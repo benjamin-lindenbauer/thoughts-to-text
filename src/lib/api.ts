@@ -70,24 +70,56 @@ export async function transcribeAudio(
   apiKey: string
 ): Promise<{ transcript: string; language: string }> {
   return withRetry(async () => {
-    const formData = new FormData();
-    formData.append('audio', audioBlob, 'recording.webm');
-    formData.append('language', language);
+    try {
+      const { errorLogger } = await import('./error-logging');
+      
+      errorLogger.info('api', 'Starting audio transcription', {
+        audioSize: audioBlob.size,
+        language,
+        hasApiKey: !!apiKey,
+      });
 
-    const response = await fetch('/api/transcribe', {
-      method: 'POST',
-      headers: {
-        'x-openai-api-key': apiKey,
-      },
-      body: formData,
-    });
+      const formData = new FormData();
+      formData.append('audio', audioBlob, 'recording.webm');
+      formData.append('language', language);
 
-    if (!response.ok) {
-      const error = await parseAPIError(response);
+      const response = await fetch('/api/transcribe', {
+        method: 'POST',
+        headers: {
+          'x-openai-api-key': apiKey,
+        },
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const error = await parseAPIError(response);
+        errorLogger.handleAPIError(error, '/api/transcribe');
+        throw error;
+      }
+
+      const result = await response.json();
+      
+      errorLogger.info('api', 'Audio transcription completed', {
+        transcriptLength: result.transcript?.length || 0,
+        detectedLanguage: result.language,
+      });
+
+      return result;
+    } catch (error) {
+      const { errorLogger } = await import('./error-logging');
+      
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        const networkError: APIError = {
+          type: 'network',
+          message: 'Network connection failed. Please check your internet connection.',
+          retryable: true,
+        };
+        errorLogger.handleNetworkError(error, navigator.onLine);
+        throw networkError;
+      }
+      
       throw error;
     }
-
-    return response.json();
   });
 }
 
@@ -98,21 +130,53 @@ export async function rewriteText(
   apiKey: string
 ): Promise<{ rewrittenText: string; originalText: string; prompt: string }> {
   return withRetry(async () => {
-    const response = await fetch('/api/rewrite', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-openai-api-key': apiKey,
-      },
-      body: JSON.stringify({ text, prompt }),
-    });
+    try {
+      const { errorLogger } = await import('./error-logging');
+      
+      errorLogger.info('api', 'Starting text rewrite', {
+        textLength: text.length,
+        promptLength: prompt.length,
+        hasApiKey: !!apiKey,
+      });
 
-    if (!response.ok) {
-      const error = await parseAPIError(response);
+      const response = await fetch('/api/rewrite', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-openai-api-key': apiKey,
+        },
+        body: JSON.stringify({ text, prompt }),
+      });
+
+      if (!response.ok) {
+        const error = await parseAPIError(response);
+        errorLogger.handleAPIError(error, '/api/rewrite');
+        throw error;
+      }
+
+      const result = await response.json();
+      
+      errorLogger.info('api', 'Text rewrite completed', {
+        originalLength: text.length,
+        rewrittenLength: result.rewrittenText?.length || 0,
+      });
+
+      return result;
+    } catch (error) {
+      const { errorLogger } = await import('./error-logging');
+      
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        const networkError: APIError = {
+          type: 'network',
+          message: 'Network connection failed. Please check your internet connection.',
+          retryable: true,
+        };
+        errorLogger.handleNetworkError(error, navigator.onLine);
+        throw networkError;
+      }
+      
       throw error;
     }
-
-    return response.json();
   });
 }
 

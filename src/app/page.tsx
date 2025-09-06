@@ -73,7 +73,7 @@ export default function Home() {
           <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-foreground mb-2">
             Thoughts to Text
           </h1>
-          <p className="text-sm md:text-base text-muted-foreground max-w-md mx-auto">
+          <p className="text-sm md:text-base text-muted-foreground">
             Record your thoughts and rewrite them with AI.
           </p>
         </div>

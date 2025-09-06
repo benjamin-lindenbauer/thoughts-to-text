@@ -136,6 +136,31 @@ export async function clearSettings(): Promise<void> {
 // Note CRUD Operations
 export async function createNote(note: Note): Promise<void> {
   try {
+    // Check storage quota before creating note
+    const { checkStorageBeforeOperation, handleStorageQuotaError } = await import('./storage-quota');
+    const { errorLogger } = await import('./error-logging');
+    
+    // Estimate note size
+    const estimatedSize = estimateNoteSize(note);
+    
+    // Check if we have enough space
+    const canStore = await checkStorageBeforeOperation(estimatedSize);
+    if (!canStore) {
+      const cleanupResult = await handleStorageQuotaError('createNote', estimatedSize);
+      
+      // If cleanup didn't free enough space, throw error
+      const canStoreAfterCleanup = await checkStorageBeforeOperation(estimatedSize);
+      if (!canStoreAfterCleanup) {
+        throw new Error('Insufficient storage space. Please delete some recordings to continue.');
+      }
+      
+      errorLogger.info('storage', 'Storage cleaned up before creating note', {
+        noteId: note.id,
+        estimatedSize,
+        cleanupResult,
+      });
+    }
+    
     // Store note metadata (without blobs)
     const noteMetadata = {
       ...note,
@@ -154,9 +179,49 @@ export async function createNote(note: Note): Promise<void> {
     if (note.photoBlob) {
       await photoStore.setItem(note.id, note.photoBlob);
     }
+    
+    errorLogger.info('storage', 'Note created successfully', {
+      noteId: note.id,
+      hasAudio: !!note.audioBlob,
+      hasPhoto: !!note.photoBlob,
+      estimatedSize,
+    });
+    
   } catch (error) {
+    const { errorLogger } = await import('./error-logging');
+    errorLogger.error('storage', 'Failed to create note', { noteId: note.id }, error as Error);
+    
+    if (error instanceof Error && error.message.includes('quota')) {
+      throw new Error(`Storage full: ${error.message}`);
+    }
     throw new Error(`Failed to create note: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
+}
+
+// Helper function to estimate note size
+function estimateNoteSize(note: Note): number {
+  let size = 0;
+  
+  // Text content (rough estimate)
+  size += (note.title?.length || 0) * 2; // UTF-16
+  size += (note.description?.length || 0) * 2;
+  size += (note.transcript?.length || 0) * 2;
+  size += (note.rewrittenText?.length || 0) * 2;
+  
+  // Audio blob
+  if (note.audioBlob?.size) {
+    size += note.audioBlob.size;
+  } else {
+    // Estimate based on duration (rough: 1 minute = ~1MB for compressed audio)
+    size += (note.duration || 0) * 1024 * 1024 / 60;
+  }
+  
+  // Photo blob
+  if (note.photoBlob?.size) {
+    size += note.photoBlob.size;
+  }
+  
+  return size;
 }
 
 export async function retrieveNote(id: string): Promise<Note | null> {

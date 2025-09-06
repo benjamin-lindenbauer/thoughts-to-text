@@ -72,6 +72,22 @@ export interface StorageQuota {
   percentage: number;
 }
 
+// Error handling types
+export interface ErrorRecoveryAction {
+  label: string;
+  action: () => void | Promise<void>;
+  variant?: 'primary' | 'secondary' | 'danger';
+  disabled?: boolean;
+}
+
+export interface ErrorContext {
+  operation?: string;
+  component?: string;
+  userId?: string;
+  sessionId?: string;
+  [key: string]: any;
+}
+
 // PWA-related types
 export interface PWAInstallPrompt {
   prompt: () => Promise<void>;

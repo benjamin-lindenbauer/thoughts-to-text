@@ -3,6 +3,8 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { AppProvider } from "@/contexts/AppContext";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { GlobalErrorHandler } from "@/components/GlobalErrorHandler";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -118,11 +120,15 @@ export default function RootLayout({
         suppressHydrationWarning
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <ThemeProvider>
-          <AppProvider>
-            {children}
-          </AppProvider>
-        </ThemeProvider>
+        <ErrorBoundary showErrorDetails={process.env.NODE_ENV === 'development'}>
+          <ThemeProvider>
+            <AppProvider>
+              <GlobalErrorHandler>
+                {children}
+              </GlobalErrorHandler>
+            </AppProvider>
+          </ThemeProvider>
+        </ErrorBoundary>
       </body>
     </html>
   );
