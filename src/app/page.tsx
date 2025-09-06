@@ -1,103 +1,134 @@
-import Image from "next/image";
+'use client';
+
+import React, { useState, useCallback } from 'react';
+import { AppLayout } from "@/components/AppLayout";
+import { RecordingInterface } from "@/components/RecordingInterface";
+import { AlertCircle, CheckCircle } from "lucide-react";
+
+const LANGUAGE_OPTIONS = [
+  { code: 'en', name: 'English', nativeName: 'English', flag: '🇺🇸' },
+  { code: 'es', name: 'Spanish', nativeName: 'Español', flag: '🇪🇸' },
+  { code: 'fr', name: 'French', nativeName: 'Français', flag: '🇫🇷' },
+  { code: 'de', name: 'German', nativeName: 'Deutsch', flag: '🇩🇪' },
+  { code: 'it', name: 'Italian', nativeName: 'Italiano', flag: '🇮🇹' },
+  { code: 'pt', name: 'Portuguese', nativeName: 'Português', flag: '🇵🇹' },
+  { code: 'ja', name: 'Japanese', nativeName: '日本語', flag: '🇯🇵' },
+  { code: 'ko', name: 'Korean', nativeName: '한국어', flag: '🇰🇷' },
+  { code: 'zh', name: 'Chinese', nativeName: '中文', flag: '🇨🇳' },
+];
 
 export default function Home() {
-  return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const [selectedLanguage, setSelectedLanguage] = useState('en');
+  const [notification, setNotification] = useState<{
+    type: 'success' | 'error';
+    message: string;
+  } | null>(null);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  // Handle recording completion
+  const handleRecordingComplete = useCallback((audioBlob: Blob, transcript?: string, photo?: Blob, rewrittenText?: string) => {
+    console.log('Recording completed:', {
+      audioSize: audioBlob.size,
+      hasTranscript: !!transcript,
+      hasPhoto: !!photo,
+      hasRewrittenText: !!rewrittenText
+    });
+    
+    // TODO: Save to storage (will be implemented in later tasks)
+    setNotification({
+      type: 'success',
+      message: 'Recording saved successfully!'
+    });
+
+    // Clear notification after 3 seconds
+    setTimeout(() => setNotification(null), 3000);
+  }, []);
+
+  // Handle transcription start
+  const handleTranscriptionStart = useCallback(() => {
+    console.log('Transcription started');
+  }, []);
+
+  // Handle transcription completion
+  const handleTranscriptionComplete = useCallback((transcript: string) => {
+    console.log('Transcription completed:', transcript);
+  }, []);
+
+  // Handle errors
+  const handleError = useCallback((error: string) => {
+    console.error('Recording error:', error);
+    setNotification({
+      type: 'error',
+      message: error
+    });
+
+    // Clear notification after 5 seconds for errors
+    setTimeout(() => setNotification(null), 5000);
+  }, []);
+
+  return (
+    <AppLayout>
+      <div className="flex flex-col items-center justify-center min-h-screen p-6 md:p-8">
+        {/* Header */}
+        <div className="text-center mb-8 md:mb-12">
+          <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-foreground mb-2">
+            Thoughts to Text
+          </h1>
+          <p className="text-sm md:text-base text-muted-foreground max-w-md">
+            Record your thoughts and transform them with AI
+          </p>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+
+        {/* Language selection */}
+        <div className="mb-8 w-full max-w-sm">
+          <label className="block text-sm font-medium text-foreground mb-3">
+            Recording Language
+          </label>
+          <select 
+            value={selectedLanguage}
+            onChange={(e) => setSelectedLanguage(e.target.value)}
+            className="w-full p-3 md:p-4 rounded-xl border border-border bg-card text-foreground shadow-sm transition-colors hover:bg-accent focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+          >
+            {LANGUAGE_OPTIONS.map((lang) => (
+              <option key={lang.code} value={lang.code}>
+                {lang.flag} {lang.name} ({lang.nativeName})
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Recording Interface */}
+        <RecordingInterface
+          selectedLanguage={selectedLanguage}
+          onRecordingComplete={handleRecordingComplete}
+          onTranscriptionStart={handleTranscriptionStart}
+          onTranscriptionComplete={handleTranscriptionComplete}
+          onError={handleError}
+          className="mb-8"
+        />
+
+        {/* Notification */}
+        {notification && (
+          <div className={`fixed top-4 right-4 p-4 rounded-lg shadow-lg flex items-center gap-3 max-w-sm z-50 ${
+            notification.type === 'success' 
+              ? 'bg-green-50 border border-green-200 text-green-800 dark:bg-green-900/20 dark:border-green-800 dark:text-green-200'
+              : 'bg-red-50 border border-red-200 text-red-800 dark:bg-red-900/20 dark:border-red-800 dark:text-red-200'
+          }`}>
+            {notification.type === 'success' ? (
+              <CheckCircle className="w-5 h-5 flex-shrink-0" />
+            ) : (
+              <AlertCircle className="w-5 h-5 flex-shrink-0" />
+            )}
+            <p className="text-sm">{notification.message}</p>
+          </div>
+        )}
+
+        {/* Quick stats or recent activity hint */}
+        <div className="mt-8 md:mt-12 text-center">
+          <p className="text-xs text-muted-foreground">
+            No recordings yet • Get started by selecting a language and tapping the microphone
+          </p>
+        </div>
+      </div>
+    </AppLayout>
   );
 }
