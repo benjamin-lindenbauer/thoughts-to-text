@@ -21,8 +21,8 @@ import { cn } from '@/lib/utils';
 
 export function SettingsForm() {
   const { settings, ui, state } = useAppState();
-  const isLoading = !state.isSettingsLoaded;
-  const settingsError = ui.error;
+  const isLoading = !state?.isSettingsLoaded;
+  const settingsError = ui?.error;
 
   const { setTheme } = useTheme();
 
@@ -50,6 +50,7 @@ export function SettingsForm() {
   };
 
   const addRewritePrompt = async (prompt: { name: string; prompt: string; isDefault: boolean }) => {
+    if (!settings?.settings?.rewritePrompts) return '';
     const newPrompt = {
       ...prompt,
       id: crypto.randomUUID(),
@@ -60,6 +61,7 @@ export function SettingsForm() {
   };
 
   const updateRewritePrompt = async (id: string, updates: Partial<{ name: string; prompt: string; isDefault: boolean }>) => {
+    if (!settings?.settings?.rewritePrompts) return;
     const updatedPrompts = settings.settings.rewritePrompts.map(prompt =>
       prompt.id === id ? { ...prompt, ...updates } : prompt
     );
@@ -67,6 +69,7 @@ export function SettingsForm() {
   };
 
   const deleteRewritePrompt = async (id: string) => {
+    if (!settings?.settings?.rewritePrompts) return;
     const updatedPrompts = settings.settings.rewritePrompts.filter(prompt => prompt.id !== id);
     let newDefaultPrompt = settings.settings.defaultRewritePrompt;
     if (settings.settings.defaultRewritePrompt === id && updatedPrompts.length > 0) {
@@ -79,6 +82,7 @@ export function SettingsForm() {
   };
 
   const setDefaultRewritePrompt = async (promptId: string) => {
+    if (!settings?.settings?.rewritePrompts) return;
     const updatedPrompts = settings.settings.rewritePrompts.map(prompt => ({
       ...prompt,
       isDefault: prompt.id === promptId,
@@ -109,11 +113,11 @@ export function SettingsForm() {
 
   // Initialize form with current settings
   useEffect(() => {
-    if (settings.settings.openaiApiKey) {
+    if (settings?.settings?.openaiApiKey) {
       setApiKeyInput(settings.settings.openaiApiKey);
       setApiKeyStatus(validateApiKey(settings.settings.openaiApiKey) ? 'valid' : 'invalid');
     }
-  }, [settings.settings.openaiApiKey]);
+  }, [settings?.settings?.openaiApiKey]);
 
   // Handle API key changes
   const handleApiKeyChange = (value: string) => {
@@ -279,7 +283,7 @@ export function SettingsForm() {
                 
                 <Button
                   onClick={handleSaveApiKey}
-                  disabled={isSaving || !apiKeyInput.trim() || apiKeyInput === settings.settings.openaiApiKey}
+                  disabled={isSaving || !apiKeyInput.trim() || apiKeyInput === settings?.settings?.openaiApiKey}
                   size="sm"
                 >
                   {isSaving ? 'Saving...' : 'Save'}
@@ -304,7 +308,7 @@ export function SettingsForm() {
             </label>
             
             <Select
-              value={settings.settings.defaultLanguage}
+              value={settings?.settings?.defaultLanguage || 'en'}
               onValueChange={handleLanguageChange}
             >
               <SelectTrigger>
@@ -340,8 +344,8 @@ export function SettingsForm() {
             </p>
             
             <RewritePromptManager
-              prompts={settings.settings.rewritePrompts}
-              defaultPromptId={settings.settings.defaultRewritePrompt}
+              prompts={settings?.settings?.rewritePrompts || []}
+              defaultPromptId={settings?.settings?.defaultRewritePrompt || 'default'}
               onAddPrompt={addRewritePrompt}
               onUpdatePrompt={updateRewritePrompt}
               onDeletePrompt={deleteRewritePrompt}

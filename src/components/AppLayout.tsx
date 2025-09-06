@@ -37,7 +37,7 @@ export function AppLayout({
       <main 
         className={cn(
           'min-h-screen safe-area-top',
-          // Mobile: account for navigation height + safe area
+          // Account for navigation height + safe area on all screens
           showMobileNav && 'pb-20',
           // Desktop: standard padding
           'md:px-6 md:py-4',
@@ -51,11 +51,9 @@ export function AppLayout({
         </div>
       </main>
       
-      {/* Mobile navigation - only show on mobile screens */}
+      {/* Navigation - show on all screens */}
       {showMobileNav && (
-        <div className="md:hidden">
-          <MobileNavigation />
-        </div>
+        <MobileNavigation />
       )}
 
       {/* PWA install prompt */}
