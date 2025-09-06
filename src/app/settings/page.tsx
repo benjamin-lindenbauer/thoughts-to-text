@@ -4,7 +4,11 @@ import { SettingsForm } from "@/components/SettingsForm";
 export default function SettingsPage() {
   return (
     <AppLayout>
-      <SettingsForm />
+      <div className="flex justify-center">
+        <div className="w-full max-w-3xl">
+          <SettingsForm />
+        </div>
+      </div>
     </AppLayout>
   );
 }

@@ -205,16 +205,17 @@ export default function NotesPage() {
 
   return (
     <AppLayout>
-      <div className="p-4 md:p-6">
-        {/* Header */}
-        <div className="mb-6 md:mb-8">
-          <h1 className="text-xl md:text-2xl font-bold text-foreground mb-2">
-            Your Notes
-          </h1>
-          <p className="text-sm md:text-base text-muted-foreground">
-            Browse and manage your recorded thoughts
-          </p>
-        </div>
+      <div className="flex justify-center">
+        <div className="w-full max-w-3xl p-4 md:p-6">
+          {/* Header */}
+          <div className="mb-6 md:mb-8 text-center">
+            <h1 className="text-xl md:text-2xl font-bold text-foreground mb-2">
+              Your Notes
+            </h1>
+            <p className="text-sm md:text-base text-muted-foreground">
+              Browse and manage your recorded thoughts
+            </p>
+          </div>
 
         {/* Error Display */}
         {error && (
@@ -264,8 +265,9 @@ export default function NotesPage() {
           isDeleting={deleting}
         />
 
-        {/* Toast Notifications */}
-        <ToastContainer toasts={toasts} onRemoveToast={removeToast} />
+          {/* Toast Notifications */}
+          <ToastContainer toasts={toasts} onRemoveToast={removeToast} />
+        </div>
       </div>
     </AppLayout>
   );

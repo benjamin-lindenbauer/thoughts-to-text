@@ -67,17 +67,19 @@ export default function Home() {
 
   return (
     <AppLayout>
-      <div className="flex flex-col items-center justify-center p-6 md:p-8">
-        {/* Header */}
-        <div className="text-center mb-8 md:mb-12">
+      {/* Fixed Header */}
+      <div className="fixed top-0 left-0 right-0 z-30 bg-background/95 backdrop-blur-sm border-b border-border">
+        <div className="text-center py-4 px-6">
           <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-foreground mb-2">
             Thoughts to Text
           </h1>
-          <p className="text-sm md:text-base text-muted-foreground max-w-md">
+          <p className="text-sm md:text-base text-muted-foreground max-w-md mx-auto">
             Record your thoughts and rewrite them with AI.
           </p>
         </div>
+      </div>
 
+      <div className="flex flex-col items-center justify-center p-6 md:p-8 pt-32 md:pt-36">
         {/* Language selection */}
         <div className="mb-8 w-full max-w-sm">
           <label className="block text-sm font-medium text-foreground mb-3">
@@ -109,8 +111,8 @@ export default function Home() {
         {/* Notification */}
         {notification && (
           <div className={`fixed top-4 right-4 p-4 rounded-lg shadow-lg flex items-center gap-3 max-w-sm z-50 ${notification.type === 'success'
-              ? 'bg-green-50 border border-green-200 text-green-800 dark:bg-green-900/20 dark:border-green-800 dark:text-green-200'
-              : 'bg-red-50 border border-red-200 text-red-800 dark:bg-red-900/20 dark:border-red-800 dark:text-red-200'
+            ? 'bg-green-50 border border-green-200 text-green-800 dark:bg-green-900/20 dark:border-green-800 dark:text-green-200'
+            : 'bg-red-50 border border-red-200 text-red-800 dark:bg-red-900/20 dark:border-red-800 dark:text-red-200'
             }`}>
             {notification.type === 'success' ? (
               <CheckCircle className="w-5 h-5 flex-shrink-0" />

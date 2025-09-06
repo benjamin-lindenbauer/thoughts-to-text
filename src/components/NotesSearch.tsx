@@ -109,7 +109,7 @@ export function NotesSearch({
             placeholder="Search notes..."
             value={localSearchQuery}
             onChange={handleSearchChange}
-            className="w-full pl-10 pr-10 py-3 md:py-4 rounded-xl border border-border bg-card text-foreground placeholder:text-muted-foreground shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+            className="w-full pl-10 pr-10 py-3 rounded-xl border border-border bg-card text-foreground placeholder:text-muted-foreground shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
           />
           {localSearchQuery && (
             <button

@@ -222,7 +222,7 @@ export function SettingsForm() {
       )}
 
       {/* Settings Sections */}
-      <div className="space-y-6 md:space-y-8 max-w-2xl">
+      <div className="space-y-6 md:space-y-8 max-w-3xl">
         {/* Theme Settings */}
         <div className="space-y-4">
           <ThemeToggle />

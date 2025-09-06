@@ -60,7 +60,7 @@ export function PWAInstallPrompt({ className }: PWAInstallPromptProps) {
         <div className="flex-shrink-0 w-10 h-10 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg flex items-center justify-center">
           <Smartphone className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
         </div>
-        
+
         <div className="flex-1 min-w-0">
           <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100">
             Install App
@@ -69,7 +69,7 @@ export function PWAInstallPrompt({ className }: PWAInstallPromptProps) {
             Add Thoughts to Text to your home screen for quick access and offline use.
           </p>
         </div>
-        
+
         <button
           onClick={handleDismiss}
           className="flex-shrink-0 p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
@@ -77,7 +77,7 @@ export function PWAInstallPrompt({ className }: PWAInstallPromptProps) {
           <X className="w-4 h-4" />
         </button>
       </div>
-      
+
       <div className="flex gap-2 mt-3">
         <button
           onClick={handleInstall}
