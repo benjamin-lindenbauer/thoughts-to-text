@@ -11,14 +11,17 @@ export interface OfflineState {
 
 export const useOffline = () => {
   const [state, setState] = useState<OfflineState>({
-    isOnline: navigator.onLine,
-    isOffline: !navigator.onLine,
-    syncQueueLength: pwaManager.queueLength,
-    lastOnlineAt: navigator.onLine ? new Date() : null,
-    connectionType: getConnectionType(),
+    isOnline: true, // Default to online for SSR
+    isOffline: false,
+    syncQueueLength: 0, // Default to 0 for SSR
+    lastOnlineAt: null,
+    connectionType: null,
   });
+  const [isMounted, setIsMounted] = useState(false);
 
   const updateOnlineStatus = useCallback(() => {
+    if (typeof navigator === 'undefined') return;
+    
     const isOnline = navigator.onLine;
     const now = new Date();
     
@@ -43,7 +46,31 @@ export const useOffline = () => {
     }));
   }, []);
 
+  // Track client-side mounting
   useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  // Initialize state after mounting
+  useEffect(() => {
+    if (!isMounted) return;
+
+    // Set initial state based on actual browser state
+    const isOnline = typeof navigator !== 'undefined' ? navigator.onLine : true;
+    const now = new Date();
+    
+    setState({
+      isOnline,
+      isOffline: !isOnline,
+      syncQueueLength: pwaManager.queueLength,
+      lastOnlineAt: isOnline ? now : null,
+      connectionType: getConnectionType(),
+    });
+  }, [isMounted]);
+
+  useEffect(() => {
+    if (!isMounted) return;
+
     // Listen for online/offline events
     window.addEventListener('online', updateOnlineStatus);
     window.addEventListener('offline', updateOnlineStatus);
@@ -60,7 +87,7 @@ export const useOffline = () => {
     // Periodic sync queue check
     const syncInterval = setInterval(() => {
       updateSyncQueue();
-      if (navigator.onLine) {
+      if (typeof navigator !== 'undefined' && navigator.onLine) {
         pwaManager.processSyncQueue();
       }
     }, 30000); // Check every 30 seconds
@@ -76,7 +103,7 @@ export const useOffline = () => {
       
       clearInterval(syncInterval);
     };
-  }, [updateOnlineStatus, updateSyncQueue]);
+  }, [updateOnlineStatus, updateSyncQueue, isMounted]);
 
   const addToSyncQueue = useCallback((type: 'transcription' | 'rewrite', data: any) => {
     const id = pwaManager.addToSyncQueue(type, data);
@@ -101,6 +128,8 @@ export const useOffline = () => {
   const getConnectionQuality = useCallback((): 'good' | 'poor' | 'offline' => {
     if (!state.isOnline) return 'offline';
     
+    if (typeof navigator === 'undefined') return 'good';
+    
     const connection = (navigator as any).connection;
     if (!connection) return 'good';
     
@@ -123,6 +152,8 @@ export const useOffline = () => {
 };
 
 function getConnectionType(): string | null {
+  if (typeof navigator === 'undefined') return null;
+  
   const connection = (navigator as any).connection;
   if (!connection) return null;
   

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { Mic, MicOff, Camera, Square, Wand2, RefreshCw } from 'lucide-react';
 import { useRecording } from '@/hooks/useRecording';
 import { cn } from '@/lib/utils';
@@ -59,11 +59,17 @@ export function RecordingInterface({
   const [rewrittenText, setRewrittenText] = useState<string | null>(null);
   const [selectedPrompt, setSelectedPrompt] = useState<string>('default');
   const [rewritePrompts] = useState<RewritePrompt[]>(DEFAULT_REWRITE_PROMPTS);
+  const [isMounted, setIsMounted] = useState(false);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isCameraActive, setIsCameraActive] = useState(false);
+
+  // Track client-side mounting to prevent hydration mismatches
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   const {
     recordingState,
@@ -101,6 +107,9 @@ export function RecordingInterface({
 
   // Handle photo capture from camera
   const handleCameraCapture = useCallback(async () => {
+    // Only run on client side
+    if (!isMounted || typeof navigator === 'undefined') return;
+    
     if (isCameraActive) {
       // Stop camera and capture photo
       if (videoRef.current && canvasRef.current) {
@@ -114,7 +123,7 @@ export function RecordingInterface({
           context.drawImage(video, 0, 0);
           
           canvas.toBlob((blob) => {
-            if (blob) {
+            if (blob && typeof URL !== 'undefined') {
               setPhoto(blob);
               setPhotoPreview(URL.createObjectURL(blob));
             }
@@ -149,12 +158,12 @@ export function RecordingInterface({
         onError?.('Failed to access camera. Please check permissions.');
       }
     }
-  }, [isCameraActive, onError]);
+  }, [isCameraActive, onError, isMounted]);
 
   // Handle photo upload from file
   const handlePhotoUpload = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file && file.type.startsWith('image/')) {
+    if (file && file.type.startsWith('image/') && typeof URL !== 'undefined') {
       setPhoto(file);
       setPhotoPreview(URL.createObjectURL(file));
     }
@@ -248,9 +257,20 @@ export function RecordingInterface({
     }
   }, [recordingError, onError]);
 
+  // Don't render anything during SSR to prevent hydration mismatches
+  if (!isMounted) {
+    return (
+      <div className={cn("flex flex-col items-center gap-6 mb-8", className)}>
+        <div className="text-center">
+          <p className="text-sm text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
   if (!isSupported) {
     return (
-      <div className={cn("text-center p-6", className)}>
+      <div className={cn("flex flex-col items-center gap-6 mb-8", className)}>
         <div className="text-red-500 mb-4">
           <MicOff className="w-12 h-12 mx-auto mb-2" />
           <p className="font-medium">Recording Not Supported</p>
@@ -263,7 +283,7 @@ export function RecordingInterface({
   }
 
   return (
-    <div className={cn("flex flex-col items-center gap-6", className)}>
+    <div className={cn("flex flex-col items-center gap-6 mb-8", className)}>
       {/* Camera preview or photo preview */}
       {(isCameraActive || photoPreview) && (
         <div className="relative w-full max-w-sm">
@@ -288,7 +308,7 @@ export function RecordingInterface({
               onClick={() => {
                 setPhoto(null);
                 setPhotoPreview(null);
-                if (photoPreview) {
+                if (photoPreview && typeof URL !== 'undefined') {
                   URL.revokeObjectURL(photoPreview);
                 }
               }}

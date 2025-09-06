@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useReducer, useEffect, useState, ReactNode } from 'react';
 import { AppState, AppAction, Note, AppSettings, RewritePrompt } from '@/types';
 import { retrieveSettings, retrieveApiKey, getAllNotes } from '@/lib/storage';
 import { StatePersistence } from '@/lib/state-persistence';
@@ -247,9 +247,18 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 // Provider component
 export function AppProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(appReducer, initialState);
+  const [isMounted, setIsMounted] = useState(false);
+
+  // Track client-side mounting to prevent hydration mismatches
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   // Hydrate state on mount
   useEffect(() => {
+    // Only run on client side after mounting
+    if (!isMounted) return;
+
     async function hydrateState() {
       try {
         // Initialize storage system
@@ -287,10 +296,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
 
     hydrateState();
-  }, []);
+  }, [isMounted]);
 
   // Persist state changes
   useEffect(() => {
+    // Only run on client side after mounting
+    if (!isMounted) return;
+    
     if (state.isSettingsLoaded && state.isNotesLoaded) {
       // Persist UI state
       StatePersistence.savePersistedState(state);
@@ -298,10 +310,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
       // Persist offline queue separately
       StatePersistence.saveOfflineQueue(state.pendingTranscriptions, state.pendingRewrites);
     }
-  }, [state]);
+  }, [state, isMounted]);
 
   // Monitor online/offline status
   useEffect(() => {
+    // Only run on client side after mounting
+    if (!isMounted) return;
+
     function handleOnline() {
       dispatch({ type: 'SET_OFFLINE', payload: false });
     }
@@ -310,8 +325,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
       dispatch({ type: 'SET_OFFLINE', payload: true });
     }
 
-    // Set initial status
-    dispatch({ type: 'SET_OFFLINE', payload: !navigator.onLine });
+    // Set initial status (only on client)
+    if (typeof navigator !== 'undefined') {
+      dispatch({ type: 'SET_OFFLINE', payload: !navigator.onLine });
+    }
 
     // Listen for changes
     window.addEventListener('online', handleOnline);
@@ -321,7 +338,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
     };
-  }, []);
+  }, [isMounted]);
 
   return (
     <AppContext.Provider value={{ state, dispatch }}>

@@ -129,8 +129,8 @@ class PWAManager {
     this.syncQueue.push(item);
     this.saveSyncQueue();
 
-    // Try to process immediately if online
-    if (navigator.onLine) {
+    // Try to process immediately if online (only in browser)
+    if (typeof navigator !== 'undefined' && navigator.onLine) {
       this.processSyncQueue();
     }
 
@@ -143,7 +143,7 @@ class PWAManager {
   }
 
   async processSyncQueue(): Promise<void> {
-    if (!navigator.onLine || this.syncQueue.length === 0) {
+    if (typeof navigator === 'undefined' || !navigator.onLine || this.syncQueue.length === 0) {
       return;
     }
 
@@ -176,6 +176,9 @@ class PWAManager {
   }
 
   private async processQueueItem(item: SyncQueueItem): Promise<void> {
+    // Only dispatch events in browser environment
+    if (typeof window === 'undefined') return;
+    
     // This will be implemented by the consuming code
     // We'll dispatch a custom event that components can listen to
     const event = new CustomEvent('pwa-sync-process', {
@@ -231,15 +234,21 @@ export const pwaManager = new PWAManager();
 
 // Utility functions
 export const isPWAInstalled = (): boolean => {
+  if (typeof window === 'undefined') return false;
+  
   return window.matchMedia('(display-mode: standalone)').matches ||
          (window.navigator as any).standalone === true;
 };
 
 export const isPWASupported = (): boolean => {
+  if (typeof window === 'undefined' || typeof navigator === 'undefined') return false;
+  
   return 'serviceWorker' in navigator && 'PushManager' in window;
 };
 
 export const getInstallInstructions = (): string => {
+  if (typeof navigator === 'undefined') return 'Install instructions not available';
+  
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
   const isAndroid = /Android/.test(navigator.userAgent);
   

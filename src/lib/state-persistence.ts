@@ -21,6 +21,9 @@ interface OfflineQueueData {
 export class StatePersistence {
   // Load persisted UI state
   static loadPersistedState(): Partial<AppState> | null {
+    // Only run on client side
+    if (typeof window === 'undefined') return null;
+    
     try {
       const persistedData = localStorage.getItem(PERSISTED_STATE_KEY);
       if (!persistedData) return null;
@@ -47,6 +50,9 @@ export class StatePersistence {
 
   // Save UI state to localStorage
   static savePersistedState(state: AppState): void {
+    // Only run on client side
+    if (typeof window === 'undefined') return;
+    
     try {
       const dataToSave: PersistedState = {
         selectedNoteId: state.selectedNoteId,
@@ -63,6 +69,9 @@ export class StatePersistence {
 
   // Clear persisted UI state
   static clearPersistedState(): void {
+    // Only run on client side
+    if (typeof window === 'undefined') return;
+    
     try {
       localStorage.removeItem(PERSISTED_STATE_KEY);
     } catch (error) {
@@ -72,6 +81,11 @@ export class StatePersistence {
 
   // Load offline queue data
   static loadOfflineQueue(): { pendingTranscriptions: TranscriptionRequest[]; pendingRewrites: RewriteRequest[] } {
+    // Only run on client side
+    if (typeof window === 'undefined') {
+      return { pendingTranscriptions: [], pendingRewrites: [] };
+    }
+    
     try {
       const queueData = localStorage.getItem(OFFLINE_QUEUE_KEY);
       if (!queueData) {
@@ -101,6 +115,9 @@ export class StatePersistence {
 
   // Save offline queue data
   static saveOfflineQueue(pendingTranscriptions: TranscriptionRequest[], pendingRewrites: RewriteRequest[]): void {
+    // Only run on client side
+    if (typeof window === 'undefined') return;
+    
     try {
       const dataToSave: OfflineQueueData = {
         pendingTranscriptions,
@@ -118,6 +135,9 @@ export class StatePersistence {
 
   // Clear offline queue data
   static clearOfflineQueue(): void {
+    // Only run on client side
+    if (typeof window === 'undefined') return;
+    
     try {
       localStorage.removeItem(OFFLINE_QUEUE_KEY);
     } catch (error) {
@@ -127,6 +147,11 @@ export class StatePersistence {
 
   // Check if localStorage is available and has space
   static checkStorageAvailability(): { available: boolean; reason?: string } {
+    // Only run on client side
+    if (typeof window === 'undefined') {
+      return { available: false, reason: 'Server-side rendering' };
+    }
+    
     try {
       const testKey = 'storage-test';
       const testValue = 'test';
@@ -188,6 +213,9 @@ export class StatePersistence {
 
   // Clean up old or corrupted data
   static cleanupStorage(): void {
+    // Only run on client side
+    if (typeof window === 'undefined') return;
+    
     try {
       // List of keys that belong to our app
       const appKeys = [
@@ -218,6 +246,9 @@ export class StatePersistence {
 
   // Initialize storage on app startup
   static async initialize(): Promise<void> {
+    // Only run on client side
+    if (typeof window === 'undefined') return;
+    
     try {
       // Check storage availability
       const storageCheck = this.checkStorageAvailability();

@@ -22,7 +22,8 @@ export function OfflineIndicator({ className, showDetails = false }: OfflineIndi
   const offlineDuration = getOfflineDuration();
   const connectionQuality = getConnectionQuality();
 
-  if (isOnline && syncQueueLength === 0 && !showDetails) {
+  // Don't render anything during SSR or if online with no queue and no details requested
+  if (typeof window === 'undefined' || (isOnline && syncQueueLength === 0 && !showDetails)) {
     return null;
   }
 
@@ -103,7 +104,8 @@ export function OfflineIndicator({ className, showDetails = false }: OfflineIndi
 export function OfflineIndicatorCompact({ className }: { className?: string }) {
   const { isOnline, syncQueueLength } = useOffline();
 
-  if (isOnline && syncQueueLength === 0) {
+  // Don't render anything during SSR or if online with no queue
+  if (typeof window === 'undefined' || (isOnline && syncQueueLength === 0)) {
     return null;
   }
 
