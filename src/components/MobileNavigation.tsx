@@ -4,6 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { History, Mic, Settings } from 'lucide-react';
+import { OfflineIndicatorCompact } from './OfflineIndicator';
 import { cn } from '@/lib/utils';
 
 interface NavItem {
@@ -35,6 +36,11 @@ export function MobileNavigation() {
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-t border-border safe-area-bottom">
+      {/* Offline indicator bar */}
+      <div className="absolute top-0 left-4 right-4 -translate-y-1/2">
+        <OfflineIndicatorCompact className="mx-auto" />
+      </div>
+
       <div className="flex items-center justify-around px-4 py-2">
         {navItems.map((item) => {
           const Icon = item.icon;
@@ -46,7 +52,7 @@ export function MobileNavigation() {
               href={item.href}
               className={cn(
                 'flex flex-col items-center justify-center gap-1 px-4 py-3 rounded-xl transition-all duration-200',
-                'min-w-[72px] min-h-[56px] touch-manipulation',
+                'min-w-[72px] min-h-[56px] touch-manipulation relative',
                 'active:scale-95 active:bg-accent/50',
                 isActive
                   ? 'text-indigo-500 bg-indigo-500/10 shadow-sm'

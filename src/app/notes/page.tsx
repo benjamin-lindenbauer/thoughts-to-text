@@ -1,12 +1,16 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { AppLayout } from "@/components/AppLayout";
 import { NotesList } from "@/components/NotesList";
 import { NotesSearch, SearchFilters } from "@/components/NotesSearch";
 import { APIErrorDisplay } from "@/components/APIErrorDisplay";
 import { useNotesFilter } from "@/hooks/useNotesFilter";
 import { useWebShare } from "@/hooks/useWebShare";
+import { useToast } from "@/hooks/useToast";
+import { ToastContainer } from "@/components/Toast";
+import { DeleteConfirmationDialog } from "@/components/DeleteConfirmationDialog";
 import { Note, APIError } from "@/types";
 import { 
   getAllNotes, 
@@ -119,8 +123,12 @@ function useNotes() {
 }
 
 export default function NotesPage() {
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
   const [filters, setFilters] = useState<SearchFilters>(DEFAULT_FILTERS);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [noteToDelete, setNoteToDelete] = useState<Note | null>(null);
+  const [deleting, setDeleting] = useState(false);
   
   const {
     notes,
@@ -132,6 +140,7 @@ export default function NotesPage() {
   } = useNotes();
   
   const { shareNote } = useWebShare();
+  const { toasts, removeToast, success, error: showError } = useToast();
   
   const filteredNotes = useNotesFilter(notes, searchQuery, filters);
 
@@ -143,17 +152,54 @@ export default function NotesPage() {
     setFilters(newFilters);
   };
 
+  const handleViewNote = (note: Note) => {
+    // Navigate to note details page
+    router.push(`/notes/${note.id}`);
+  };
+
   const handleEditNote = (note: Note) => {
-    // TODO: Navigate to note details page for editing
-    // This will be implemented in task 10
-    console.log('Edit note:', note.id);
+    // Navigate to note details page for editing
+    router.push(`/notes/${note.id}`);
   };
 
   const handleShareNote = async (note: Note) => {
-    const success = await shareNote(note);
-    if (!success) {
-      // Could show an error toast here
-      console.error('Failed to share note');
+    try {
+      const shareSuccess = await shareNote(note);
+      if (shareSuccess) {
+        success('Note shared successfully', 'Your note has been shared or copied to clipboard.');
+      } else {
+        showError('Share cancelled', 'The share operation was cancelled.');
+      }
+    } catch (err) {
+      showError('Failed to share note', err instanceof Error ? err.message : 'An unexpected error occurred.');
+    }
+  };
+
+  const handleDeleteNote = async (note: Note) => {
+    setNoteToDelete(note);
+    setShowDeleteDialog(true);
+  };
+
+  const confirmDeleteNote = async () => {
+    if (!noteToDelete) return;
+    
+    try {
+      setDeleting(true);
+      await deleteNote(noteToDelete.id);
+      success('Note deleted', 'The note has been permanently deleted.');
+      setShowDeleteDialog(false);
+      setNoteToDelete(null);
+    } catch (err) {
+      showError('Failed to delete note', err instanceof Error ? err.message : 'An unexpected error occurred.');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const closeDeleteDialog = () => {
+    if (!deleting) {
+      setShowDeleteDialog(false);
+      setNoteToDelete(null);
     }
   };
 
@@ -200,11 +246,26 @@ export default function NotesPage() {
         <NotesList
           notes={filteredNotes}
           loading={loading}
-          onDeleteNote={deleteNote}
+          onDeleteNote={handleDeleteNote}
           onGenerateMetadata={generateMetadata}
           onEditNote={handleEditNote}
           onShareNote={handleShareNote}
+          onViewNote={handleViewNote}
         />
+
+        {/* Delete Confirmation Dialog */}
+        <DeleteConfirmationDialog
+          isOpen={showDeleteDialog}
+          onClose={closeDeleteDialog}
+          onConfirm={confirmDeleteNote}
+          title="Delete Note"
+          description="Are you sure you want to delete this note? This action cannot be undone and will permanently remove the note, its audio recording, and any associated photo."
+          itemName={noteToDelete?.title}
+          isDeleting={deleting}
+        />
+
+        {/* Toast Notifications */}
+        <ToastContainer toasts={toasts} onRemoveToast={removeToast} />
       </div>
     </AppLayout>
   );

@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/select';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { RewritePromptManager } from '@/components/RewritePromptManager';
+import { PWAInstallButton } from '@/components/PWAInstallPrompt';
 import { cn } from '@/lib/utils';
 
 export function SettingsForm() {
@@ -286,6 +287,23 @@ export function SettingsForm() {
               onSetDefault={setDefaultRewritePrompt}
               defaultPromptIds={defaultRewritePrompts.map(p => p.id)}
             />
+          </div>
+        </div>
+
+        {/* PWA Settings */}
+        <div className="space-y-4">
+          <div className="flex items-center gap-2">
+            <MessageSquare className="w-5 h-5 text-indigo-500" />
+            <h2 className="text-lg font-semibold text-foreground">
+              App Installation
+            </h2>
+          </div>
+          
+          <div className="space-y-3">
+            <PWAInstallButton className="w-full justify-center" />
+            <p className="text-xs text-muted-foreground">
+              Install the app for offline access and a native app experience
+            </p>
           </div>
         </div>
       </div>

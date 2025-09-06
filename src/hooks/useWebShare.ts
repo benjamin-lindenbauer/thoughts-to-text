@@ -68,7 +68,7 @@ export function useWebShare() {
         return true;
       } catch (fallbackError) {
         console.error('Share failed:', fallbackError);
-        return false;
+        throw fallbackError;
       }
     }
   }, [isShareSupported]);
@@ -78,9 +78,6 @@ export function useWebShare() {
       // Copy to clipboard
       const textToCopy = `${data.title}\n\n${data.text}`;
       await navigator.clipboard.writeText(textToCopy);
-      
-      // Show a temporary notification
-      showNotification('Note copied to clipboard!');
     } else {
       // Very old browser fallback
       const textArea = document.createElement('textarea');
@@ -94,7 +91,6 @@ export function useWebShare() {
       
       try {
         document.execCommand('copy');
-        showNotification('Note copied to clipboard!');
       } catch (err) {
         console.error('Fallback copy failed:', err);
         throw new Error('Unable to share or copy note');
@@ -102,34 +98,6 @@ export function useWebShare() {
         document.body.removeChild(textArea);
       }
     }
-  }, []);
-
-  const showNotification = useCallback((message: string) => {
-    // Create a simple toast notification
-    const toast = document.createElement('div');
-    toast.textContent = message;
-    toast.style.cssText = `
-      position: fixed;
-      bottom: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: #333;
-      color: white;
-      padding: 12px 24px;
-      border-radius: 8px;
-      z-index: 10000;
-      font-size: 14px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    `;
-    
-    document.body.appendChild(toast);
-    
-    // Remove after 3 seconds
-    setTimeout(() => {
-      if (document.body.contains(toast)) {
-        document.body.removeChild(toast);
-      }
-    }, 3000);
   }, []);
 
   return {

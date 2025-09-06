@@ -102,10 +102,11 @@ function SimpleAudioPlayer({ audioBlob, onEnded }: { audioBlob: Blob; onEnded: (
 interface NotesListProps {
     notes: Note[];
     loading: boolean;
-    onDeleteNote: (id: string) => Promise<void>;
+    onDeleteNote: (note: Note) => Promise<void>;
     onGenerateMetadata: (note: Note) => Promise<void>;
     onEditNote?: (note: Note) => void;
     onShareNote?: (note: Note) => void;
+    onViewNote?: (note: Note) => void;
 }
 
 interface ContextMenuState {
@@ -125,7 +126,8 @@ export function NotesList({
     onDeleteNote,
     onGenerateMetadata,
     onEditNote,
-    onShareNote
+    onShareNote,
+    onViewNote
 }: NotesListProps) {
     const [contextMenu, setContextMenu] = useState<ContextMenuState>({
         isOpen: false,
@@ -211,9 +213,7 @@ export function NotesList({
                 onEditNote?.(note);
                 break;
             case 'delete':
-                if (confirm('Are you sure you want to delete this note?')) {
-                    await onDeleteNote(noteId);
-                }
+                await onDeleteNote(note);
                 break;
             case 'share':
                 onShareNote?.(note);
@@ -233,10 +233,16 @@ export function NotesList({
         }
     }, [notes, onDeleteNote, onGenerateMetadata, onEditNote, onShareNote]);
 
-    // Handle note click to expand/collapse
+    // Handle note click to navigate to details
     const handleNoteClick = useCallback((noteId: string) => {
-        setExpandedNoteId(prev => prev === noteId ? null : noteId);
-    }, []);
+        const note = notes.find(n => n.id === noteId);
+        if (note && onViewNote) {
+            onViewNote(note);
+        } else {
+            // Fallback to expand/collapse if no navigation handler
+            setExpandedNoteId(prev => prev === noteId ? null : noteId);
+        }
+    }, [notes, onViewNote]);
 
     // Handle audio play/pause
     const handleAudioToggle = useCallback((noteId: string) => {
