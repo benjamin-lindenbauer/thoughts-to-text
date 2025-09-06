@@ -205,10 +205,10 @@ export default function NotesPage() {
 
   return (
     <AppLayout>
-      <div className="flex justify-center">
+      <div className="flex">
         <div className="w-full max-w-3xl p-4 md:p-6">
           {/* Header */}
-          <div className="mb-6 md:mb-8 text-center">
+          <div className="mb-6 md:mb-8">
             <h1 className="text-xl md:text-2xl font-bold text-foreground mb-2">
               Your Notes
             </h1>

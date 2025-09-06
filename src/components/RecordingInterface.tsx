@@ -61,12 +61,14 @@ export function RecordingInterface({
   const [selectedPrompt, setSelectedPrompt] = useState<string>('default');
   const [rewritePrompts] = useState<RewritePrompt[]>(DEFAULT_REWRITE_PROMPTS);
   const [isMounted, setIsMounted] = useState(false);
-  
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const transcriptionStartedRef = useRef<boolean>(false);
+  const cameraLoadingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [isCameraActive, setIsCameraActive] = useState(false);
+  const [isCameraLoading, setIsCameraLoading] = useState(false);
   const [currentNoteId, setCurrentNoteId] = useState<string | null>(null);
 
   // Use app state hooks
@@ -75,6 +77,18 @@ export function RecordingInterface({
   // Track client-side mounting to prevent hydration mismatches
   useEffect(() => {
     setIsMounted(true);
+    
+    // Cleanup function
+    return () => {
+      if (cameraLoadingTimeoutRef.current) {
+        clearTimeout(cameraLoadingTimeoutRef.current);
+      }
+      // Stop camera stream if active
+      if (videoRef.current?.srcObject) {
+        const stream = videoRef.current.srcObject as MediaStream;
+        stream.getTracks().forEach(track => track.stop());
+      }
+    };
   }, []);
 
   // Auto-save function for recordings and transcripts
@@ -83,7 +97,7 @@ export function RecordingInterface({
       // Generate a unique ID for the note
       const noteId = crypto.randomUUID();
       setCurrentNoteId(noteId);
-      
+
       // Create initial note with recording
       const newNote = {
         id: noteId,
@@ -99,10 +113,10 @@ export function RecordingInterface({
         createdAt: new Date(),
         updatedAt: new Date()
       };
-      
+
       // Save note immediately after recording
       await notes.addNote(newNote);
-      
+
     } catch (error) {
       console.error('Failed to save recording:', error);
       onError?.('Failed to save recording. Please try again.');
@@ -112,21 +126,21 @@ export function RecordingInterface({
   // Auto-save function for transcript updates
   const saveTranscriptUpdate = useCallback(async (transcript: string) => {
     if (!currentNoteId) return;
-    
+
     try {
       // Get the current note
       const currentNote = notes.getNote(currentNoteId);
       if (!currentNote) return;
-      
+
       // Generate title and description from transcript
       const { generateNoteMetadata } = await import('@/lib/api');
       const { retrieveApiKey } = await import('@/lib/storage');
       const apiKey = await retrieveApiKey();
-      
+
       let title = currentNote.title;
       let description = currentNote.description;
       let keywords = currentNote.keywords;
-      
+
       if (apiKey && transcript.trim()) {
         try {
           const generated = await generateNoteMetadata(transcript, apiKey);
@@ -140,7 +154,7 @@ export function RecordingInterface({
           description = transcript.slice(0, 200) + (transcript.length > 200 ? '...' : '');
         }
       }
-      
+
       // Update note with transcript and generated metadata
       const updatedNote = {
         ...currentNote,
@@ -150,10 +164,10 @@ export function RecordingInterface({
         keywords,
         updatedAt: new Date()
       };
-      
+
       // Save updated note immediately
       await notes.updateNote(updatedNote);
-      
+
     } catch (error) {
       console.error('Failed to save transcript:', error);
       onError?.('Failed to save transcript. Please try again.');
@@ -163,22 +177,22 @@ export function RecordingInterface({
   // Auto-save function for rewritten text updates
   const saveRewrittenTextUpdate = useCallback(async (rewrittenText: string) => {
     if (!currentNoteId) return;
-    
+
     try {
       // Get the current note
       const currentNote = notes.getNote(currentNoteId);
       if (!currentNote) return;
-      
+
       // Update note with rewritten text
       const updatedNote = {
         ...currentNote,
         rewrittenText,
         updatedAt: new Date()
       };
-      
+
       // Save updated note immediately
       await notes.updateNote(updatedNote);
-      
+
     } catch (error) {
       console.error('Failed to save rewritten text:', error);
       onError?.('Failed to save rewritten text. Please try again.');
@@ -202,7 +216,7 @@ export function RecordingInterface({
   // Handle recording button click
   const handleRecordingToggle = useCallback(async () => {
     clearError();
-    
+
     if (recordingState.isRecording) {
       stopRecording();
     } else {
@@ -210,7 +224,7 @@ export function RecordingInterface({
       try {
         const { retrieveApiKey } = await import('@/lib/storage');
         const apiKey = await retrieveApiKey();
-        
+
         if (!apiKey) {
           onError?.('OpenAI API key not configured. Please set your API key in settings before recording.');
           return;
@@ -225,7 +239,7 @@ export function RecordingInterface({
       setRewrittenText(null);
       setCurrentNoteId(null);
       transcriptionStartedRef.current = false;
-      
+
       try {
         await startRecording();
       } catch (error) {
@@ -239,28 +253,41 @@ export function RecordingInterface({
   const handleCameraCapture = useCallback(async () => {
     // Only run on client side
     if (!isMounted || typeof navigator === 'undefined') return;
-    
+
     if (isCameraActive) {
+      // Clear any existing timeout
+      if (cameraLoadingTimeoutRef.current) {
+        clearTimeout(cameraLoadingTimeoutRef.current);
+        cameraLoadingTimeoutRef.current = null;
+      }
+
       // Stop camera and capture photo
       if (videoRef.current && canvasRef.current) {
         const video = videoRef.current;
         const canvas = canvasRef.current;
         const context = canvas.getContext('2d');
+
+        console.log('Video dimensions:', video.videoWidth, 'x', video.videoHeight);
+        console.log('Video ready state:', video.readyState);
+        console.log('Video current time:', video.currentTime);
         
-        if (context) {
+        if (context && video.videoWidth > 0 && video.videoHeight > 0) {
           canvas.width = video.videoWidth;
           canvas.height = video.videoHeight;
           context.drawImage(video, 0, 0);
-          
+
           canvas.toBlob((blob) => {
             if (blob && typeof URL !== 'undefined') {
               setPhoto(blob);
               setPhotoPreview(URL.createObjectURL(blob));
             }
           }, 'image/jpeg', 0.8);
+        } else {
+          onError?.(`Camera not ready. Video dimensions: ${video.videoWidth}x${video.videoHeight}, Ready state: ${video.readyState}`);
+          return;
         }
       }
-      
+
       // Stop camera stream
       if (videoRef.current?.srcObject) {
         const stream = videoRef.current.srcObject as MediaStream;
@@ -269,26 +296,141 @@ export function RecordingInterface({
       }
       setIsCameraActive(false);
     } else {
+      // Clear any existing timeout
+      if (cameraLoadingTimeoutRef.current) {
+        clearTimeout(cameraLoadingTimeoutRef.current);
+        cameraLoadingTimeoutRef.current = null;
+      }
+
       // Start camera
+      setIsCameraLoading(true);
+      console.log('Starting camera...');
+      
+      // Wait a tick for React to re-render and create the video element
+      await new Promise(resolve => setTimeout(resolve, 10));
+      
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ 
-          video: { 
-            facingMode: 'environment',
-            width: { ideal: 1280 },
-            height: { ideal: 720 }
-          } 
-        });
-        
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-          videoRef.current.play();
+        // Try with simpler constraints first
+        let stream;
+        try {
+          console.log('Trying back camera...');
+          // Try with back camera first
+          stream = await navigator.mediaDevices.getUserMedia({
+            video: {
+              facingMode: 'environment',
+              width: { ideal: 1280, max: 1920 },
+              height: { ideal: 720, max: 1080 }
+            }
+          });
+        } catch (backCameraError) {
+          console.log('Back camera failed, trying any camera...', backCameraError);
+          // Fallback to any available camera
+          stream = await navigator.mediaDevices.getUserMedia({
+            video: {
+              width: { ideal: 1280, max: 1920 },
+              height: { ideal: 720, max: 1080 }
+            }
+          });
         }
-        setIsCameraActive(true);
+
+        console.log('Got camera stream:', stream);
+        console.log('Video ref current:', videoRef.current);
+
+        // Wait for video element to be available if it's not ready yet
+        let retries = 0;
+        while (!videoRef.current && retries < 10) {
+          console.log(`Waiting for video element, retry ${retries + 1}`);
+          await new Promise(resolve => setTimeout(resolve, 100));
+          retries++;
+        }
+
+        if (videoRef.current && stream) {
+          console.log('Setting stream to video element');
+          videoRef.current.srcObject = stream;
+
+          // Set up timeout first
+          cameraLoadingTimeoutRef.current = setTimeout(() => {
+            console.log('Camera timeout reached, forcing activation');
+            setIsCameraActive(true);
+            setIsCameraLoading(false);
+            cameraLoadingTimeoutRef.current = null;
+          }, 5000);
+
+          // Wait for video to be ready
+          videoRef.current.onloadedmetadata = () => {
+            console.log('Video metadata loaded');
+            if (videoRef.current) {
+              videoRef.current.play().then(() => {
+                console.log('Video playing successfully');
+                if (cameraLoadingTimeoutRef.current) {
+                  clearTimeout(cameraLoadingTimeoutRef.current);
+                  cameraLoadingTimeoutRef.current = null;
+                }
+                setIsCameraActive(true);
+                setIsCameraLoading(false);
+              }).catch(playError => {
+                console.error('Error playing video:', playError);
+                if (cameraLoadingTimeoutRef.current) {
+                  clearTimeout(cameraLoadingTimeoutRef.current);
+                  cameraLoadingTimeoutRef.current = null;
+                }
+                setIsCameraLoading(false);
+                onError?.('Failed to start camera preview.');
+              });
+            }
+          };
+
+          // Also try to play immediately in case metadata is already loaded
+          if (videoRef.current.readyState >= 1) {
+            console.log('Video ready state is good, playing immediately');
+            videoRef.current.play().then(() => {
+              console.log('Video playing immediately');
+              if (cameraLoadingTimeoutRef.current) {
+                clearTimeout(cameraLoadingTimeoutRef.current);
+                cameraLoadingTimeoutRef.current = null;
+              }
+              setIsCameraActive(true);
+              setIsCameraLoading(false);
+            }).catch(playError => {
+              console.error('Error playing video immediately:', playError);
+            });
+          }
+        } else {
+          console.error('No video ref or stream');
+          console.log('videoRef.current:', videoRef.current);
+          console.log('stream:', stream);
+          setIsCameraLoading(false);
+          
+          // Stop the stream if we can't use it
+          if (stream) {
+            stream.getTracks().forEach(track => track.stop());
+          }
+          
+          onError?.('Failed to initialize camera.');
+        }
       } catch (error) {
-        onError?.('Failed to access camera. Please check permissions.');
+        console.error('Camera access error:', error);
+        setIsCameraLoading(false);
+        let errorMessage = 'Failed to access camera. ';
+
+        if (error instanceof Error) {
+          if (error.name === 'NotAllowedError') {
+            errorMessage += 'Please allow camera permissions and try again.';
+          } else if (error.name === 'NotFoundError') {
+            errorMessage += 'No camera found on this device.';
+          } else if (error.name === 'NotReadableError') {
+            errorMessage += 'Camera is already in use by another application.';
+          } else {
+            errorMessage += 'Please check permissions and try again.';
+          }
+        } else {
+          errorMessage += 'Please check permissions and try again.';
+        }
+
+        onError?.(errorMessage);
       }
     }
-  }, [isCameraActive, onError, isMounted]);
+  }, [isCameraActive, isCameraLoading, onError, isMounted]);
 
   // Handle photo upload from file
   const handlePhotoUpload = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
@@ -310,7 +452,7 @@ export function RecordingInterface({
       // Get API key from encrypted storage
       const { retrieveApiKey } = await import('@/lib/storage');
       const apiKey = await retrieveApiKey();
-      
+
       if (!apiKey) {
         throw new Error('OpenAI API key not configured. Please set your API key in settings.');
       }
@@ -321,10 +463,10 @@ export function RecordingInterface({
 
       setTranscript(result.transcript);
       onTranscriptionComplete?.(result.transcript);
-      
+
       // Auto-save transcript immediately
       await saveTranscriptUpdate(result.transcript);
-      
+
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Transcription failed';
       onError?.(errorMessage);
@@ -343,7 +485,7 @@ export function RecordingInterface({
       // Get API key from encrypted storage
       const { retrieveApiKey } = await import('@/lib/storage');
       const apiKey = await retrieveApiKey();
-      
+
       if (!apiKey) {
         throw new Error('OpenAI API key not configured. Please set your API key in settings.');
       }
@@ -362,10 +504,10 @@ export function RecordingInterface({
       }
 
       setRewrittenText(result.rewrittenText);
-      
+
       // Auto-save rewritten text immediately
       await saveRewrittenTextUpdate(result.rewrittenText);
-      
+
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Rewriting failed';
       onError?.(errorMessage);
@@ -379,13 +521,13 @@ export function RecordingInterface({
   React.useEffect(() => {
     if (recordingState.audioBlob && !recordingState.isRecording && !transcriptionStartedRef.current) {
       transcriptionStartedRef.current = true;
-      
+
       // Save note immediately after recording stops
       saveNoteAfterRecording(recordingState.audioBlob);
-      
+
       // Automatically start transcription after recording
       handleTranscription(recordingState.audioBlob);
-      
+
       // Call completion callback with rewritten text if available
       onRecordingComplete?.(recordingState.audioBlob, transcript || undefined, photo || undefined, rewrittenText || undefined);
     }
@@ -426,16 +568,27 @@ export function RecordingInterface({
   return (
     <div className={cn("flex flex-col items-center gap-6 mb-8 w-full", className)}>
       {/* Camera preview or photo preview */}
-      {(isCameraActive || photoPreview) && (
+      {(isCameraActive || isCameraLoading || photoPreview) && (
         <div className="relative w-full max-w-sm">
-          {isCameraActive ? (
-            <video
-              ref={videoRef}
-              className="w-full rounded-lg shadow-lg"
-              autoPlay
-              playsInline
-              muted
-            />
+          {(isCameraLoading || isCameraActive) ? (
+            <div className="relative">
+              <video
+                ref={videoRef}
+                className="w-full h-auto rounded-lg shadow-lg bg-gray-100 dark:bg-gray-800"
+                autoPlay
+                playsInline
+                muted
+                style={{ minHeight: '200px' }}
+              />
+              {isCameraLoading && (
+                <div className="absolute inset-0 w-full h-full rounded-lg shadow-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+                  <div className="text-center">
+                    <div className="animate-spin w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full mx-auto mb-2"></div>
+                    <p className="text-sm text-muted-foreground">Starting camera...</p>
+                  </div>
+                </div>
+              )}
+            </div>
           ) : photoPreview ? (
             <img
               src={photoPreview}
@@ -443,7 +596,7 @@ export function RecordingInterface({
               className="w-full rounded-lg shadow-lg"
             />
           ) : null}
-          
+
           {photoPreview && (
             <button
               onClick={() => {
@@ -484,7 +637,7 @@ export function RecordingInterface({
               <Mic className="w-10 h-10 md:w-12 md:h-12 lg:w-14 lg:h-14 text-white drop-shadow-sm" />
             )}
           </div>
-          
+
           {/* Pulse animation ring when recording */}
           {recordingState.isRecording && (
             <div className="absolute inset-0 rounded-full bg-gradient-to-br from-red-500 to-red-600 animate-pulse opacity-30"></div>
@@ -540,7 +693,7 @@ export function RecordingInterface({
               <label className="block text-sm font-medium text-foreground mb-2">
                 Rewrite Style:
               </label>
-              <select 
+              <select
                 value={selectedPrompt}
                 onChange={(e) => setSelectedPrompt(e.target.value)}
                 disabled={isRewriting}
@@ -604,11 +757,12 @@ export function RecordingInterface({
       <div className="flex gap-3">
         <button
           onClick={handleCameraCapture}
-          className="flex items-center gap-2 px-4 py-2 bg-card border border-border rounded-lg hover:bg-accent transition-colors"
+          disabled={isCameraLoading}
+          className="flex items-center gap-2 px-4 py-2 bg-card border border-border rounded-lg hover:bg-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <Camera className="w-4 h-4" />
           <span className="text-sm">
-            {isCameraActive ? 'Capture' : 'Camera'}
+            {isCameraLoading ? 'Starting...' : isCameraActive ? 'Capture' : 'Camera'}
           </span>
         </button>
 

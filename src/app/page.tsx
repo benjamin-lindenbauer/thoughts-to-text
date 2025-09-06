@@ -88,7 +88,7 @@ export default function Home() {
           <select
             value={selectedLanguage}
             onChange={(e) => setSelectedLanguage(e.target.value)}
-            className="w-full p-3 md:p-4 rounded-xl border border-border bg-card text-foreground shadow-sm transition-colors hover:bg-accent focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+            className="w-full p-3 rounded-xl border border-border bg-card text-foreground shadow-sm transition-colors hover:bg-accent focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
           >
             {LANGUAGE_OPTIONS.map((lang) => (
               <option key={lang.code} value={lang.code}>

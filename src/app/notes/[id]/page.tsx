@@ -224,7 +224,7 @@ export default function NoteDetailsPage() {
               className="mb-4"
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Notes
+              Back
             </Button>
           </div>
 
@@ -244,7 +244,7 @@ export default function NoteDetailsPage() {
 
   return (
     <AppLayout>
-      <div className="p-4 md:p-6 max-w-3xl mx-auto">
+      <div className="p-2 md:p-4 max-w-3xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <Button
@@ -253,7 +253,7 @@ export default function NoteDetailsPage() {
             className="flex items-center gap-2"
           >
             <ArrowLeft className="h-4 w-4" />
-            Back to Notes
+            Back
           </Button>
 
           <div className="flex items-center gap-2">
