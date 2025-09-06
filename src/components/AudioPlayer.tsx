@@ -6,6 +6,8 @@ import { AudioPlayer as AudioPlayerClass, formatDuration } from '@/lib/audio';
 import { AudioPlaybackState } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
+import { useKeyboardNavigation } from '@/hooks/useKeyboardNavigation';
+import { useAriaLiveRegion } from '@/hooks/useAccessibility';
 
 interface AudioPlayerProps {
   audioBlob: Blob;
@@ -43,6 +45,9 @@ export function AudioPlayer({
 
   const playerRef = useRef<AudioPlayerClass | null>(null);
   const isSeekingRef = useRef(false);
+  
+  // Accessibility hooks
+  const { announce, LiveRegion } = useAriaLiveRegion();
 
   // Handle state changes from audio player
   const handleStateChange = useCallback((state: AudioPlaybackState) => {
@@ -104,16 +109,19 @@ export function AudioPlayer({
     try {
       if (playbackState.isPlaying) {
         playerRef.current.pause();
+        announce('Audio paused', 'polite');
         onPause?.();
       } else {
         playerRef.current.play();
+        announce('Audio playing', 'polite');
         onPlay?.();
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Playback error';
+      announce(`Playback error: ${errorMessage}`, 'assertive');
       setError(errorMessage);
     }
-  }, [playbackState.isPlaying, isLoading, onPlay, onPause]);
+  }, [playbackState.isPlaying, isLoading, onPlay, onPause, announce]);
 
   // Stop playback
   const stopPlayback = useCallback(() => {
@@ -121,12 +129,14 @@ export function AudioPlayer({
 
     try {
       playerRef.current.stop();
+      announce('Audio stopped', 'polite');
       onStop?.();
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Stop error';
+      announce(`Stop error: ${errorMessage}`, 'assertive');
       setError(errorMessage);
     }
-  }, [isLoading, onStop]);
+  }, [isLoading, onStop, announce]);
 
   // Seek to position
   const handleSeek = useCallback((value: number[]) => {
@@ -203,14 +213,24 @@ export function AudioPlayer({
 
   return (
     <div className={`flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg ${className}`}>
+      {/* Live region for announcements */}
+      <LiveRegion />
+      
       {/* Play/Pause/Stop Controls */}
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-1" role="group" aria-label="Audio playback controls">
         <Button
           variant="ghost"
           size="sm"
           onClick={togglePlayback}
           disabled={isLoading}
-          className="h-8 w-8 p-0"
+          aria-label={
+            isLoading 
+              ? 'Loading audio...' 
+              : playbackState.isPlaying 
+                ? 'Pause audio' 
+                : 'Play audio'
+          }
+          className="h-8 w-8 p-0 focus:ring-2 focus:ring-indigo-500"
         >
           {isLoading ? (
             <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-indigo-500" />
@@ -226,16 +246,20 @@ export function AudioPlayer({
           size="sm"
           onClick={stopPlayback}
           disabled={isLoading || (!playbackState.isPlaying && playbackState.currentTime === 0)}
-          className="h-8 w-8 p-0"
+          aria-label="Stop audio and return to beginning"
+          className="h-8 w-8 p-0 focus:ring-2 focus:ring-indigo-500"
         >
           <Square className="h-4 w-4" />
         </Button>
       </div>
 
       {/* Progress Bar */}
-      <div className="flex-1 flex items-center gap-2">
+      <div className="flex-1 flex items-center gap-2" role="group" aria-label="Audio progress">
         {showTimeDisplay && (
-          <span className="text-xs text-gray-500 dark:text-gray-400 min-w-[35px]">
+          <span 
+            className="text-xs text-gray-500 dark:text-gray-400 min-w-[35px]"
+            aria-label={`Current time: ${currentTimeFormatted}`}
+          >
             {currentTimeFormatted}
           </span>
         )}
@@ -247,12 +271,16 @@ export function AudioPlayer({
             disabled={isLoading || playbackState.duration === 0}
             max={100}
             step={0.1}
+            aria-label={`Audio progress: ${Math.round(progressPercentage)}% of ${durationFormatted}`}
             className="w-full"
           />
         </div>
 
         {showTimeDisplay && (
-          <span className="text-xs text-gray-500 dark:text-gray-400 min-w-[35px]">
+          <span 
+            className="text-xs text-gray-500 dark:text-gray-400 min-w-[35px]"
+            aria-label={`Total duration: ${durationFormatted}`}
+          >
             {durationFormatted}
           </span>
         )}
@@ -260,13 +288,14 @@ export function AudioPlayer({
 
       {/* Volume Control */}
       {showVolumeControl && (
-        <div className="flex items-center gap-2 min-w-[100px]">
+        <div className="flex items-center gap-2 min-w-[100px]" role="group" aria-label="Volume controls">
           <Button
             variant="ghost"
             size="sm"
             onClick={toggleMute}
             disabled={isLoading}
-            className="h-8 w-8 p-0"
+            aria-label={isMuted || playbackState.volume === 0 ? 'Unmute audio' : 'Mute audio'}
+            className="h-8 w-8 p-0 focus:ring-2 focus:ring-indigo-500"
           >
             {isMuted || playbackState.volume === 0 ? (
               <VolumeX className="h-4 w-4" />
@@ -282,6 +311,7 @@ export function AudioPlayer({
               disabled={isLoading}
               max={100}
               step={1}
+              aria-label={`Volume: ${Math.round(playbackState.volume * 100)}%`}
               className="w-full"
             />
           </div>

@@ -204,11 +204,14 @@ export class AudioCompressor {
       // Decode audio data
       const audioBuffer = await this.audioContext.decodeAudioData(arrayBuffer);
       
+      // Calculate optimal sample rate based on quality
+      const targetSampleRate = Math.max(16000, audioBuffer.sampleRate * quality);
+      
       // Create offline context for processing
       const offlineContext = new OfflineAudioContext(
-        audioBuffer.numberOfChannels,
-        audioBuffer.length,
-        audioBuffer.sampleRate * quality // Reduce sample rate for compression
+        Math.min(audioBuffer.numberOfChannels, 2), // Limit to stereo
+        Math.floor(audioBuffer.length * (targetSampleRate / audioBuffer.sampleRate)),
+        targetSampleRate
       );
 
       // Create buffer source
@@ -223,29 +226,39 @@ export class AudioCompressor {
       compressor.attack.setValueAtTime(0.003, offlineContext.currentTime);
       compressor.release.setValueAtTime(0.25, offlineContext.currentTime);
 
+      // Add low-pass filter to remove high frequencies for better compression
+      const lowPassFilter = offlineContext.createBiquadFilter();
+      lowPassFilter.type = 'lowpass';
+      lowPassFilter.frequency.setValueAtTime(8000, offlineContext.currentTime); // 8kHz cutoff
+
       // Connect nodes
       source.connect(compressor);
-      compressor.connect(offlineContext.destination);
+      compressor.connect(lowPassFilter);
+      lowPassFilter.connect(offlineContext.destination);
 
       // Start processing
       source.start();
       const compressedBuffer = await offlineContext.startRendering();
 
-      // Convert back to blob
-      return this.audioBufferToBlob(compressedBuffer);
+      // Convert back to blob with optimized encoding
+      return this.audioBufferToBlob(compressedBuffer, quality);
     } catch (error) {
       console.warn('Audio compression failed, returning original:', error);
       return audioBlob;
     }
   }
 
-  private audioBufferToBlob(audioBuffer: AudioBuffer): Blob {
+  private audioBufferToBlob(audioBuffer: AudioBuffer, quality: number = 0.7): Blob {
     const numberOfChannels = audioBuffer.numberOfChannels;
     const length = audioBuffer.length;
     const sampleRate = audioBuffer.sampleRate;
     
+    // Use 16-bit or 8-bit based on quality
+    const bitsPerSample = quality > 0.8 ? 16 : 8;
+    const bytesPerSample = bitsPerSample / 8;
+    
     // Create WAV file
-    const buffer = new ArrayBuffer(44 + length * numberOfChannels * 2);
+    const buffer = new ArrayBuffer(44 + length * numberOfChannels * bytesPerSample);
     const view = new DataView(buffer);
     
     // WAV header
@@ -256,26 +269,33 @@ export class AudioCompressor {
     };
 
     writeString(0, 'RIFF');
-    view.setUint32(4, 36 + length * numberOfChannels * 2, true);
+    view.setUint32(4, 36 + length * numberOfChannels * bytesPerSample, true);
     writeString(8, 'WAVE');
     writeString(12, 'fmt ');
     view.setUint32(16, 16, true);
     view.setUint16(20, 1, true);
     view.setUint16(22, numberOfChannels, true);
     view.setUint32(24, sampleRate, true);
-    view.setUint32(28, sampleRate * numberOfChannels * 2, true);
-    view.setUint16(32, numberOfChannels * 2, true);
-    view.setUint16(34, 16, true);
+    view.setUint32(28, sampleRate * numberOfChannels * bytesPerSample, true);
+    view.setUint16(32, numberOfChannels * bytesPerSample, true);
+    view.setUint16(34, bitsPerSample, true);
     writeString(36, 'data');
-    view.setUint32(40, length * numberOfChannels * 2, true);
+    view.setUint32(40, length * numberOfChannels * bytesPerSample, true);
 
-    // Convert audio data
+    // Convert audio data with optimized bit depth
     let offset = 44;
     for (let i = 0; i < length; i++) {
       for (let channel = 0; channel < numberOfChannels; channel++) {
         const sample = Math.max(-1, Math.min(1, audioBuffer.getChannelData(channel)[i]));
-        view.setInt16(offset, sample * 0x7FFF, true);
-        offset += 2;
+        
+        if (bitsPerSample === 16) {
+          view.setInt16(offset, sample * 0x7FFF, true);
+          offset += 2;
+        } else {
+          // 8-bit unsigned
+          view.setUint8(offset, (sample + 1) * 127.5);
+          offset += 1;
+        }
       }
     }
 
@@ -489,4 +509,151 @@ export async function getAudioDuration(audioBlob: Blob): Promise<number> {
       reject(new Error('Failed to get audio duration'));
     };
   });
+}
+
+// Audio streaming utilities for large files
+export class AudioStreamer {
+  private audioContext: AudioContext | null = null;
+  private sourceNode: AudioBufferSourceNode | null = null;
+  private gainNode: GainNode | null = null;
+  private chunks: ArrayBuffer[] = [];
+  private isPlaying = false;
+
+  constructor() {
+    if (typeof window !== 'undefined' && (window.AudioContext || (window as any).webkitAudioContext)) {
+      this.audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+    }
+  }
+
+  async streamAudio(audioBlob: Blob, chunkSize: number = 64 * 1024): Promise<void> {
+    if (!this.audioContext) {
+      throw new Error('Web Audio API not supported');
+    }
+
+    // Split blob into chunks for streaming
+    const arrayBuffer = await audioBlob.arrayBuffer();
+    this.chunks = [];
+    
+    for (let i = 0; i < arrayBuffer.byteLength; i += chunkSize) {
+      const chunk = arrayBuffer.slice(i, i + chunkSize);
+      this.chunks.push(chunk);
+    }
+
+    // Decode first chunk to start playback quickly
+    if (this.chunks.length > 0) {
+      await this.playChunk(0);
+    }
+  }
+
+  private async playChunk(index: number): Promise<void> {
+    if (!this.audioContext || index >= this.chunks.length) return;
+
+    try {
+      const audioBuffer = await this.audioContext.decodeAudioData(this.chunks[index]);
+      
+      // Create source node
+      this.sourceNode = this.audioContext.createBufferSource();
+      this.sourceNode.buffer = audioBuffer;
+
+      // Create gain node for volume control
+      this.gainNode = this.audioContext.createGain();
+      
+      // Connect nodes
+      this.sourceNode.connect(this.gainNode);
+      this.gainNode.connect(this.audioContext.destination);
+
+      // Handle chunk completion
+      this.sourceNode.onended = () => {
+        if (this.isPlaying && index + 1 < this.chunks.length) {
+          this.playChunk(index + 1);
+        }
+      };
+
+      // Start playback
+      this.sourceNode.start();
+      this.isPlaying = true;
+
+    } catch (error) {
+      console.warn(`Failed to play chunk ${index}:`, error);
+      // Try next chunk
+      if (index + 1 < this.chunks.length) {
+        this.playChunk(index + 1);
+      }
+    }
+  }
+
+  stop(): void {
+    this.isPlaying = false;
+    if (this.sourceNode) {
+      this.sourceNode.stop();
+      this.sourceNode = null;
+    }
+  }
+
+  setVolume(volume: number): void {
+    if (this.gainNode) {
+      this.gainNode.gain.setValueAtTime(volume, this.audioContext?.currentTime || 0);
+    }
+  }
+
+  cleanup(): void {
+    this.stop();
+    if (this.audioContext && this.audioContext.state !== 'closed') {
+      this.audioContext.close();
+    }
+    this.audioContext = null;
+    this.chunks = [];
+  }
+}
+
+// Progressive audio loading for better performance
+export class ProgressiveAudioLoader {
+  private loadedChunks = new Map<number, ArrayBuffer>();
+  private totalChunks = 0;
+  private chunkSize: number;
+
+  constructor(chunkSize: number = 64 * 1024) {
+    this.chunkSize = chunkSize;
+  }
+
+  async loadAudioProgressively(
+    audioBlob: Blob,
+    onChunkLoaded?: (chunkIndex: number, totalChunks: number) => void
+  ): Promise<ArrayBuffer[]> {
+    const arrayBuffer = await audioBlob.arrayBuffer();
+    this.totalChunks = Math.ceil(arrayBuffer.byteLength / this.chunkSize);
+    
+    const chunks: ArrayBuffer[] = [];
+    
+    for (let i = 0; i < this.totalChunks; i++) {
+      const start = i * this.chunkSize;
+      const end = Math.min(start + this.chunkSize, arrayBuffer.byteLength);
+      const chunk = arrayBuffer.slice(start, end);
+      
+      chunks.push(chunk);
+      this.loadedChunks.set(i, chunk);
+      
+      onChunkLoaded?.(i, this.totalChunks);
+      
+      // Yield control to prevent blocking
+      if (i % 10 === 0) {
+        await new Promise(resolve => setTimeout(resolve, 0));
+      }
+    }
+    
+    return chunks;
+  }
+
+  getChunk(index: number): ArrayBuffer | null {
+    return this.loadedChunks.get(index) || null;
+  }
+
+  getLoadProgress(): number {
+    return this.totalChunks > 0 ? this.loadedChunks.size / this.totalChunks : 0;
+  }
+
+  cleanup(): void {
+    this.loadedChunks.clear();
+    this.totalChunks = 0;
+  }
 }

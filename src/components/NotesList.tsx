@@ -15,6 +15,9 @@ import {
     Tag,
     Wand2
 } from 'lucide-react';
+import { useKeyboardNavigation, useFocusManagement } from '@/hooks/useKeyboardNavigation';
+import { useAriaLiveRegion } from '@/hooks/useAccessibility';
+import { LazyComponent } from '@/components/LazyComponent';
 // Simple audio player component for inline playback
 function SimpleAudioPlayer({ audioBlob, onEnded }: { audioBlob: Blob; onEnded: () => void }) {
     const audioRef = useRef<HTMLAudioElement>(null);
@@ -138,12 +141,17 @@ export function NotesList({
     const [playingNoteId, setPlayingNoteId] = useState<string | null>(null);
     const [expandedNoteId, setExpandedNoteId] = useState<string | null>(null);
     const [generatingMetadata, setGeneratingMetadata] = useState<Set<string>>(new Set());
+    const [selectedNoteIndex, setSelectedNoteIndex] = useState(-1);
 
     // Virtual scrolling state
     const [scrollTop, setScrollTop] = useState(0);
     const [containerHeight, setContainerHeight] = useState(600);
     const containerRef = useRef<HTMLDivElement>(null);
     const contextMenuRef = useRef<HTMLDivElement>(null);
+
+    // Accessibility hooks
+    const { announce, LiveRegion } = useAriaLiveRegion();
+    const { containerRef: focusContainerRef, focusNext, focusPrevious } = useFocusManagement();
 
     // Calculate visible items for virtual scrolling
     const startIndex = Math.max(0, Math.floor(scrollTop / ITEM_HEIGHT) - BUFFER_SIZE);
@@ -237,17 +245,35 @@ export function NotesList({
     const handleNoteClick = useCallback((noteId: string) => {
         const note = notes.find(n => n.id === noteId);
         if (note && onViewNote) {
+            announce(`Opening note: ${note.title || 'Untitled Note'}`, 'polite');
             onViewNote(note);
         } else {
             // Fallback to expand/collapse if no navigation handler
+            const isExpanding = expandedNoteId !== noteId;
             setExpandedNoteId(prev => prev === noteId ? null : noteId);
+            announce(
+              isExpanding 
+                ? `Expanded note: ${note?.title || 'Untitled Note'}` 
+                : 'Collapsed note',
+              'polite'
+            );
         }
-    }, [notes, onViewNote]);
+    }, [notes, onViewNote, expandedNoteId, announce]);
 
     // Handle audio play/pause
     const handleAudioToggle = useCallback((noteId: string) => {
+        const note = notes.find(n => n.id === noteId);
+        const isPlaying = playingNoteId === noteId;
+        
         setPlayingNoteId(prev => prev === noteId ? null : noteId);
-    }, []);
+        
+        announce(
+          isPlaying 
+            ? `Stopped playing ${note?.title || 'note'}` 
+            : `Playing ${note?.title || 'note'}`,
+          'polite'
+        );
+    }, [notes, playingNoteId, announce]);
 
     // Format duration
     const formatDuration = (seconds: number): string => {
@@ -296,27 +322,59 @@ export function NotesList({
 
     return (
         <div className="relative">
+            {/* Live region for announcements */}
+            <LiveRegion />
+            
             {/* Virtual scrolling container */}
             <div
-                ref={containerRef}
-                className="h-[600px] overflow-auto"
+                ref={(el) => {
+                  containerRef.current = el;
+                  focusContainerRef.current = el;
+                }}
+                className="h-[600px] overflow-auto focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded-lg"
                 onScroll={handleScroll}
+                role="list"
+                aria-label={`Notes list with ${notes.length} notes`}
+                tabIndex={0}
             >
                 <div style={{ height: totalHeight, position: 'relative' }}>
                     <div style={{ transform: `translateY(${offsetY}px)` }}>
-                        {visibleNotes.map((note) => {
+                        {visibleNotes.map((note, index) => {
                             const isExpanded = expandedNoteId === note.id;
                             const isPlaying = playingNoteId === note.id;
                             const isGenerating = generatingMetadata.has(note.id);
+                            const actualIndex = startIndex + index;
 
                             return (
-                                <div
+                                <LazyComponent
                                     key={note.id}
-                                    className="mb-4 p-4 rounded-xl border border-border bg-card hover:bg-accent/50 transition-colors cursor-pointer"
-                                    style={{ height: ITEM_HEIGHT }}
-                                    onClick={() => handleNoteClick(note.id)}
-                                    onContextMenu={(e) => handleContextMenu(e, note.id)}
+                                    fallback={
+                                        <div 
+                                            className="mb-4 p-4 rounded-xl border border-border bg-card animate-pulse"
+                                            style={{ height: ITEM_HEIGHT }}
+                                        >
+                                            <div className="h-5 bg-muted rounded w-3/4 mb-2"></div>
+                                            <div className="h-4 bg-muted rounded w-full mb-2"></div>
+                                            <div className="h-4 bg-muted rounded w-2/3"></div>
+                                        </div>
+                                    }
                                 >
+                                    <div
+                                        className="mb-4 p-4 rounded-xl border border-border bg-card hover:bg-accent/50 transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                        style={{ height: ITEM_HEIGHT }}
+                                        onClick={() => handleNoteClick(note.id)}
+                                        onContextMenu={(e) => handleContextMenu(e, note.id)}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter' || e.key === ' ') {
+                                                e.preventDefault();
+                                                handleNoteClick(note.id);
+                                            }
+                                        }}
+                                        role="listitem"
+                                        tabIndex={0}
+                                        aria-label={`Note: ${note.title || 'Untitled'}. Created ${dateFns.formatDistanceToNow(note.createdAt, { addSuffix: true })}. Duration ${formatDuration(note.duration)}.`}
+                                        aria-expanded={isExpanded}
+                                    >
                                     <div className="flex justify-between items-start mb-3">
                                         <div className="flex-1 min-w-0">
                                             <h3 className="font-medium text-foreground truncate">
@@ -341,7 +399,8 @@ export function NotesList({
                                                     e.stopPropagation();
                                                     handleAudioToggle(note.id);
                                                 }}
-                                                className="p-2 rounded-lg hover:bg-accent transition-colors"
+                                                aria-label={isPlaying ? `Pause ${note.title || 'note'}` : `Play ${note.title || 'note'}`}
+                                                className="p-2 rounded-lg hover:bg-accent transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500"
                                             >
                                                 {isPlaying ? (
                                                     <Pause className="w-4 h-4 text-indigo-500" />
@@ -358,7 +417,8 @@ export function NotesList({
                                                         handleContextMenuAction('generate', note.id);
                                                     }}
                                                     disabled={isGenerating}
-                                                    className="p-2 rounded-lg hover:bg-accent transition-colors disabled:opacity-50"
+                                                    aria-label={`Generate title and description for ${note.title || 'note'}`}
+                                                    className="p-2 rounded-lg hover:bg-accent transition-colors disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                                                 >
                                                     <Wand2 className={`w-4 h-4 ${isGenerating ? 'animate-spin text-indigo-500' : 'text-muted-foreground hover:text-foreground'}`} />
                                                 </button>
@@ -370,7 +430,9 @@ export function NotesList({
                                                     e.stopPropagation();
                                                     handleContextMenu(e, note.id);
                                                 }}
-                                                className="p-2 rounded-lg hover:bg-accent transition-colors"
+                                                aria-label={`More options for ${note.title || 'note'}`}
+                                                aria-haspopup="menu"
+                                                className="p-2 rounded-lg hover:bg-accent transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500"
                                             >
                                                 <MoreVertical className="w-4 h-4 text-muted-foreground hover:text-foreground" />
                                             </button>
@@ -432,7 +494,8 @@ export function NotesList({
                                             </div>
                                         </div>
                                     )}
-                                </div>
+                                    </div>
+                                </LazyComponent>
                             );
                         })}
                     </div>

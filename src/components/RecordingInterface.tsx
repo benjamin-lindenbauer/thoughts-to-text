@@ -4,6 +4,9 @@ import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { Mic, MicOff, Camera, Square, Wand2, RefreshCw } from 'lucide-react';
 import { useRecording } from '@/hooks/useRecording';
 import { useAppState } from '@/hooks/useAppState';
+import { useHapticFeedback } from '@/hooks/useHapticFeedback';
+import { useKeyboardNavigation } from '@/hooks/useKeyboardNavigation';
+import { useAriaLiveRegion } from '@/hooks/useAccessibility';
 import { cn } from '@/lib/utils';
 import { RewritePrompt } from '@/types';
 
@@ -73,6 +76,10 @@ export function RecordingInterface({
 
   // Use app state hooks
   const { notes } = useAppState();
+
+  // Accessibility and haptic feedback hooks
+  const haptic = useHapticFeedback({ enabled: true });
+  const { announce, LiveRegion } = useAriaLiveRegion();
 
   // Track client-side mounting to prevent hydration mismatches
   useEffect(() => {
@@ -216,9 +223,12 @@ export function RecordingInterface({
   // Handle recording button click
   const handleRecordingToggle = useCallback(async () => {
     clearError();
+    haptic.buttonPress();
 
     if (recordingState.isRecording) {
       stopRecording();
+      haptic.recordingStop();
+      announce('Recording stopped', 'polite');
     } else {
       // Check for API key before starting recording
       try {
@@ -242,12 +252,16 @@ export function RecordingInterface({
 
       try {
         await startRecording();
+        haptic.recordingStart();
+        announce('Recording started', 'polite');
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Failed to start recording';
+        haptic.recordingError();
+        announce(`Recording failed: ${errorMessage}`, 'assertive');
         onError?.(errorMessage);
       }
     }
-  }, [recordingState.isRecording, startRecording, stopRecording, clearError, onError]);
+  }, [recordingState.isRecording, startRecording, stopRecording, clearError, onError, haptic, announce]);
 
   // Handle photo capture from camera
   const handleCameraCapture = useCallback(async () => {
@@ -617,13 +631,23 @@ export function RecordingInterface({
       {/* Hidden canvas for photo capture */}
       <canvas ref={canvasRef} className="hidden" />
 
+      {/* Live region for screen reader announcements */}
+      <LiveRegion />
+
       {/* Recording button */}
       <div className="relative">
         <button
           onClick={handleRecordingToggle}
           disabled={isTranscribing}
+          aria-label={
+            recordingState.isRecording 
+              ? `Stop recording. Current duration: ${formattedDuration}` 
+              : 'Start recording'
+          }
+          aria-pressed={recordingState.isRecording}
+          aria-describedby="recording-status"
           className={cn(
-            "relative w-28 h-28 md:w-32 md:h-32 lg:w-36 lg:h-36 rounded-full transition-all duration-300 shadow-lg hover:shadow-xl active:scale-95 touch-manipulation",
+            "relative w-28 h-28 md:w-32 md:h-32 lg:w-36 lg:h-36 rounded-full transition-all duration-300 shadow-lg hover:shadow-xl active:scale-95 touch-manipulation focus:outline-none focus:ring-4 focus:ring-indigo-500/50",
             recordingState.isRecording
               ? "bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700"
               : "bg-gradient-to-br from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600",
@@ -647,8 +671,12 @@ export function RecordingInterface({
 
       {/* Duration display */}
       {(recordingState.isRecording || recordingState.duration > 0) && (
-        <div className="text-center">
-          <div className="text-2xl md:text-3xl font-mono font-bold text-foreground">
+        <div className="text-center" id="recording-status">
+          <div 
+            className="text-2xl md:text-3xl font-mono font-bold text-foreground"
+            aria-live="polite"
+            aria-atomic="true"
+          >
             {formattedDuration}
           </div>
           <p className="text-sm text-muted-foreground mt-1">
@@ -756,9 +784,19 @@ export function RecordingInterface({
       {/* Photo controls */}
       <div className="flex gap-3">
         <button
-          onClick={handleCameraCapture}
+          onClick={() => {
+            haptic.buttonPress();
+            handleCameraCapture();
+          }}
           disabled={isCameraLoading}
-          className="flex items-center gap-2 px-4 py-2 bg-card border border-border rounded-lg hover:bg-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          aria-label={
+            isCameraLoading 
+              ? 'Starting camera...' 
+              : isCameraActive 
+                ? 'Capture photo from camera' 
+                : 'Open camera to take photo'
+          }
+          className="flex items-center gap-2 px-4 py-2 bg-card border border-border rounded-lg hover:bg-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-indigo-500"
         >
           <Camera className="w-4 h-4" />
           <span className="text-sm">
@@ -767,8 +805,12 @@ export function RecordingInterface({
         </button>
 
         <button
-          onClick={() => fileInputRef.current?.click()}
-          className="flex items-center gap-2 px-4 py-2 bg-card border border-border rounded-lg hover:bg-accent transition-colors"
+          onClick={() => {
+            haptic.buttonPress();
+            fileInputRef.current?.click();
+          }}
+          aria-label="Upload photo from device"
+          className="flex items-center gap-2 px-4 py-2 bg-card border border-border rounded-lg hover:bg-accent transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500"
         >
           <span className="text-sm">Upload Photo</span>
         </button>
