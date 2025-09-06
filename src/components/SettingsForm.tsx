@@ -2,8 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { Key, Globe, MessageSquare, AlertCircle, CheckCircle2 } from 'lucide-react';
-import { useSettings } from '@/hooks/useSettings';
+import { useAppState } from '@/hooks/useAppState';
 import { useTheme } from '@/contexts/ThemeContext';
+import { LANGUAGE_OPTIONS } from '@/hooks/useSettings';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -19,24 +20,84 @@ import { PWAInstallButton } from '@/components/PWAInstallPrompt';
 import { cn } from '@/lib/utils';
 
 export function SettingsForm() {
-  const {
-    settings,
-    isLoading,
-    error: settingsError,
-    updateApiKey,
-    updateDefaultLanguage,
-    updateTheme,
-    addRewritePrompt,
-    updateRewritePrompt,
-    deleteRewritePrompt,
-    setDefaultRewritePrompt,
-    validateApiKey,
-    getLanguageDisplayName,
-    languageOptions,
-    defaultRewritePrompts,
-  } = useSettings();
+  const { settings, ui, state } = useAppState();
+  const isLoading = !state.isSettingsLoaded;
+  const settingsError = ui.error;
 
   const { setTheme } = useTheme();
+
+  // Validation helpers
+  const validateApiKey = (apiKey: string): boolean => {
+    return apiKey.startsWith('sk-') && apiKey.length > 20;
+  };
+
+  const getLanguageDisplayName = (code: string): string => {
+    const language = LANGUAGE_OPTIONS.find(lang => lang.code === code);
+    return language ? `${language.nativeName} (${language.name})` : code;
+  };
+
+  // Update functions
+  const updateApiKey = async (apiKey: string) => {
+    await settings.updateSettings({ openaiApiKey: apiKey });
+  };
+
+  const updateDefaultLanguage = async (language: string) => {
+    await settings.updateSettings({ defaultLanguage: language });
+  };
+
+  const updateTheme = async (theme: 'light' | 'dark' | 'auto') => {
+    await settings.updateSettings({ theme });
+  };
+
+  const addRewritePrompt = async (prompt: { name: string; prompt: string; isDefault: boolean }) => {
+    const newPrompt = {
+      ...prompt,
+      id: crypto.randomUUID(),
+    };
+    const updatedPrompts = [...settings.settings.rewritePrompts, newPrompt];
+    await settings.updateSettings({ rewritePrompts: updatedPrompts });
+    return newPrompt.id;
+  };
+
+  const updateRewritePrompt = async (id: string, updates: Partial<{ name: string; prompt: string; isDefault: boolean }>) => {
+    const updatedPrompts = settings.settings.rewritePrompts.map(prompt =>
+      prompt.id === id ? { ...prompt, ...updates } : prompt
+    );
+    await settings.updateSettings({ rewritePrompts: updatedPrompts });
+  };
+
+  const deleteRewritePrompt = async (id: string) => {
+    const updatedPrompts = settings.settings.rewritePrompts.filter(prompt => prompt.id !== id);
+    let newDefaultPrompt = settings.settings.defaultRewritePrompt;
+    if (settings.settings.defaultRewritePrompt === id && updatedPrompts.length > 0) {
+      newDefaultPrompt = updatedPrompts[0].id;
+    }
+    await settings.updateSettings({ 
+      rewritePrompts: updatedPrompts,
+      defaultRewritePrompt: newDefaultPrompt
+    });
+  };
+
+  const setDefaultRewritePrompt = async (promptId: string) => {
+    const updatedPrompts = settings.settings.rewritePrompts.map(prompt => ({
+      ...prompt,
+      isDefault: prompt.id === promptId,
+    }));
+    await settings.updateSettings({
+      rewritePrompts: updatedPrompts,
+      defaultRewritePrompt: promptId,
+    });
+  };
+
+  const languageOptions = LANGUAGE_OPTIONS;
+  const defaultRewritePrompts = [
+    {
+      id: 'default',
+      name: 'Default',
+      prompt: 'Improve the clarity and grammar of the following text while maintaining the original meaning and tone.',
+      isDefault: true,
+    }
+  ];
 
   // Local form state
   const [apiKeyInput, setApiKeyInput] = useState('');
@@ -48,11 +109,11 @@ export function SettingsForm() {
 
   // Initialize form with current settings
   useEffect(() => {
-    if (settings.openaiApiKey) {
-      setApiKeyInput(settings.openaiApiKey);
-      setApiKeyStatus(validateApiKey(settings.openaiApiKey) ? 'valid' : 'invalid');
+    if (settings.settings.openaiApiKey) {
+      setApiKeyInput(settings.settings.openaiApiKey);
+      setApiKeyStatus(validateApiKey(settings.settings.openaiApiKey) ? 'valid' : 'invalid');
     }
-  }, [settings.openaiApiKey, validateApiKey]);
+  }, [settings.settings.openaiApiKey]);
 
   // Handle API key changes
   const handleApiKeyChange = (value: string) => {
@@ -218,7 +279,7 @@ export function SettingsForm() {
                 
                 <Button
                   onClick={handleSaveApiKey}
-                  disabled={isSaving || !apiKeyInput.trim() || apiKeyInput === settings.openaiApiKey}
+                  disabled={isSaving || !apiKeyInput.trim() || apiKeyInput === settings.settings.openaiApiKey}
                   size="sm"
                 >
                   {isSaving ? 'Saving...' : 'Save'}
@@ -243,7 +304,7 @@ export function SettingsForm() {
             </label>
             
             <Select
-              value={settings.defaultLanguage}
+              value={settings.settings.defaultLanguage}
               onValueChange={handleLanguageChange}
             >
               <SelectTrigger>
@@ -279,8 +340,8 @@ export function SettingsForm() {
             </p>
             
             <RewritePromptManager
-              prompts={settings.rewritePrompts}
-              defaultPromptId={settings.defaultRewritePrompt}
+              prompts={settings.settings.rewritePrompts}
+              defaultPromptId={settings.settings.defaultRewritePrompt}
               onAddPrompt={addRewritePrompt}
               onUpdatePrompt={updateRewritePrompt}
               onDeletePrompt={deleteRewritePrompt}

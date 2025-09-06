@@ -3,6 +3,7 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { Mic, MicOff, Camera, Square, Wand2, RefreshCw } from 'lucide-react';
 import { useRecording } from '@/hooks/useRecording';
+import { useAppState } from '@/hooks/useAppState';
 import { cn } from '@/lib/utils';
 import { RewritePrompt } from '@/types';
 
@@ -64,12 +65,125 @@ export function RecordingInterface({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const transcriptionStartedRef = useRef<boolean>(false);
   const [isCameraActive, setIsCameraActive] = useState(false);
+  const [currentNoteId, setCurrentNoteId] = useState<string | null>(null);
+
+  // Use app state hooks
+  const { notes } = useAppState();
 
   // Track client-side mounting to prevent hydration mismatches
   useEffect(() => {
     setIsMounted(true);
   }, []);
+
+  // Auto-save function for recordings and transcripts
+  const saveNoteAfterRecording = useCallback(async (audioBlob: Blob) => {
+    try {
+      // Generate a unique ID for the note
+      const noteId = crypto.randomUUID();
+      setCurrentNoteId(noteId);
+      
+      // Create initial note with recording
+      const newNote = {
+        id: noteId,
+        title: `Recording ${new Date().toLocaleString()}`,
+        description: 'Processing...',
+        transcript: '',
+        rewrittenText: undefined,
+        keywords: [],
+        language: selectedLanguage,
+        duration: recordingState.duration || 0,
+        audioBlob,
+        photoBlob: photo || undefined,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+      
+      // Save note immediately after recording
+      await notes.addNote(newNote);
+      
+    } catch (error) {
+      console.error('Failed to save recording:', error);
+      onError?.('Failed to save recording. Please try again.');
+    }
+  }, [selectedLanguage, photo, onError, notes]);
+
+  // Auto-save function for transcript updates
+  const saveTranscriptUpdate = useCallback(async (transcript: string) => {
+    if (!currentNoteId) return;
+    
+    try {
+      // Get the current note
+      const currentNote = notes.getNote(currentNoteId);
+      if (!currentNote) return;
+      
+      // Generate title and description from transcript
+      const { generateNoteMetadata } = await import('@/lib/api');
+      const { retrieveApiKey } = await import('@/lib/storage');
+      const apiKey = await retrieveApiKey();
+      
+      let title = currentNote.title;
+      let description = currentNote.description;
+      let keywords = currentNote.keywords;
+      
+      if (apiKey && transcript.trim()) {
+        try {
+          const generated = await generateNoteMetadata(transcript, apiKey);
+          title = generated.title || title;
+          description = generated.description || description;
+          keywords = generated.keywords || keywords;
+        } catch (error) {
+          console.warn('Failed to generate title/description:', error);
+          // Use fallback title/description
+          title = transcript.slice(0, 50) + (transcript.length > 50 ? '...' : '');
+          description = transcript.slice(0, 200) + (transcript.length > 200 ? '...' : '');
+        }
+      }
+      
+      // Update note with transcript and generated metadata
+      const updatedNote = {
+        ...currentNote,
+        title,
+        description,
+        transcript,
+        keywords,
+        updatedAt: new Date()
+      };
+      
+      // Save updated note immediately
+      await notes.updateNote(updatedNote);
+      
+    } catch (error) {
+      console.error('Failed to save transcript:', error);
+      onError?.('Failed to save transcript. Please try again.');
+    }
+  }, [currentNoteId, onError, notes]);
+
+  // Auto-save function for rewritten text updates
+  const saveRewrittenTextUpdate = useCallback(async (rewrittenText: string) => {
+    if (!currentNoteId) return;
+    
+    try {
+      // Get the current note
+      const currentNote = notes.getNote(currentNoteId);
+      if (!currentNote) return;
+      
+      // Update note with rewritten text
+      const updatedNote = {
+        ...currentNote,
+        rewrittenText,
+        updatedAt: new Date()
+      };
+      
+      // Save updated note immediately
+      await notes.updateNote(updatedNote);
+      
+    } catch (error) {
+      console.error('Failed to save rewritten text:', error);
+      onError?.('Failed to save rewritten text. Please try again.');
+    }
+  }, [currentNoteId, onError, notes]);
 
   const {
     recordingState,
@@ -92,9 +206,25 @@ export function RecordingInterface({
     if (recordingState.isRecording) {
       stopRecording();
     } else {
+      // Check for API key before starting recording
+      try {
+        const { retrieveApiKey } = await import('@/lib/storage');
+        const apiKey = await retrieveApiKey();
+        
+        if (!apiKey) {
+          onError?.('OpenAI API key not configured. Please set your API key in settings before recording.');
+          return;
+        }
+      } catch (error) {
+        onError?.('Failed to check API key. Please try again.');
+        return;
+      }
+
       // Clear previous transcript and rewritten text when starting new recording
       setTranscript(null);
       setRewrittenText(null);
+      setCurrentNoteId(null);
+      transcriptionStartedRef.current = false;
       
       try {
         await startRecording();
@@ -192,6 +322,9 @@ export function RecordingInterface({
       setTranscript(result.transcript);
       onTranscriptionComplete?.(result.transcript);
       
+      // Auto-save transcript immediately
+      await saveTranscriptUpdate(result.transcript);
+      
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Transcription failed';
       onError?.(errorMessage);
@@ -230,6 +363,9 @@ export function RecordingInterface({
 
       setRewrittenText(result.rewrittenText);
       
+      // Auto-save rewritten text immediately
+      await saveRewrittenTextUpdate(result.rewrittenText);
+      
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Rewriting failed';
       onError?.(errorMessage);
@@ -239,16 +375,21 @@ export function RecordingInterface({
     }
   }, [transcript, selectedPrompt, rewritePrompts, onError]);
 
-  // Handle recording completion
+  // Handle recording completion and save note immediately
   React.useEffect(() => {
-    if (recordingState.audioBlob && !recordingState.isRecording) {
+    if (recordingState.audioBlob && !recordingState.isRecording && !transcriptionStartedRef.current) {
+      transcriptionStartedRef.current = true;
+      
+      // Save note immediately after recording stops
+      saveNoteAfterRecording(recordingState.audioBlob);
+      
       // Automatically start transcription after recording
       handleTranscription(recordingState.audioBlob);
       
       // Call completion callback with rewritten text if available
       onRecordingComplete?.(recordingState.audioBlob, transcript || undefined, photo || undefined, rewrittenText || undefined);
     }
-  }, [recordingState.audioBlob, recordingState.isRecording, handleTranscription, onRecordingComplete, transcript, photo, rewrittenText]);
+  }, [recordingState.audioBlob, recordingState.isRecording]);
 
   // Handle recording errors
   React.useEffect(() => {
@@ -260,7 +401,7 @@ export function RecordingInterface({
   // Don't render anything during SSR to prevent hydration mismatches
   if (!isMounted) {
     return (
-      <div className={cn("flex flex-col items-center gap-6 mb-8", className)}>
+      <div className={cn("flex flex-col items-center gap-6 mb-8 w-full", className)}>
         <div className="text-center">
           <p className="text-sm text-muted-foreground">Loading...</p>
         </div>
@@ -270,7 +411,7 @@ export function RecordingInterface({
 
   if (!isSupported) {
     return (
-      <div className={cn("flex flex-col items-center gap-6 mb-8", className)}>
+      <div className={cn("flex flex-col items-center gap-6 mb-8 w-full", className)}>
         <div className="text-red-500 mb-4">
           <MicOff className="w-12 h-12 mx-auto mb-2" />
           <p className="font-medium">Recording Not Supported</p>
@@ -283,7 +424,7 @@ export function RecordingInterface({
   }
 
   return (
-    <div className={cn("flex flex-col items-center gap-6 mb-8", className)}>
+    <div className={cn("flex flex-col items-center gap-6 mb-8 w-full", className)}>
       {/* Camera preview or photo preview */}
       {(isCameraActive || photoPreview) && (
         <div className="relative w-full max-w-sm">

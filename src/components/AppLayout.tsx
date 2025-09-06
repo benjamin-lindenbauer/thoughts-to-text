@@ -38,11 +38,11 @@ export function AppLayout({
         className={cn(
           'min-h-screen safe-area-top',
           // Mobile: account for navigation height + safe area
-          showMobileNav && 'pb-20 md:pb-0',
+          showMobileNav && 'pb-20',
           // Desktop: standard padding
           'md:px-6 md:py-4',
           // Add top padding to account for offline indicator
-          'pt-16 md:pt-4',
+          'pt-4',
           className
         )}
       >

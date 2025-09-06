@@ -8,8 +8,7 @@ const API_CACHE = 'api-v2';
 const STATIC_ASSETS = [
   '/',
   '/manifest.json',
-  '/icon-192.png',
-  '/icon-512.png',
+  '/logo.png',
   '/offline.html'
 ];
 
