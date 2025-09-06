@@ -9,6 +9,17 @@ const nextConfig: NextConfig = {
       },
     },
   },
+  // Optimize bundle size
+  compiler: {
+    removeConsole: process.env.NODE_ENV === 'production',
+  },
+  // Enable compression
+  compress: true,
+  // Optimize images
+  images: {
+    formats: ['image/webp', 'image/avif'],
+    minimumCacheTTL: 31536000,
+  },
   headers: async () => {
     return [
       {
@@ -43,6 +54,15 @@ const nextConfig: NextConfig = {
         ],
       },
       {
+        source: '/static/(.*)',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
+      },
+      {
         source: '/(.*)',
         headers: [
           {
@@ -57,14 +77,24 @@ const nextConfig: NextConfig = {
             key: 'X-XSS-Protection',
             value: '1; mode=block',
           },
+          {
+            key: 'Referrer-Policy',
+            value: 'strict-origin-when-cross-origin',
+          },
         ],
       },
     ];
   },
-  // Enable experimental features for PWA
+  // Enable experimental features for PWA and performance
   experimental: {
     webpackBuildWorker: true,
+    optimizePackageImports: ['lucide-react', '@radix-ui/react-dialog', '@radix-ui/react-select'],
   },
+  // Production optimizations
+  ...(process.env.NODE_ENV === 'production' && {
+    output: 'standalone',
+    poweredByHeader: false,
+  }),
 };
 
 export default nextConfig;

@@ -25,9 +25,9 @@ class PerformanceMonitor {
         for (const entry of list.getEntries()) {
           if (entry.entryType === 'navigation') {
             const navEntry = entry as PerformanceNavigationTiming;
-            this.recordMetric('page-load', navEntry.loadEventEnd - navEntry.navigationStart, 'timing');
-            this.recordMetric('dom-content-loaded', navEntry.domContentLoadedEventEnd - navEntry.navigationStart, 'timing');
-            this.recordMetric('first-paint', navEntry.loadEventStart - navEntry.navigationStart, 'timing');
+            this.recordMetric('page-load', navEntry.loadEventEnd - navEntry.startTime, 'timing');
+            this.recordMetric('dom-content-loaded', navEntry.domContentLoadedEventEnd - navEntry.startTime, 'timing');
+            this.recordMetric('first-paint', navEntry.loadEventStart - navEntry.startTime, 'timing');
           }
         }
       });

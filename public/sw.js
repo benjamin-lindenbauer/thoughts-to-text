@@ -1,15 +1,23 @@
-// Service Worker for Thoughts to Text PWA
-const CACHE_NAME = 'thoughts-to-text-v2';
-const STATIC_CACHE = 'static-v2';
-const DYNAMIC_CACHE = 'dynamic-v2';
-const API_CACHE = 'api-v2';
+// Service Worker for Thoughts to Text PWA - Optimized Version
+const CACHE_VERSION = '3';
+const CACHE_NAME = `thoughts-to-text-v${CACHE_VERSION}`;
+const STATIC_CACHE = `static-v${CACHE_VERSION}`;
+const DYNAMIC_CACHE = `dynamic-v${CACHE_VERSION}`;
+const API_CACHE = `api-v${CACHE_VERSION}`;
+const IMAGE_CACHE = `images-v${CACHE_VERSION}`;
 
-// Resources to cache immediately
+// Resources to cache immediately (critical path)
 const STATIC_ASSETS = [
   '/',
   '/manifest.json',
   '/logo.png',
   '/offline.html'
+];
+
+// Additional resources to prefetch
+const PREFETCH_ASSETS = [
+  '/notes',
+  '/settings'
 ];
 
 // API endpoints that can be cached
@@ -18,49 +26,101 @@ const CACHEABLE_APIS = [
   '/api/rewrite'
 ];
 
-// Install event - cache static resources
+// Install event - cache static resources with optimization
 self.addEventListener('install', (event) => {
   console.log('Service Worker installing...');
   
   event.waitUntil(
     Promise.all([
+      // Cache critical static assets first
       caches.open(STATIC_CACHE).then(cache => {
-        console.log('Caching static assets');
+        console.log('Caching critical static assets');
         return cache.addAll(STATIC_ASSETS.map(url => new Request(url, { cache: 'reload' })));
       }),
+      // Initialize other caches
       caches.open(DYNAMIC_CACHE),
-      caches.open(API_CACHE)
+      caches.open(API_CACHE),
+      caches.open(IMAGE_CACHE),
+      // Prefetch non-critical assets
+      caches.open(DYNAMIC_CACHE).then(cache => {
+        console.log('Prefetching additional assets');
+        return Promise.allSettled(
+          PREFETCH_ASSETS.map(url => 
+            fetch(url).then(response => {
+              if (response.ok) {
+                return cache.put(url, response);
+              }
+            }).catch(() => {
+              // Ignore prefetch failures
+            })
+          )
+        );
+      })
     ]).then(() => {
-      console.log('Service Worker installed');
+      console.log('Service Worker installed and optimized');
       return self.skipWaiting();
     })
   );
 });
 
-// Activate event - clean up old caches and claim clients
+// Activate event - optimized cache cleanup and client claiming
 self.addEventListener('activate', (event) => {
   console.log('Service Worker activating...');
   
   event.waitUntil(
     Promise.all([
-      // Clean up old caches
+      // Clean up old caches more efficiently
       caches.keys().then(cacheNames => {
-        return Promise.all(
-          cacheNames.map(cacheName => {
-            if (![STATIC_CACHE, DYNAMIC_CACHE, API_CACHE].includes(cacheName)) {
-              console.log('Deleting old cache:', cacheName);
-              return caches.delete(cacheName);
-            }
-          })
-        );
+        const currentCaches = [STATIC_CACHE, DYNAMIC_CACHE, API_CACHE, IMAGE_CACHE];
+        const deletePromises = cacheNames
+          .filter(cacheName => !currentCaches.includes(cacheName))
+          .map(cacheName => {
+            console.log('Deleting old cache:', cacheName);
+            return caches.delete(cacheName);
+          });
+        return Promise.all(deletePromises);
       }),
-      // Claim all clients
-      self.clients.claim()
+      // Claim all clients immediately
+      self.clients.claim(),
+      // Optimize existing caches
+      optimizeCaches()
     ]).then(() => {
-      console.log('Service Worker activated');
+      console.log('Service Worker activated and optimized');
+      // Notify clients of successful activation
+      self.clients.matchAll().then(clients => {
+        clients.forEach(client => {
+          client.postMessage({ type: 'SW_ACTIVATED', version: CACHE_VERSION });
+        });
+      });
     })
   );
 });
+
+// Optimize caches by removing old or large entries
+async function optimizeCaches() {
+  try {
+    const cache = await caches.open(DYNAMIC_CACHE);
+    const requests = await cache.keys();
+    
+    // Remove entries older than 7 days
+    const oneWeekAgo = Date.now() - (7 * 24 * 60 * 60 * 1000);
+    
+    for (const request of requests) {
+      const response = await cache.match(request);
+      if (response) {
+        const dateHeader = response.headers.get('date');
+        if (dateHeader) {
+          const responseDate = new Date(dateHeader).getTime();
+          if (responseDate < oneWeekAgo) {
+            await cache.delete(request);
+          }
+        }
+      }
+    }
+  } catch (error) {
+    console.warn('Cache optimization failed:', error);
+  }
+}
 
 // Fetch event - implement caching strategies
 self.addEventListener('fetch', (event) => {

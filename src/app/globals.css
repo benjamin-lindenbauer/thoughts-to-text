@@ -120,13 +120,37 @@
   * {
     @apply border-border outline-ring/50;
   }
-  body {
-    @apply bg-background text-foreground transition-colors duration-200;
+  
+  html, body {
+    overflow-x: hidden;
+    width: 100%;
+    max-width: 100vw;
   }
   
-  /* Smooth theme transitions */
+  /* Prevent any element from causing horizontal overflow */
+  * {
+    box-sizing: border-box;
+  }
+  
+  *:not(html):not(body) {
+    max-width: 100%;
+  }
+  
+  body {
+    @apply bg-background text-foreground transition-colors duration-200;
+    /* Optimize font rendering */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+  
+  /* Smooth theme transitions with GPU acceleration */
   html {
     @apply transition-colors duration-200;
+    /* Enable hardware acceleration for smooth animations */
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    perspective: 1000px;
   }
   
   /* Mobile-first responsive utilities */
@@ -149,9 +173,114 @@
   
   ::-webkit-scrollbar-thumb {
     @apply bg-border rounded-full;
+    transition: background-color 0.2s ease;
   }
   
   ::-webkit-scrollbar-thumb:hover {
     @apply bg-muted-foreground;
+  }
+  
+  /* Performance optimizations */
+  .gpu-accelerated {
+    transform: translateZ(0);
+    will-change: transform;
+  }
+  
+  /* Reduce motion for accessibility */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+  
+  /* High contrast mode support */
+  @media (prefers-contrast: high) {
+    .border-border {
+      border-color: currentColor;
+    }
+  }
+  
+  /* Focus visible improvements */
+  .focus-visible:focus-visible {
+    outline: 2px solid var(--color-ring);
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  /* Enhanced button animations */
+  .btn-animated {
+    @apply transition-all duration-200 ease-in-out transform-gpu;
+  }
+  
+  .btn-animated:hover {
+    @apply scale-105 shadow-lg;
+  }
+  
+  .btn-animated:active {
+    @apply scale-95;
+  }
+  
+  /* Card hover effects */
+  .card-interactive {
+    @apply transition-all duration-200 ease-in-out transform-gpu;
+  }
+  
+  .card-interactive:hover {
+    @apply translate-y-[-2px] shadow-lg;
+  }
+  
+  /* Gradient text */
+  .gradient-text {
+    @apply bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent;
+  }
+  
+  /* Loading shimmer effect */
+  .shimmer {
+    background: linear-gradient(90deg, 
+      transparent 0%, 
+      rgba(255, 255, 255, 0.1) 50%, 
+      transparent 100%
+    );
+    background-size: 200px 100%;
+    animation: shimmer 2s infinite;
+  }
+  
+  @keyframes shimmer {
+    0% { background-position: -200px 0; }
+    100% { background-position: calc(200px + 100%) 0; }
+  }
+  
+  /* Pulse animation for recording */
+  .recording-pulse {
+    animation: recording-pulse 2s ease-in-out infinite;
+  }
+  
+  @keyframes recording-pulse {
+    0%, 100% { 
+      transform: scale(1); 
+      opacity: 1; 
+    }
+    50% { 
+      transform: scale(1.05); 
+      opacity: 0.8; 
+    }
+  }
+  
+  /* Smooth backdrop blur */
+  .backdrop-blur-optimized {
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    /* Fallback for browsers without backdrop-filter */
+    background-color: rgba(255, 255, 255, 0.8);
+  }
+  
+  .dark .backdrop-blur-optimized {
+    background-color: rgba(0, 0, 0, 0.8);
   }
 }

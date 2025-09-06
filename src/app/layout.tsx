@@ -5,6 +5,7 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 import { AppProvider } from "@/contexts/AppContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { GlobalErrorHandler } from "@/components/GlobalErrorHandler";
+import { AppOptimizer } from "@/components/AppOptimizer";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -124,7 +125,9 @@ export default function RootLayout({
           <ThemeProvider>
             <AppProvider>
               <GlobalErrorHandler>
-                {children}
+                <AppOptimizer>
+                  {children}
+                </AppOptimizer>
               </GlobalErrorHandler>
             </AppProvider>
           </ThemeProvider>
