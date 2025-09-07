@@ -109,7 +109,7 @@ export function NotesSearch({
             placeholder="Search notes..."
             value={localSearchQuery}
             onChange={handleSearchChange}
-            className="w-full pl-10 pr-10 py-3 rounded-xl border border-border bg-card text-foreground placeholder:text-muted-foreground shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+            className="w-full pl-10 pr-10 py-3 rounded-xl border border-border bg-card text-foreground placeholder:text-muted-foreground shadow-sm transition-colors focus:border-transparent"
           />
           {localSearchQuery && (
             <button
@@ -158,7 +158,7 @@ export function NotesSearch({
                     <select
                       value={filters.sortBy}
                       onChange={(e) => handleFilterChange({ sortBy: e.target.value as SearchFilters['sortBy'] })}
-                      className="px-3 py-2 rounded-lg border border-border bg-card text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      className="px-3 py-2 rounded-lg border border-border bg-card text-foreground text-sm"
                     >
                       <option value="date">Date</option>
                       <option value="title">Title</option>
@@ -194,7 +194,7 @@ export function NotesSearch({
                   <select
                     value={filters.dateRange}
                     onChange={(e) => handleFilterChange({ dateRange: e.target.value as SearchFilters['dateRange'] })}
-                    className="w-full px-3 py-2 rounded-lg border border-border bg-card text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-full px-3 py-2 rounded-lg border border-border bg-card text-foreground text-sm"
                   >
                     <option value="all">All time</option>
                     <option value="today">Today</option>
@@ -217,7 +217,7 @@ export function NotesSearch({
                       onChange={(e) => handleFilterChange({ 
                         minDuration: e.target.value ? parseInt(e.target.value) : undefined 
                       })}
-                      className="px-3 py-2 rounded-lg border border-border bg-card text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      className="px-3 py-2 rounded-lg border border-border bg-card text-foreground text-sm"
                     />
                     <input
                       type="number"
@@ -226,7 +226,7 @@ export function NotesSearch({
                       onChange={(e) => handleFilterChange({ 
                         maxDuration: e.target.value ? parseInt(e.target.value) : undefined 
                       })}
-                      className="px-3 py-2 rounded-lg border border-border bg-card text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      className="px-3 py-2 rounded-lg border border-border bg-card text-foreground text-sm"
                     />
                   </div>
                 </div>

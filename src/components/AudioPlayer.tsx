@@ -56,8 +56,12 @@ export function AudioPlayer({
 
   // Handle errors from audio player
   const handleError = useCallback((error: Error) => {
-    setError(error.message);
-    onError?.(error);
+    // If parent provides onError, delegate so it can decide (e.g., show fallback)
+    if (onError) {
+      onError(error);
+    } else {
+      setError(error.message);
+    }
   }, [onError]);
 
   // Initialize audio player
@@ -87,7 +91,11 @@ export function AudioPlayer({
 
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Failed to load audio';
-        setError(errorMessage);
+        if (onError) {
+          onError(new Error(errorMessage));
+        } else {
+          setError(errorMessage);
+        }
         setIsLoading(false);
       }
     };
@@ -230,7 +238,7 @@ export function AudioPlayer({
                 ? 'Pause audio' 
                 : 'Play audio'
           }
-          className="h-8 w-8 p-0 focus:ring-2 focus:ring-indigo-500"
+          className="h-8 w-8 p-0"
         >
           {isLoading ? (
             <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-indigo-500" />
@@ -247,7 +255,7 @@ export function AudioPlayer({
           onClick={stopPlayback}
           disabled={isLoading || (!playbackState.isPlaying && playbackState.currentTime === 0)}
           aria-label="Stop audio and return to beginning"
-          className="h-8 w-8 p-0 focus:ring-2 focus:ring-indigo-500"
+          className="h-8 w-8 p-0"
         >
           <Square className="h-4 w-4" />
         </Button>
@@ -295,7 +303,7 @@ export function AudioPlayer({
             onClick={toggleMute}
             disabled={isLoading}
             aria-label={isMuted || playbackState.volume === 0 ? 'Unmute audio' : 'Mute audio'}
-            className="h-8 w-8 p-0 focus:ring-2 focus:ring-indigo-500"
+            className="h-8 w-8 p-0"
           >
             {isMuted || playbackState.volume === 0 ? (
               <VolumeX className="h-4 w-4" />

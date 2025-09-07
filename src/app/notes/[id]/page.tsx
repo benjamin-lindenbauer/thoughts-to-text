@@ -45,6 +45,7 @@ export default function NoteDetailsPage() {
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [audioFailed, setAudioFailed] = useState(false);
 
   const noteId = params.id as string;
 
@@ -199,7 +200,7 @@ export default function NoteDetailsPage() {
     return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
   };
 
-  if (loading) {
+  if (loading || !note) {
     return (
       <AppLayout>
         <div className="flex items-center justify-center min-h-[50vh]">
@@ -310,7 +311,7 @@ export default function NoteDetailsPage() {
           </div>
         )}
 
-        <div className="space-y-6">
+        <div className="space-y-6 my-2 md:my-4">
           {/* Title and Metadata */}
           <Card>
             <CardHeader>
@@ -423,12 +424,26 @@ export default function NoteDetailsPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <AudioPlayer
-                audioBlob={note.audioBlob}
-                showVolumeControl={true}
-                showTimeDisplay={true}
-                onError={(error) => setError(`Audio playback error: ${error.message}`)}
-              />
+              {!audioFailed ? (
+                <AudioPlayer
+                  audioBlob={note.audioBlob}
+                  showVolumeControl={true}
+                  showTimeDisplay={true}
+                  onError={(error) => {
+                    // Switch to fallback player silently without showing a global error banner
+                    setAudioFailed(true);
+                  }}
+                />
+              ) : (
+                <div className="space-y-2">
+                  <p className="text-sm text-muted-foreground">Fallback player (basic browser audio):</p>
+                  <audio
+                    controls
+                    src={URL.createObjectURL(note.audioBlob)}
+                    className="w-full"
+                  />
+                </div>
+              )}
             </CardContent>
           </Card>
 

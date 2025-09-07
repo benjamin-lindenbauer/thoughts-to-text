@@ -11,7 +11,7 @@ interface LazyComponentProps {
 
 export function LazyComponent({
   children,
-  fallback = <div className="animate-pulse bg-muted h-20 rounded" />,
+  fallback = <div className="animate-pulse bg-muted rounded" />,
   threshold = 0.1,
   className
 }: LazyComponentProps) {

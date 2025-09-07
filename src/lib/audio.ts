@@ -332,7 +332,8 @@ export class AudioPlayer {
 
       // Create new audio element
       this.audio = new Audio();
-      this.audio.preload = 'metadata';
+      // Use 'auto' to let browser fetch enough data to determine readiness more reliably
+      this.audio.preload = 'auto';
       this.audio.src = URL.createObjectURL(audioBlob);
 
       // Set up event listeners
@@ -355,30 +356,32 @@ export class AudioPlayer {
         this.emitStateChange();
       };
 
-      this.audio.onerror = () => {
-        const error = new Error('Audio playback error');
-        this.onError?.(error);
-      };
+      // Do not attach a global onerror handler that surfaces immediately.
+      // We handle load errors inside tryLoad below and only propagate after retries fail.
+      this.audio.onerror = null as any;
 
       this.audio.ontimeupdate = () => {
         this.emitStateChange();
       };
 
-      // Wait for metadata to load
+      // Wait for the audio to become playable
       const tryLoad = () => new Promise<void>((resolve, reject) => {
         if (!this.audio) {
           reject(new Error('Audio element not created'));
           return;
         }
 
-        const onLoaded = () => {
+        let timeoutId: any;
+
+        const resolveSuccess = () => {
           cleanup();
           resolve();
         };
-        const onCanPlay = () => {
-          cleanup();
-          resolve();
-        };
+
+        const onLoadedMetadata = () => resolveSuccess();
+        const onLoadedData = () => resolveSuccess();
+        const onCanPlay = () => resolveSuccess();
+        const onCanPlayThrough = () => resolveSuccess();
         const onError = () => {
           cleanup();
           reject(new Error('Failed to load audio'));
@@ -386,27 +389,58 @@ export class AudioPlayer {
 
         const cleanup = () => {
           if (!this.audio) return;
-          this.audio.removeEventListener('loadedmetadata', onLoaded);
-          this.audio.removeEventListener('canplaythrough', onCanPlay);
+          clearTimeout(timeoutId);
+          this.audio.removeEventListener('loadedmetadata', onLoadedMetadata);
+          this.audio.removeEventListener('loadeddata', onLoadedData);
+          this.audio.removeEventListener('canplay', onCanPlay);
+          this.audio.removeEventListener('canplaythrough', onCanPlayThrough);
           this.audio.removeEventListener('error', onError as any);
         };
 
-        this.audio.addEventListener('loadedmetadata', onLoaded);
-        this.audio.addEventListener('canplaythrough', onCanPlay, { once: true });
+        this.audio.addEventListener('loadedmetadata', onLoadedMetadata);
+        this.audio.addEventListener('loadeddata', onLoadedData);
+        this.audio.addEventListener('canplay', onCanPlay);
+        this.audio.addEventListener('canplaythrough', onCanPlayThrough, { once: true });
         this.audio.addEventListener('error', onError as any);
 
+        // As a safety net, accept readiness after a short timeout if browser has enough data
+        timeoutId = setTimeout(() => {
+          if (!this.audio) return;
+          try {
+            // HAVE_CURRENT_DATA = 2, HAVE_FUTURE_DATA = 3
+            if ((this.audio.readyState >= 2) || (this.audio.duration && this.audio.duration > 0)) {
+              resolveSuccess();
+            }
+          } catch {}
+        }, 1500);
+
         // Trigger load explicitly
-        this.audio.load();
+        try { this.audio.load(); } catch {}
       });
 
       try {
         await tryLoad();
       } catch (e1) {
-        // Retry once with a generic webm type in case the blob's MIME string is too specific
+        // Retry once with a generic MIME derived from the original format (not forced webm)
         if (!this.audio) throw e1;
+
+        const deriveGenericType = (t: string): string | undefined => {
+          const lower = (t || '').toLowerCase();
+          if (!lower) return undefined;
+          if (lower.includes('webm')) return 'audio/webm';
+          if (lower.includes('ogg')) return 'audio/ogg';
+          if (lower.includes('wav')) return 'audio/wav';
+          if (lower.includes('mpeg') || lower.includes('mp3')) return 'audio/mpeg';
+          if (lower.includes('mp4') || lower.includes('m4a')) return 'audio/mp4';
+          return undefined;
+        };
+
         const prevSrc = this.audio.src;
         try {
-          const genericBlob = new Blob([audioBlob], { type: 'audio/webm' });
+          const genericType = deriveGenericType(audioBlob.type) || '';
+          const genericBlob = genericType
+            ? new Blob([audioBlob], { type: genericType })
+            : new Blob([audioBlob]);
           this.audio.src = URL.createObjectURL(genericBlob);
           await tryLoad();
           if (prevSrc) URL.revokeObjectURL(prevSrc);

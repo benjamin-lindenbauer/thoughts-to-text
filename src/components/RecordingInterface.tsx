@@ -73,6 +73,8 @@ export function RecordingInterface({
   const [isCameraActive, setIsCameraActive] = useState(false);
   const [isCameraLoading, setIsCameraLoading] = useState(false);
   const [currentNoteId, setCurrentNoteId] = useState<string | null>(null);
+  // Keep a ref in sync for immediate availability across async boundaries
+  const currentNoteIdRef = useRef<string | null>(null);
 
   // Use app state hooks
   const { notes } = useAppState();
@@ -99,10 +101,12 @@ export function RecordingInterface({
   }, []);
 
   // Auto-save function for recordings and transcripts
-  const saveNoteAfterRecording = useCallback(async (audioBlob: Blob) => {
+  const saveNoteAfterRecording = useCallback(async (audioBlob: Blob, durationMs: number) => {
     try {
       // Generate a unique ID for the note
       const noteId = crypto.randomUUID();
+      // Update both state and ref immediately to avoid races
+      currentNoteIdRef.current = noteId;
       setCurrentNoteId(noteId);
 
       // Create initial note with recording
@@ -114,7 +118,8 @@ export function RecordingInterface({
         rewrittenText: undefined,
         keywords: [],
         language: selectedLanguage,
-        duration: recordingState.duration || 0,
+        // Store duration in SECONDS to match consumers (e.g., formatters expect seconds)
+        duration: Math.round((durationMs || 0) / 1000),
         audioBlob,
         photoBlob: photo || undefined,
         createdAt: new Date(),
@@ -132,12 +137,18 @@ export function RecordingInterface({
 
   // Auto-save function for transcript updates
   const saveTranscriptUpdate = useCallback(async (transcript: string) => {
-    if (!currentNoteId) return;
+    const noteId = currentNoteIdRef.current || currentNoteId;
+    if (!noteId) return;
 
     try {
-      // Get the current note
-      const currentNote = notes.getNote(currentNoteId);
-      if (!currentNote) return;
+      // Get the current note from state or fall back to storage if not yet in state
+      let currentNote = notes.getNote(noteId);
+      if (!currentNote) {
+        const { retrieveNote } = await import('@/lib/storage');
+        const stored = await retrieveNote(noteId);
+        if (!stored) return;
+        currentNote = stored;
+      }
 
       // Generate title and description from transcript
       const { generateNoteMetadata } = await import('@/lib/api');
@@ -183,11 +194,12 @@ export function RecordingInterface({
 
   // Auto-save function for rewritten text updates
   const saveRewrittenTextUpdate = useCallback(async (rewrittenText: string) => {
-    if (!currentNoteId) return;
+    const noteId = currentNoteIdRef.current || currentNoteId;
+    if (!noteId) return;
 
     try {
       // Get the current note
-      const currentNote = notes.getNote(currentNoteId);
+      const currentNote = notes.getNote(noteId);
       if (!currentNote) return;
 
       // Update note with rewritten text
@@ -249,6 +261,7 @@ export function RecordingInterface({
       setTranscript(null);
       setRewrittenText(null);
       setCurrentNoteId(null);
+      currentNoteIdRef.current = null;
       transcriptionStartedRef.current = false;
 
       try {
@@ -506,7 +519,7 @@ export function RecordingInterface({
     } finally {
       setIsTranscribing(false);
     }
-  }, [selectedLanguage, onTranscriptionStart, onTranscriptionComplete, onError]);
+  }, [selectedLanguage, onTranscriptionStart, onTranscriptionComplete, onError, saveTranscriptUpdate]);
 
   // Handle text rewriting
   const handleRewrite = useCallback(async () => {
@@ -548,23 +561,25 @@ export function RecordingInterface({
     } finally {
       setIsRewriting(false);
     }
-  }, [transcript, selectedPrompt, rewritePrompts, onError]);
+  }, [transcript, selectedPrompt, rewritePrompts, onError, saveRewrittenTextUpdate]);
 
   // Handle recording completion and save note immediately
   React.useEffect(() => {
     if (recordingState.audioBlob && !recordingState.isRecording && !transcriptionStartedRef.current) {
       transcriptionStartedRef.current = true;
 
-      // Save note immediately after recording stops
-      saveNoteAfterRecording(recordingState.audioBlob);
+      (async () => {
+        // Save note immediately after recording stops (await to ensure ID is available)
+        await saveNoteAfterRecording(recordingState.audioBlob!, recordingState.duration);
 
-      // Automatically start transcription after recording
-      handleTranscription(recordingState.audioBlob);
+        // Automatically start transcription after recording
+        await handleTranscription(recordingState.audioBlob!);
 
-      // Call completion callback with rewritten text if available
-      onRecordingComplete?.(recordingState.audioBlob, transcript || undefined, photo || undefined, rewrittenText || undefined);
+        // Call completion callback with rewritten text if available
+        onRecordingComplete?.(recordingState.audioBlob!, transcript || undefined, photo || undefined, rewrittenText || undefined);
+      })();
     }
-  }, [recordingState.audioBlob, recordingState.isRecording]);
+  }, [recordingState.audioBlob, recordingState.isRecording, saveNoteAfterRecording, handleTranscription, onRecordingComplete, transcript, photo, rewrittenText]);
 
   // Handle recording errors
   React.useEffect(() => {
@@ -691,7 +706,7 @@ export function RecordingInterface({
                 value={selectedPrompt}
                 onChange={(e) => setSelectedPrompt(e.target.value)}
                 disabled={isRewriting}
-                className="w-full p-2 rounded-lg border border-border bg-card text-foreground text-sm transition-colors hover:bg-accent focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent disabled:opacity-50"
+                className="w-full p-2 rounded-lg border border-border bg-card text-foreground text-sm transition-colors hover:bg-accent focus:border-transparent disabled:opacity-50"
               >
                 {rewritePrompts.map((prompt) => (
                   <option key={prompt.id} value={prompt.id}>
@@ -832,7 +847,7 @@ export function RecordingInterface({
                   ? 'Capture photo from camera'
                   : 'Open camera to take photo'
             }
-            className="flex items-center gap-2 px-4 py-2 bg-card border border-border rounded-lg hover:bg-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="flex items-center gap-2 px-4 py-2 bg-card border border-border rounded-lg hover:bg-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Camera className="w-4 h-4" />
             <span className="text-sm">
@@ -846,7 +861,7 @@ export function RecordingInterface({
               fileInputRef.current?.click();
             }}
             aria-label="Upload photo from device"
-            className="flex items-center gap-2 px-4 py-2 bg-card border border-border rounded-lg hover:bg-accent transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="flex items-center gap-2 px-4 py-2 bg-card border border-border rounded-lg hover:bg-accent transition-colors"
           >
             <span className="text-sm">Upload Photo</span>
           </button>

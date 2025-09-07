@@ -15,7 +15,7 @@ import {
     Tag,
     Wand2
 } from 'lucide-react';
-import { useKeyboardNavigation, useFocusManagement } from '@/hooks/useKeyboardNavigation';
+import { useFocusManagement } from '@/hooks/useKeyboardNavigation';
 import { useAriaLiveRegion } from '@/hooks/useAccessibility';
 import { LazyComponent } from '@/components/LazyComponent';
 // Simple audio player component for inline playback
@@ -260,21 +260,6 @@ export function NotesList({
         }
     }, [notes, onViewNote, expandedNoteId, announce]);
 
-    // Handle audio play/pause
-    const handleAudioToggle = useCallback((noteId: string) => {
-        const note = notes.find(n => n.id === noteId);
-        const isPlaying = playingNoteId === noteId;
-        
-        setPlayingNoteId(prev => prev === noteId ? null : noteId);
-        
-        announce(
-          isPlaying 
-            ? `Stopped playing ${note?.title || 'note'}` 
-            : `Playing ${note?.title || 'note'}`,
-          'polite'
-        );
-    }, [notes, playingNoteId, announce]);
-
     // Format duration
     const formatDuration = (seconds: number): string => {
         const mins = Math.floor(seconds / 60);
@@ -331,7 +316,6 @@ export function NotesList({
                   containerRef.current = el;
                   focusContainerRef.current = el;
                 }}
-                className="h-[600px] overflow-auto focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded-lg"
                 onScroll={handleScroll}
                 role="list"
                 aria-label={`Notes list with ${notes.length} notes`}
@@ -342,8 +326,6 @@ export function NotesList({
                         {visibleNotes.map((note, index) => {
                             const isExpanded = expandedNoteId === note.id;
                             const isPlaying = playingNoteId === note.id;
-                            const isGenerating = generatingMetadata.has(note.id);
-                            const actualIndex = startIndex + index;
 
                             return (
                                 <LazyComponent
@@ -351,7 +333,6 @@ export function NotesList({
                                     fallback={
                                         <div 
                                             className="mb-4 p-4 rounded-xl border border-border bg-card animate-pulse"
-                                            style={{ height: ITEM_HEIGHT }}
                                         >
                                             <div className="h-5 bg-muted rounded w-3/4 mb-2"></div>
                                             <div className="h-4 bg-muted rounded w-full mb-2"></div>
@@ -360,8 +341,7 @@ export function NotesList({
                                     }
                                 >
                                     <div
-                                        className="mb-4 p-4 rounded-xl border border-border bg-card hover:bg-accent/50 transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                        style={{ height: ITEM_HEIGHT }}
+                                        className="mb-4 p-4 rounded-xl border border-border bg-card hover:bg-accent/50 transition-colors cursor-pointer"
                                         onClick={() => handleNoteClick(note.id)}
                                         onContextMenu={(e) => handleContextMenu(e, note.id)}
                                         onKeyDown={(e) => {
@@ -392,38 +372,7 @@ export function NotesList({
                                             </div>
                                         </div>
 
-                                        <div className="flex items-center gap-2 ml-3">
-                                            {/* Audio play button */}
-                                            <button
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    handleAudioToggle(note.id);
-                                                }}
-                                                aria-label={isPlaying ? `Pause ${note.title || 'note'}` : `Play ${note.title || 'note'}`}
-                                                className="p-2 rounded-lg hover:bg-accent transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                            >
-                                                {isPlaying ? (
-                                                    <Pause className="w-4 h-4 text-indigo-500" />
-                                                ) : (
-                                                    <Play className="w-4 h-4 text-muted-foreground hover:text-foreground" />
-                                                )}
-                                            </button>
-
-                                            {/* Generate metadata button */}
-                                            {(!note.title || note.title === 'Untitled Note' || !note.description) && (
-                                                <button
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        handleContextMenuAction('generate', note.id);
-                                                    }}
-                                                    disabled={isGenerating}
-                                                    aria-label={`Generate title and description for ${note.title || 'note'}`}
-                                                    className="p-2 rounded-lg hover:bg-accent transition-colors disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                                >
-                                                    <Wand2 className={`w-4 h-4 ${isGenerating ? 'animate-spin text-indigo-500' : 'text-muted-foreground hover:text-foreground'}`} />
-                                                </button>
-                                            )}
-
+                                        <div className="flex items-center gap-2 ml-2">
                                             {/* Context menu button */}
                                             <button
                                                 onClick={(e) => {
@@ -432,7 +381,7 @@ export function NotesList({
                                                 }}
                                                 aria-label={`More options for ${note.title || 'note'}`}
                                                 aria-haspopup="menu"
-                                                className="p-2 rounded-lg hover:bg-accent transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                                className="p-2 rounded-lg hover:bg-accent transition-colors"
                                             >
                                                 <MoreVertical className="w-4 h-4 text-muted-foreground hover:text-foreground" />
                                             </button>

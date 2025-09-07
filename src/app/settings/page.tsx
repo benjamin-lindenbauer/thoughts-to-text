@@ -12,7 +12,7 @@ export default function SettingsPage() {
   return (
     <AppLayout>
       <div className="flex">
-        <div className="w-full max-w-3xl p-4 md:p-6">
+        <div className="w-full max-w-3xl p-2">
           {/* Header */}
           <div className="mb-6 md:mb-8">
             <div className="flex flex-row gap-2">

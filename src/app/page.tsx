@@ -153,7 +153,7 @@ export default function Home() {
             value={selectedLanguage}
             disabled
             onChange={(e) => setSelectedLanguage(e.target.value)}
-            className={`w-full p-4 rounded-xl border border-border bg-card text-foreground shadow-sm ${animationPresets.button.idle} hover:shadow-md hover:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:shadow-lg`}
+            className={`w-full p-4 rounded-xl border border-border bg-card text-foreground shadow-sm ${animationPresets.button.idle} hover:shadow-md hover:border-indigo-300 focus:border-transparent focus:shadow-lg`}
           >
             {LANGUAGE_OPTIONS.map((lang) => (
               <option key={lang.code} value={lang.code}>
