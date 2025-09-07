@@ -217,7 +217,7 @@ export default function NoteDetailsPage() {
     <AppLayout>
       <div className="max-w-3xl mx-auto">
         {/* Header */}
-        <div className="sticky top-0 z-10 bg-white py-2">
+        <div className="sticky top-0 z-10 py-2">
           <div className="flex items-center justify-between">
             <Button
               variant="ghost"

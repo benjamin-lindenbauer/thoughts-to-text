@@ -80,11 +80,6 @@ export default function Home() {
       </div>
 
       <div className="flex flex-col items-center justify-center p-2 md:p-4 pt-32 md:pt-40 w-full max-w-full">
-        <div className="text-center mb-8">
-          <p className="text-sm md:text-base text-muted-foreground">
-            What's on your mind today?
-          </p>
-        </div>
         {/* Language selection with enhanced styling */}
         {/*
         <div className={`mb-8 w-full max-w-sm ${isLoaded ? animations.slideInFromTop : 'opacity-0 translate-y-4'}`}>

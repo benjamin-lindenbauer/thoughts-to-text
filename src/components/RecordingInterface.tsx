@@ -233,6 +233,11 @@ export function RecordingInterface({
     maxDuration: 10 * 60 * 1000 // 10 minutes max
   });
 
+  // UI mode: show only the core recording controls centered vertically
+  // when the app first loads (no recording yet) or while actively recording.
+  // After recording stops (duration > 0 and not recording), show the full UI from the top.
+  const showMinimalUI = recordingState.isRecording || recordingState.duration === 0;
+
   // Handle recording button click
   const handleRecordingToggle = useCallback(async () => {
     clearError();
@@ -614,44 +619,61 @@ export function RecordingInterface({
   }
 
   return (
-    <div className={cn("flex flex-col items-center gap-6 w-full", className)}>
+    <div
+      className={cn(
+        "flex flex-col gap-6 w-full",
+        showMinimalUI ? "items-center justify-center min-h-[calc(100vh-22rem)]" : "items-center justify-start overflow-y-auto",
+        className
+      )}
+    >
       {/* Live region for screen reader announcements */}
       <LiveRegion />
 
+      {/* Greeting */}
+      {showMinimalUI && (
+        <div className="text-center mb-16">
+          <p className="text-sm md:text-base text-muted-foreground">
+            What's on your mind today?
+          </p>
+        </div>
+      )}
+
       {/* Recording button */}
-      <div className="relative">
-        <button
-          onClick={handleRecordingToggle}
-          disabled={isTranscribing}
-          aria-label={
+      {showMinimalUI && (
+        <div className="relative">
+          <button
+            onClick={handleRecordingToggle}
+            disabled={isTranscribing}
+            aria-label={
             recordingState.isRecording
               ? `Stop recording. Current duration: ${formattedDuration}`
               : 'Start recording'
-          }
-          aria-pressed={recordingState.isRecording}
-          aria-describedby="recording-status"
-          className={cn(
-            "relative w-28 h-28 md:w-32 md:h-32 lg:w-36 lg:h-36 rounded-full transition-all duration-300 shadow-lg hover:shadow-xl active:scale-95 touch-manipulation",
-            recordingState.isRecording
-              ? "bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700"
-              : "bg-gradient-to-br from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600",
-            isTranscribing && "opacity-50 cursor-not-allowed"
-          )}
-        >
-          <div className="absolute inset-2 md:inset-3 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
-            {recordingState.isRecording ? (
-              <Square className="w-10 h-10 md:w-12 md:h-12 lg:w-14 lg:h-14 text-white drop-shadow-sm" />
-            ) : (
-              <Mic className="w-10 h-10 md:w-12 md:h-12 lg:w-14 lg:h-14 text-white drop-shadow-sm" />
+            }
+            aria-pressed={recordingState.isRecording}
+            aria-describedby="recording-status"
+            className={cn(
+              "relative w-28 h-28 md:w-32 md:h-32 lg:w-36 lg:h-36 rounded-full transition-all duration-300 shadow-lg hover:shadow-xl active:scale-95 touch-manipulation",
+              recordingState.isRecording
+                ? "bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700"
+                : "bg-gradient-to-br from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600",
+              isTranscribing && "opacity-50 cursor-not-allowed"
             )}
-          </div>
+          >
+            <div className="absolute inset-2 md:inset-3 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
+              {recordingState.isRecording ? (
+                <Square className="w-10 h-10 md:w-12 md:h-12 lg:w-14 lg:h-14 text-white drop-shadow-sm" />
+              ) : (
+                <Mic className="w-10 h-10 md:w-12 md:h-12 lg:w-14 lg:h-14 text-white drop-shadow-sm" />
+              )}
+            </div>
 
-          {/* Pulse animation ring when recording */}
-          {recordingState.isRecording && (
-            <div className="absolute inset-0 rounded-full bg-gradient-to-br from-red-500 to-red-600 animate-pulse opacity-30"></div>
-          )}
-        </button>
-      </div>
+            {/* Pulse animation ring when recording */}
+            {recordingState.isRecording && (
+              <div className="absolute inset-0 rounded-full bg-gradient-to-br from-red-500 to-red-600 animate-pulse opacity-30"></div>
+            )}
+          </button>
+        </div>
+      )}
 
       {/* Duration display */}
       {(recordingState.isRecording || recordingState.duration > 0) && (
@@ -678,8 +700,8 @@ export function RecordingInterface({
         </div>
       )}
 
-      {/* Transcription status */}
-      {isTranscribing && (
+      {/* Transcription status (only after recording stops) */}
+      {!showMinimalUI && isTranscribing && (
         <div className="text-center">
           <div className="animate-spin w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full mx-auto mb-2"></div>
           <p className="text-sm text-muted-foreground">
@@ -688,8 +710,8 @@ export function RecordingInterface({
         </div>
       )}
 
-      {/* Transcript preview */}
-      {transcript && (
+      {/* Transcript preview (only after recording stops) */}
+      {!showMinimalUI && transcript && (
         <div className="w-full max-w-md space-y-4">
           <div className="p-4 bg-card border border-border rounded-lg">
             <h3 className="font-medium text-foreground mb-2">Original Transcript:</h3>
@@ -740,7 +762,7 @@ export function RecordingInterface({
             </button>
           </div>
 
-          {/* Rewritten text display */}
+          {/* Rewritten text display (only after recording stops) */}
           {rewrittenText && (
             <div className="p-4 bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-950/20 dark:to-purple-950/20 border border-indigo-200 dark:border-indigo-800 rounded-lg">
               <div className="flex items-center justify-between mb-2">
@@ -762,8 +784,8 @@ export function RecordingInterface({
         </div>
       )}
 
-      {/* Camera preview or photo preview */}
-      {(isCameraActive || isCameraLoading || photoPreview) && (
+      {/* Camera preview or photo preview (only after recording stops) */}
+      {!showMinimalUI && (isCameraActive || isCameraLoading || photoPreview) && (
         <div className="relative w-full max-w-sm">
           {(isCameraLoading || isCameraActive) ? (
             <div className="relative rounded-lg overflow-hidden">
@@ -826,7 +848,8 @@ export function RecordingInterface({
       {/* Hidden canvas for photo capture */}
       <canvas ref={canvasRef} className="hidden" />
 
-      {transcript && (
+      {/* Photo controls (only after recording stops) */}
+      {!showMinimalUI && transcript && (
       <>
         <p className="text-sm md:text-base text-muted-foreground">
           Add an image to your recording

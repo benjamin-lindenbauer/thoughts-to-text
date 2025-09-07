@@ -326,8 +326,9 @@ export function NotesList({
                 tabIndex={0}
                 className={cn('overflow-y-auto h-full', className)}
             >
-                <div style={{ position: 'relative' }}>
-                    <div style={{ transform: `translateY(${offsetY}px)` }}>
+                {/* Spacer sets total scrollable height for virtualization */}
+                <div style={{ position: 'relative', height: notes.length * ITEM_HEIGHT }}>
+                    <div style={{ position: 'absolute', top: 0, left: 0, right: 0, transform: `translateY(${offsetY}px)` }}>
                         {visibleNotes.map((note, index) => {
                             const isExpanded = expandedNoteId === note.id;
                             const isPlaying = playingNoteId === note.id;

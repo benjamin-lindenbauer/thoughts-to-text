@@ -10,11 +10,11 @@ export default function SettingsPage() {
   const router = useRouter();
 
   return (
-    <AppLayout>
-      <div className="flex">
-        <div className="w-full max-w-3xl p-2 md:p-4">
+    <AppLayout className="overflow-y-hidden">
+      <div className="flex justify-center h-full">
+        <div className="w-full max-w-3xl p-2 md:p-4 flex flex-col h-full min-h-0">
           {/* Header */}
-          <div className="mb-6 md:mb-8">
+          <div className="sticky top-0 z-10 bg-background mb-6 md:mb-8">
             <div className="flex flex-row gap-2">
               <Button
                 variant="ghost"
@@ -33,7 +33,10 @@ export default function SettingsPage() {
             </p>
           </div>
 
-          <SettingsForm />
+          {/* Settings Form */}
+          <div className="flex-1 min-h-0 overflow-y-auto">
+            <SettingsForm />
+          </div>
         </div>
       </div>
     </AppLayout>

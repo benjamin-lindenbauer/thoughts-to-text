@@ -206,8 +206,8 @@ export default function NotesPage() {
   };
 
   return (
-    <AppLayout className="overflow-hidden">
-      <div className="flex justify-center h-full">
+    <AppLayout className="overflow-y-hidden">
+      <div className="flex">
         <div className="w-full max-w-3xl p-2 md:p-4 flex flex-col h-full min-h-0">
 
           {/* Header */}

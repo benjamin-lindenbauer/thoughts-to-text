@@ -25,7 +25,7 @@ export function AppLayout({
   }, []);
 
   return (
-    <div className="h-screen w-full flex flex-col bg-background transition-colors duration-200 overflow-hidden">
+    <div className="h-screen w-full flex flex-col bg-background transition-colors duration-200">
       {/* Offline indicator - positioned at top */}
       <div className="fixed top-4 right-4 z-40 flex justify-center pointer-events-none">
         <div className="pointer-events-auto">
@@ -39,8 +39,8 @@ export function AppLayout({
           'flex-1 overflow-y-auto overflow-x-hidden safe-area-top w-full min-h-0',
           // Standard padding
           'px-2 md:px-4',
-          // Account for navigation height + safe area
-          'pb-20',
+          // Bottom spacing handled by explicit spacer element to avoid overlap
+          'pb-20 safe-area-bottom',
           className
         )}
       >
