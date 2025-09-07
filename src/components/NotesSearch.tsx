@@ -242,7 +242,7 @@ export function NotesSearch({
                       type="checkbox"
                       checked={filters.hasKeywords}
                       onChange={(e) => handleFilterChange({ hasKeywords: e.target.checked })}
-                      className="w-4 h-4 text-indigo-500 border-border rounded focus:ring-indigo-500"
+                      className="w-4 h-4 text-indigo-500 border-border rounded"
                     />
                     <span className="text-sm text-foreground">Has keywords</span>
                   </label>
@@ -252,7 +252,7 @@ export function NotesSearch({
                       type="checkbox"
                       checked={filters.hasRewrittenText}
                       onChange={(e) => handleFilterChange({ hasRewrittenText: e.target.checked })}
-                      className="w-4 h-4 text-indigo-500 border-border rounded focus:ring-indigo-500"
+                      className="w-4 h-4 text-indigo-500 border-border rounded"
                     />
                     <span className="text-sm text-foreground">Has enhanced text</span>
                   </label>

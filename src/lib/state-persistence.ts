@@ -227,16 +227,56 @@ export class StatePersistence {
         'theme' // From theme context
       ];
 
-      // Check each key and remove if corrupted
+      // Keys that store JSON strings
+      const jsonKeys = new Set<string>([
+        PERSISTED_STATE_KEY,
+        OFFLINE_QUEUE_KEY,
+        'thoughts-to-text-settings',
+      ]);
+
+      // Validate each key appropriately and remove if clearly corrupted
       appKeys.forEach(key => {
-        try {
-          const value = localStorage.getItem(key);
-          if (value) {
-            JSON.parse(value); // Test if it's valid JSON
+        const value = localStorage.getItem(key);
+        if (value == null) return;
+
+        // JSON-backed keys: ensure they parse
+        if (jsonKeys.has(key)) {
+          try {
+            JSON.parse(value);
+          } catch (error) {
+            console.warn(`Removing corrupted JSON data for key: ${key}`);
+            localStorage.removeItem(key);
           }
-        } catch (error) {
-          console.warn(`Removing corrupted data for key: ${key}`);
-          localStorage.removeItem(key);
+          return;
+        }
+
+        // String-backed keys: basic sanity checks only
+        // - API key: encrypted/base64-like string – do not attempt to parse, just ensure non-empty
+        if (key === 'thoughts-to-text-api-key') {
+          if (!value || value.trim() === '') {
+            console.warn('Removing empty API key');
+            localStorage.removeItem(key);
+          }
+          return;
+        }
+
+        // - Encryption key: UUID stored as plain string – ensure non-empty
+        if (key === 'thoughts-to-text-encryption') {
+          if (!value || value.trim() === '') {
+            console.warn('Removing empty encryption key');
+            localStorage.removeItem(key);
+          }
+          return;
+        }
+
+        // - Theme: should be one of 'light' | 'dark' | 'auto'
+        if (key === 'theme') {
+          const allowed = new Set(['light', 'dark', 'auto']);
+          if (!allowed.has(value)) {
+            console.warn(`Removing invalid theme value: ${value}`);
+            localStorage.removeItem(key);
+          }
+          return;
         }
       });
     } catch (error) {

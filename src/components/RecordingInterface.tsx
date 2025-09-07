@@ -631,7 +631,7 @@ export function RecordingInterface({
           aria-pressed={recordingState.isRecording}
           aria-describedby="recording-status"
           className={cn(
-            "relative w-28 h-28 md:w-32 md:h-32 lg:w-36 lg:h-36 rounded-full transition-all duration-300 shadow-lg hover:shadow-xl active:scale-95 touch-manipulation focus:outline-none focus:ring-4 focus:ring-indigo-500/50",
+            "relative w-28 h-28 md:w-32 md:h-32 lg:w-36 lg:h-36 rounded-full transition-all duration-300 shadow-lg hover:shadow-xl active:scale-95 touch-manipulation",
             recordingState.isRecording
               ? "bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700"
               : "bg-gradient-to-br from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600",
@@ -791,7 +791,7 @@ export function RecordingInterface({
                     handleCloseCamera();
                   }}
                   aria-label="Close camera"
-                  className="absolute top-2 right-2 p-2 bg-black/50 backdrop-blur-sm text-white rounded-full hover:bg-black/70 transition-colors focus:outline-none focus:ring-2 focus:ring-white/50"
+                  className="absolute top-2 right-2 p-2 bg-black/50 backdrop-blur-sm text-white rounded-full hover:bg-black/70 transition-colors"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -815,7 +815,7 @@ export function RecordingInterface({
                 }
               }}
               aria-label="Remove captured photo"
-              className="absolute top-2 right-2 p-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors focus:outline-none focus:ring-2 focus:ring-red-300"
+              className="absolute top-2 right-2 p-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
             >
               <X className="w-4 h-4" />
             </button>
