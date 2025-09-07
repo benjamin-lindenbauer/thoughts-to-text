@@ -56,18 +56,6 @@ export class ErrorBoundary extends Component<Props, State> {
       retryCount: this.retryCount,
     };
 
-    // Store error in localStorage for debugging (without sensitive data)
-    try {
-      const existingErrors = JSON.parse(localStorage.getItem('app-errors') || '[]');
-      existingErrors.push(errorData);
-      
-      // Keep only last 10 errors to prevent storage bloat
-      const recentErrors = existingErrors.slice(-10);
-      localStorage.setItem('app-errors', JSON.stringify(recentErrors));
-    } catch (storageError) {
-      console.warn('Failed to store error log:', storageError);
-    }
-
     console.error('ErrorBoundary caught an error:', errorData);
   };
 

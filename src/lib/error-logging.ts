@@ -20,7 +20,8 @@ export interface StorageError extends Error {
 
 class ErrorLogger {
   private maxLogs = 50;
-  private storageKey = 'app-error-logs';
+  // In-memory only; do not persist to localStorage
+  private inMemoryLogs: ErrorLog[] = [];
   private sensitiveKeys = ['apiKey', 'password', 'token', 'secret', 'key'];
 
   // Sanitize data to remove sensitive information
@@ -83,16 +84,14 @@ class ErrorLogger {
       };
     }
 
-    // Store in localStorage
+    // Store in memory only
     try {
-      const existingLogs = this.getLogs();
-      existingLogs.push(errorLog);
-      
-      // Keep only recent logs
-      const recentLogs = existingLogs.slice(-this.maxLogs);
-      localStorage.setItem(this.storageKey, JSON.stringify(recentLogs));
+      this.inMemoryLogs.push(errorLog);
+      if (this.inMemoryLogs.length > this.maxLogs) {
+        this.inMemoryLogs = this.inMemoryLogs.slice(-this.maxLogs);
+      }
     } catch (storageError) {
-      console.warn('Failed to store error log:', storageError);
+      console.warn('Failed to buffer error log in memory:', storageError);
     }
 
     // Also log to console for development
@@ -116,23 +115,14 @@ class ErrorLogger {
     return this.log('info', category, message, details);
   }
 
-  // Get all stored logs
+  // Get all stored logs (in-memory only)
   getLogs(): ErrorLog[] {
-    try {
-      const logs = localStorage.getItem(this.storageKey);
-      return logs ? JSON.parse(logs) : [];
-    } catch {
-      return [];
-    }
+    return [...this.inMemoryLogs];
   }
 
-  // Clear all logs
+  // Clear all logs (in-memory only)
   clearLogs(): void {
-    try {
-      localStorage.removeItem(this.storageKey);
-    } catch (error) {
-      console.warn('Failed to clear error logs:', error);
-    }
+    this.inMemoryLogs = [];
   }
 
   // Get logs by category
@@ -221,6 +211,14 @@ export function logNetworkError(error: Error, isOnline: boolean): string {
 
 // Global error handler for unhandled promise rejections
 if (typeof window !== 'undefined') {
+  // Proactively remove legacy persisted error logs
+  try {
+    localStorage.removeItem('app-error-logs');
+    localStorage.removeItem('app-errors');
+  } catch {
+    // ignore storage errors
+  }
+
   window.addEventListener('unhandledrejection', (event) => {
     errorLogger.error(
       'unknown',

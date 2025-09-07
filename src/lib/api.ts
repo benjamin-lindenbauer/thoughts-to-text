@@ -2,7 +2,9 @@ import { APIError } from '@/types';
 
 // Configuration for retry logic
 const RETRY_CONFIG = {
-  maxRetries: 3,
+  // maxRetries represents the total number of attempts (initial attempt + retries)
+  // Set to 2 so we try at most twice.
+  maxRetries: 2,
   baseDelay: 1000, // 1 second
   maxDelay: 10000, // 10 seconds
   backoffMultiplier: 2,
@@ -22,16 +24,18 @@ async function withRetry<T>(
   operation: () => Promise<T>,
   maxRetries: number = RETRY_CONFIG.maxRetries
 ): Promise<T> {
+  // attempt is 0-based; we will perform at most `maxRetries` attempts
   let lastError: any;
 
-  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
       return await operation();
     } catch (error: any) {
       lastError = error;
 
-      // Don't retry on certain error types
-      if (error.type === 'auth' || !error.retryable || attempt === maxRetries) {
+      // Don't retry on certain error types or if this was the last allowed attempt
+      const isLastAttempt = attempt === maxRetries - 1;
+      if (error.type === 'auth' || !error.retryable || isLastAttempt) {
         throw error;
       }
 
@@ -51,7 +55,8 @@ const parseAPIError = async (response: Response): Promise<APIError> => {
     return {
       type: errorData.type || 'unknown',
       message: errorData.error || 'An unexpected error occurred',
-      retryable: errorData.retryable !== false,
+      // If server doesn't specify retryable, default to non-retryable for 4xx and retryable for 5xx
+      retryable: errorData.retryable ?? (response.status >= 500),
       retryAfter: errorData.retryAfter,
     };
   } catch {
@@ -80,7 +85,18 @@ export async function transcribeAudio(
       });
 
       const formData = new FormData();
-      formData.append('audio', audioBlob, 'recording.webm');
+      // Name the file according to its MIME type to avoid server-side rejection
+      const mime = audioBlob.type || 'audio/webm';
+      const filename = mime.includes('wav')
+        ? 'recording.wav'
+        : mime.includes('ogg')
+          ? 'recording.ogg'
+          : mime.includes('mpeg') || mime.includes('mp3')
+            ? 'recording.mp3'
+            : mime.includes('mp4') || mime.includes('m4a')
+              ? 'recording.m4a'
+              : 'recording.webm';
+      formData.append('audio', audioBlob, filename);
       formData.append('language', language);
 
       const response = await fetch('/api/transcribe', {

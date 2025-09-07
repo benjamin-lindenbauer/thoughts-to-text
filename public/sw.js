@@ -1,5 +1,5 @@
 // Service Worker for Thoughts to Text PWA - Optimized Version
-const CACHE_VERSION = '3';
+const CACHE_VERSION = '4';
 const CACHE_NAME = `thoughts-to-text-v${CACHE_VERSION}`;
 const STATIC_CACHE = `static-v${CACHE_VERSION}`;
 const DYNAMIC_CACHE = `dynamic-v${CACHE_VERSION}`;
@@ -7,8 +7,9 @@ const API_CACHE = `api-v${CACHE_VERSION}`;
 const IMAGE_CACHE = `images-v${CACHE_VERSION}`;
 
 // Resources to cache immediately (critical path)
+// Do NOT include '/' here to avoid caching the root HTML with cache-first,
+// which can cause hydration mismatches if the page changes.
 const STATIC_ASSETS = [
-  '/',
   '/manifest.json',
   '/logo.png',
   '/offline.html'

@@ -212,35 +212,6 @@ export default function NoteDetailsPage() {
     );
   }
 
-  if (error || !note) {
-    return (
-      <AppLayout>
-        <div className="p-4 md:p-6">
-          <div className="mb-6">
-            <Button
-              variant="ghost"
-              onClick={() => router.push('/notes')}
-              className="mb-4"
-            >
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back
-            </Button>
-          </div>
-
-          <APIErrorDisplay
-            error={{
-              type: 'unknown',
-              message: error || 'Note not found',
-              retryable: false,
-            }}
-            onRetry={() => window.location.reload()}
-            onDismiss={() => router.push('/notes')}
-          />
-        </div>
-      </AppLayout>
-    );
-  }
-
   return (
     <AppLayout>
       <div className="max-w-3xl mx-auto">

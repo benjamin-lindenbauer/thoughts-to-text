@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
 
+// Ensure this route runs in the Node.js runtime where the OpenAI SDK is fully supported
+export const runtime = 'nodejs';
+
 export async function POST(request: NextRequest) {
   try {
     // Get the API key from headers
@@ -52,6 +55,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Validate file size (avoid sending empty/corrupted files)
+    if (typeof audioFile.size === 'number' && audioFile.size <= 0) {
+      return NextResponse.json(
+        {
+          error: 'Empty audio file received. Please record again.',
+          type: 'unknown',
+          retryable: false
+        },
+        { status: 400 }
+      );
+    }
+
     // Prepare transcription parameters
     const transcriptionParams: any = {
       file: audioFile,
@@ -91,6 +106,18 @@ export async function POST(request: NextRequest) {
           retryable: false
         },
         { status: 401 }
+      );
+    }
+
+    // Bad request (commonly due to unsupported/corrupted audio)
+    if (error?.status === 400) {
+      return NextResponse.json(
+        {
+          error: error?.message || 'Audio file might be corrupted or unsupported',
+          type: 'unknown',
+          retryable: false
+        },
+        { status: 400 }
       );
     }
 

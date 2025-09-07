@@ -109,7 +109,7 @@ export function RecordingInterface({
       const newNote = {
         id: noteId,
         title: `Recording ${new Date().toLocaleString()}`,
-        description: 'Processing...',
+        description: '',
         transcript: '',
         rewrittenText: undefined,
         keywords: [],
@@ -215,8 +215,9 @@ export function RecordingInterface({
     formattedDuration,
     clearError
   } = useRecording({
-    autoCompress: true,
-    compressionQuality: 0.8,
+    // Keep the pipeline simple: record directly in a supported format (webm/opus) without conversion
+    autoCompress: false,
+    mimeType: 'audio/webm;codecs=opus',
     maxDuration: 10 * 60 * 1000 // 10 minutes max
   });
 

@@ -332,6 +332,7 @@ export class AudioPlayer {
 
       // Create new audio element
       this.audio = new Audio();
+      this.audio.preload = 'metadata';
       this.audio.src = URL.createObjectURL(audioBlob);
 
       // Set up event listeners
@@ -364,15 +365,58 @@ export class AudioPlayer {
       };
 
       // Wait for metadata to load
-      await new Promise<void>((resolve, reject) => {
+      const tryLoad = () => new Promise<void>((resolve, reject) => {
         if (!this.audio) {
           reject(new Error('Audio element not created'));
           return;
         }
 
-        this.audio.onloadedmetadata = () => resolve();
-        this.audio.onerror = () => reject(new Error('Failed to load audio'));
+        const onLoaded = () => {
+          cleanup();
+          resolve();
+        };
+        const onCanPlay = () => {
+          cleanup();
+          resolve();
+        };
+        const onError = () => {
+          cleanup();
+          reject(new Error('Failed to load audio'));
+        };
+
+        const cleanup = () => {
+          if (!this.audio) return;
+          this.audio.removeEventListener('loadedmetadata', onLoaded);
+          this.audio.removeEventListener('canplaythrough', onCanPlay);
+          this.audio.removeEventListener('error', onError as any);
+        };
+
+        this.audio.addEventListener('loadedmetadata', onLoaded);
+        this.audio.addEventListener('canplaythrough', onCanPlay, { once: true });
+        this.audio.addEventListener('error', onError as any);
+
+        // Trigger load explicitly
+        this.audio.load();
       });
+
+      try {
+        await tryLoad();
+      } catch (e1) {
+        // Retry once with a generic webm type in case the blob's MIME string is too specific
+        if (!this.audio) throw e1;
+        const prevSrc = this.audio.src;
+        try {
+          const genericBlob = new Blob([audioBlob], { type: 'audio/webm' });
+          this.audio.src = URL.createObjectURL(genericBlob);
+          await tryLoad();
+          if (prevSrc) URL.revokeObjectURL(prevSrc);
+        } catch (e2) {
+          if (prevSrc) URL.revokeObjectURL(prevSrc);
+          const typeInfo = audioBlob.type || 'unknown';
+          const sizeInfo = typeof audioBlob.size === 'number' ? `${audioBlob.size} bytes` : 'unknown size';
+          throw new Error(`Failed to load audio (type=${typeInfo}, size=${sizeInfo})`);
+        }
+      }
 
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -460,8 +504,16 @@ export class AudioPlayer {
     
     if (this.audio) {
       this.audio.pause();
-      if (this.audio.src) {
-        URL.revokeObjectURL(this.audio.src);
+      // Clear the src before revoking to avoid transient GET blob errors in dev
+      const currentSrc = this.audio.src;
+      if (currentSrc) {
+        this.audio.src = '';
+        try {
+          this.audio.load();
+        } catch {}
+        try {
+          URL.revokeObjectURL(currentSrc);
+        } catch {}
       }
       this.audio = null;
     }

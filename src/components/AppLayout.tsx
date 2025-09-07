@@ -17,13 +17,15 @@ export function AppLayout({
   className
 }: AppLayoutProps) {
   useEffect(() => {
-    // Initialize PWA manager
-    pwaManager.registerServiceWorker();
-    pwaManager.setupInstallPrompt();
+    // Initialize PWA manager (only in production to avoid dev caching issues)
+    if (process.env.NODE_ENV === 'production') {
+      pwaManager.registerServiceWorker();
+      pwaManager.setupInstallPrompt();
+    }
   }, []);
 
   return (
-    <div className="h-screen w-screen flex flex-col bg-background transition-colors duration-200 overflow-hidden">
+    <div className="h-screen w-full flex flex-col bg-background transition-colors duration-200 overflow-hidden">
       {/* Offline indicator - positioned at top */}
       <div className="fixed top-4 right-4 z-40 flex justify-center pointer-events-none">
         <div className="pointer-events-auto">
