@@ -114,6 +114,9 @@ interface NotesListProps {
     onShareNote?: (note: Note) => void;
     onViewNote?: (note: Note) => void;
     className?: string;
+    // Infinite loading support
+    onEndReached?: () => void;
+    hasMore?: boolean;
 }
 
 interface ContextMenuState {
@@ -123,10 +126,6 @@ interface ContextMenuState {
     noteId: string | null;
 }
 
-// Virtual scrolling configuration
-const ITEM_HEIGHT = 120; // Height of each note item in pixels
-const BUFFER_SIZE = 5; // Number of items to render outside visible area
-
 export function NotesList({
     notes,
     loading,
@@ -135,7 +134,9 @@ export function NotesList({
     onEditNote,
     onShareNote,
     onViewNote,
-    className
+    className,
+    onEndReached,
+    hasMore = false
 }: NotesListProps) {
     const [contextMenu, setContextMenu] = useState<ContextMenuState>({
         isOpen: false,
@@ -148,42 +149,40 @@ export function NotesList({
     const [generatingMetadata, setGeneratingMetadata] = useState<Set<string>>(new Set());
     const [selectedNoteIndex, setSelectedNoteIndex] = useState(-1);
 
-    // Virtual scrolling state
-    const [scrollTop, setScrollTop] = useState(0);
-    const [containerHeight, setContainerHeight] = useState(600);
     const containerRef = useRef<HTMLDivElement>(null);
     const contextMenuRef = useRef<HTMLDivElement>(null);
+    const sentinelRef = useRef<HTMLDivElement>(null);
+    const loadingMoreRef = useRef(false);
 
     // Accessibility hooks
     const { announce, LiveRegion } = useAriaLiveRegion();
     const { containerRef: focusContainerRef, focusNext, focusPrevious } = useFocusManagement();
 
-    // Calculate visible items for virtual scrolling
-    const startIndex = Math.max(0, Math.floor(scrollTop / ITEM_HEIGHT) - BUFFER_SIZE);
-    const endIndex = Math.min(
-        notes.length,
-        Math.ceil((scrollTop + containerHeight) / ITEM_HEIGHT) + BUFFER_SIZE
-    );
-    const visibleNotes = notes.slice(startIndex, endIndex);
-    const offsetY = startIndex * ITEM_HEIGHT;
-
-    // Handle scroll for virtual scrolling
-    const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
-        setScrollTop(e.currentTarget.scrollTop);
-    }, []);
-
-    // Update container height on resize
+    // Intersection observer for infinite loading
     useEffect(() => {
-        const updateHeight = () => {
-            if (containerRef.current) {
-                setContainerHeight(containerRef.current.clientHeight);
-            }
-        };
+        if (!onEndReached || !hasMore) return;
+        const root = containerRef.current;
+        const target = sentinelRef.current;
+        if (!root || !target) return;
 
-        updateHeight();
-        window.addEventListener('resize', updateHeight);
-        return () => window.removeEventListener('resize', updateHeight);
-    }, []);
+        const io = new IntersectionObserver(
+            (entries) => {
+                const entry = entries[0];
+                if (entry.isIntersecting && !loadingMoreRef.current) {
+                    loadingMoreRef.current = true;
+                    onEndReached();
+                    // simple throttle to avoid rapid firing
+                    setTimeout(() => {
+                        loadingMoreRef.current = false;
+                    }, 300);
+                }
+            },
+            { root, rootMargin: '200px' }
+        );
+
+        io.observe(target);
+        return () => io.disconnect();
+    }, [onEndReached, hasMore]);
 
     // Close context menu when clicking outside
     useEffect(() => {
@@ -314,22 +313,18 @@ export function NotesList({
             {/* Live region for announcements */}
             <LiveRegion />
             
-            {/* Virtual scrolling container */}
+            {/* Scroll container */}
             <div
                 ref={(el) => {
                   containerRef.current = el;
                   focusContainerRef.current = el;
                 }}
-                onScroll={handleScroll}
                 role="list"
                 aria-label={`Notes list with ${notes.length} notes`}
                 tabIndex={0}
-                className={cn('overflow-y-auto h-full', className)}
+                className={cn('overflow-y-auto flex-1 min-h-0', className)}
             >
-                {/* Spacer sets total scrollable height for virtualization */}
-                <div style={{ position: 'relative', height: notes.length * ITEM_HEIGHT }}>
-                    <div style={{ position: 'absolute', top: 0, left: 0, right: 0, transform: `translateY(${offsetY}px)` }}>
-                        {visibleNotes.map((note, index) => {
+                {notes.map((note) => {
                             const isExpanded = expandedNoteId === note.id;
                             const isPlaying = playingNoteId === note.id;
 
@@ -453,8 +448,11 @@ export function NotesList({
                                 </LazyComponent>
                             );
                         })}
-                    </div>
-                </div>
+
+                {/* Infinite load sentinel */}
+                {hasMore && (
+                    <div ref={sentinelRef} aria-hidden="true" className="h-8" />
+                )}
             </div>
 
             {/* Context Menu */}

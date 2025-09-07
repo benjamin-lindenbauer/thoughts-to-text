@@ -146,6 +146,22 @@ export default function NotesPage() {
   
   const filteredNotes = useNotesFilter(notes, searchQuery, filters);
 
+  // Incremental batching: show an initial set and load more as user scrolls
+  const INITIAL_COUNT = 5;
+  const LOAD_STEP = 5;
+  const [visibleCount, setVisibleCount] = useState(INITIAL_COUNT);
+
+  // Reset when search or filters change
+  useEffect(() => {
+    setVisibleCount(INITIAL_COUNT);
+  }, [searchQuery, filters]);
+
+  const notesToRender = filteredNotes.slice(0, visibleCount);
+  const hasMore = visibleCount < filteredNotes.length;
+  const handleEndReached = useCallback(() => {
+    setVisibleCount((prev) => Math.min(prev + LOAD_STEP, filteredNotes.length));
+  }, [filteredNotes.length]);
+
   const handleSearch = (query: string) => {
     setSearchQuery(query);
   };
@@ -207,7 +223,7 @@ export default function NotesPage() {
 
   return (
     <AppLayout className="overflow-y-hidden">
-      <div className="flex">
+      <div className="flex justify-center h-full min-h-0">
         <div className="w-full max-w-3xl p-2 md:p-4 flex flex-col h-full min-h-0">
 
           {/* Header */}
@@ -257,16 +273,17 @@ export default function NotesPage() {
           </div>
 
           {/* Notes List */}
-          <div className="flex-1 min-h-0">
+          <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
             <NotesList
-              className="h-full"
-              notes={filteredNotes}
+              notes={notesToRender}
               loading={loading}
               onDeleteNote={handleDeleteNote}
               onGenerateMetadata={generateMetadata}
               onEditNote={handleEditNote}
               onShareNote={handleShareNote}
               onViewNote={handleViewNote}
+              onEndReached={hasMore ? handleEndReached : undefined}
+              hasMore={hasMore}
             />
           </div>
 

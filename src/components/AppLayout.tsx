@@ -25,7 +25,7 @@ export function AppLayout({
   }, []);
 
   return (
-    <div className="h-screen w-full flex flex-col bg-background transition-colors duration-200">
+    <div className="h-screen min-h-0 w-full flex flex-col bg-background transition-colors duration-200">
       {/* Offline indicator - positioned at top */}
       <div className="fixed top-4 right-4 z-40 flex justify-center pointer-events-none">
         <div className="pointer-events-auto">

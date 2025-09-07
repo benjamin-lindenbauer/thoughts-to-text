@@ -185,6 +185,11 @@
     transform: translateZ(0);
     will-change: transform;
   }
+
+  /* Enable momentum scrolling for nested scroll areas on iOS Safari */
+  .scroll-touch {
+    -webkit-overflow-scrolling: touch;
+  }
   
   /* Reduce motion for accessibility */
   @media (prefers-reduced-motion: reduce) {
