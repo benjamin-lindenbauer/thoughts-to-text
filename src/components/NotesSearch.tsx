@@ -135,7 +135,7 @@ export function NotesSearch({
           
           {/* Filter Dropdown */}
           {isFilterOpen && (
-            <div className="absolute right-0 top-full mt-2 w-80 bg-card border border-border rounded-xl shadow-lg p-4 z-50">
+            <div className="absolute right-0 top-full mt-2 w-80 max-w-none bg-card border border-border rounded-xl shadow-lg p-4 z-50">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-medium text-foreground">Filter & Sort</h3>
                 {hasActiveFilters && (

@@ -215,6 +215,25 @@
     outline: 2px solid var(--color-ring);
     outline-offset: 2px;
   }
+
+  /* Global pointer cursor for interactive buttons */
+  button,
+  [type='button'],
+  [type='reset'],
+  [type='submit'],
+  [role='button'],
+  a[role='button'] {
+    @apply cursor-pointer;
+  }
+
+  /* Respect disabled states */
+  button:disabled,
+  [type='button']:disabled,
+  [type='reset']:disabled,
+  [type='submit']:disabled,
+  [aria-disabled='true'] {
+    @apply cursor-not-allowed;
+  }
 }
 
 @layer components {
