@@ -199,13 +199,19 @@
   - Implement final UI polish and animations
   - _Requirements: 7.3, 7.4, 10.4_
 
-- [ ] 17. Write unit tests for storage operations
+- [x] 17. Write unit tests for storage operations
+
+
+
   - Create unit tests for Local Storage and Local Forage operations
   - Test encrypted API key storage and retrieval functions
   - Test note CRUD operations with proper error handling
   - _Requirements: 10.1, 10.2, 9.1_
 
-- [ ] 18. Write tests for audio recording and playback
+- [x] 18. Write tests for audio recording and playback
+
+
+
   - Test MediaRecorder API wrapper functionality
   - Test audio recording hook with start/stop/duration tracking
   - Test audio compression using Web Audio API

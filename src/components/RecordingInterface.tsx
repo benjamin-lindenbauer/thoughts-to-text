@@ -557,7 +557,7 @@ export function RecordingInterface({
   // Don't render anything during SSR to prevent hydration mismatches
   if (!isMounted) {
     return (
-      <div className={cn("flex flex-col items-center gap-6 mb-8 w-full", className)}>
+      <div className={cn("flex flex-col items-center gap-6 w-full", className)}>
         <div className="text-center">
           <p className="text-sm text-muted-foreground">Loading...</p>
         </div>
@@ -567,7 +567,7 @@ export function RecordingInterface({
 
   if (!isSupported) {
     return (
-      <div className={cn("flex flex-col items-center gap-6 mb-8 w-full", className)}>
+      <div className={cn("flex flex-col items-center gap-6 w-full", className)}>
         <div className="text-red-500 mb-4">
           <MicOff className="w-12 h-12 mx-auto mb-2" />
           <p className="font-medium">Recording Not Supported</p>
@@ -580,7 +580,7 @@ export function RecordingInterface({
   }
 
   return (
-    <div className={cn("flex flex-col items-center gap-6 mb-8 w-full", className)}>
+    <div className={cn("flex flex-col items-center gap-6 w-full", className)}>
       {/* Camera preview or photo preview */}
       {(isCameraActive || isCameraLoading || photoPreview) && (
         <div className="relative w-full max-w-sm">
@@ -690,9 +690,6 @@ export function RecordingInterface({
         <div className="text-center">
           <p className="text-sm md:text-base text-muted-foreground">
             {isTranscribing ? 'Processing...' : 'Tap to start recording'}
-          </p>
-          <p className="text-xs text-muted-foreground/70 mt-1">
-            Hold for continuous recording
           </p>
         </div>
       )}

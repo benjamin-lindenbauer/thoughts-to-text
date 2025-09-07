@@ -79,11 +79,11 @@ export default function Home() {
       <div className="fixed top-0 left-0 right-0 z-30 bg-gradient-to-b from-background via-background/95 to-background/80 backdrop-blur-md border-b border-border/50">
         <div className={`text-center py-6 px-6 ${isLoaded ? animations.fadeIn : 'opacity-0'}`}>
           <div className="flex items-center justify-center gap-2 mb-2">
-            <Sparkles className="w-6 h-6 text-indigo-500 animate-pulse" />
+            <Sparkles className="w-6 h-6 text-indigo-500" />
             <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent leading-tight pb-1">
               Thoughts to Text
             </h1>
-            <Sparkles className="w-6 h-6 text-purple-500 animate-pulse" />
+            <Sparkles className="w-6 h-6 text-purple-500" />
           </div>
           <p className="text-sm md:text-base text-muted-foreground">
             Record your thoughts and rewrite them with AI
@@ -91,10 +91,10 @@ export default function Home() {
         </div>
       </div>
 
-      <div className="flex flex-col items-center justify-center p-2 md:p-4 pt-40 md:pt-44 w-full max-w-full">
+      <div className="flex flex-col items-center justify-center p-2 md:p-4 pt-40 md:pt-36 w-full max-w-full">
         {/* Language selection with enhanced styling */}
         <div className={`mb-8 w-full max-w-sm ${isLoaded ? animations.slideInFromTop : 'opacity-0 translate-y-4'}`}>
-          <label className="block text-sm font-medium text-foreground mb-3 flex items-center gap-2">
+          <label className="block text-sm text-foreground mb-3 flex items-center gap-2">
             Recording Language
           </label>
           <select
@@ -111,7 +111,7 @@ export default function Home() {
         </div>
 
         {/* Recording Interface with enhanced container */}
-        <div className={`w-full mb-8 ${isLoaded ? animations.scaleIn : 'opacity-0 scale-95'} transition-all duration-500 delay-200`}>
+        <div className={`w-full ${isLoaded ? animations.scaleIn : 'opacity-0 scale-95'} transition-all duration-500 delay-200`}>
           <RecordingInterface
             selectedLanguage={selectedLanguage}
             onRecordingComplete={handleRecordingComplete}
