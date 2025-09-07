@@ -217,7 +217,7 @@ export default function NoteDetailsPage() {
     <AppLayout>
       <div className="max-w-3xl mx-auto">
         {/* Header */}
-        <div className="sticky top-0 z-10 py-2">
+        <div className="sticky top-0 z-10 py-2 md:py-4">
           <div className="flex items-center justify-between">
             <Button
               variant="ghost"
@@ -311,7 +311,7 @@ export default function NoteDetailsPage() {
           </div>
         )}
 
-        <div className="space-y-6 my-2 md:my-4">
+        <div className="space-y-6 my-2">
           {/* Title and Metadata */}
           <Card>
             <CardHeader>

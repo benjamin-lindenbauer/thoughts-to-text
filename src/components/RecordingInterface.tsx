@@ -773,7 +773,7 @@ export function RecordingInterface({
               </button>
               <button
                 onClick={handleDiscard}
-                className="px-4 py-2 rounded-lg text-sm font-medium bg-card border border-border hover:bg-accent transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-4 py-2 rounded-lg text-sm font-medium bg-secondary border border-border hover:bg-accent transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 aria-label="Discard recording and transcript"
                 disabled={isSaving}
               >
@@ -807,7 +807,7 @@ export function RecordingInterface({
       {/* Transcript preview (only after recording stops) */}
       {!showMinimalUI && transcript && (
         <div className="w-full max-w-md space-y-4">
-          <div className="p-4 bg-card border border-border rounded-lg">
+          <div className="p-4 bg-secondary border border-border rounded-lg">
             <h3 className="font-medium text-foreground mb-2">Original Transcript:</h3>
             <p className="text-sm text-muted-foreground">{transcript}</p>
           </div>
@@ -822,7 +822,7 @@ export function RecordingInterface({
                 value={selectedPrompt}
                 onChange={(e) => setSelectedPrompt(e.target.value)}
                 disabled={isRewriting}
-                className="w-full p-2 rounded-lg border border-border bg-card text-foreground text-sm transition-colors hover:bg-accent focus:border-transparent disabled:opacity-50"
+                className="w-full p-2 rounded-lg border border-border bg-secondary text-foreground text-sm transition-colors hover:bg-accent focus:border-transparent disabled:opacity-50"
               >
                 {rewritePrompts.map((prompt) => (
                   <option key={prompt.id} value={prompt.id}>
@@ -964,7 +964,7 @@ export function RecordingInterface({
                   ? 'Capture photo from camera'
                   : 'Open camera to take photo'
             }
-            className="flex items-center gap-2 px-4 py-2 bg-card border border-border rounded-lg hover:bg-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center gap-2 px-4 py-2 bg-secondary border border-border rounded-lg hover:bg-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Camera className="w-4 h-4" />
             <span className="text-sm">
@@ -978,7 +978,7 @@ export function RecordingInterface({
               fileInputRef.current?.click();
             }}
             aria-label="Upload photo from device"
-            className="flex items-center gap-2 px-4 py-2 bg-card border border-border rounded-lg hover:bg-accent transition-colors"
+            className="flex items-center gap-2 px-4 py-2 bg-secondary border border-border rounded-lg hover:bg-accent transition-colors"
           >
             <span className="text-sm">Upload Photo</span>
           </button>

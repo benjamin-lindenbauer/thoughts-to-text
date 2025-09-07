@@ -98,15 +98,17 @@ export default function Home() {
         </div>
         */}
 
-        {/* Recording Interface with enhanced container */}
+        {/* Recording Interface with enhanced card container */}
         <div className={`w-full ${isLoaded ? animations.scaleIn : 'opacity-0 scale-95'} transition-all duration-500 delay-200`}>
-          <RecordingInterface
-            selectedLanguage={selectedLanguage}
-            onSave={handleSave}
-            onTranscriptionStart={handleTranscriptionStart}
-            onTranscriptionComplete={handleTranscriptionComplete}
-            onError={handleError}
-          />
+          <div className="max-w-2xl mx-auto rounded-2xl bg-card border border-border/60 shadow-sm p-4 md:p-6">
+            <RecordingInterface
+              selectedLanguage={selectedLanguage}
+              onSave={handleSave}
+              onTranscriptionStart={handleTranscriptionStart}
+              onTranscriptionComplete={handleTranscriptionComplete}
+              onError={handleError}
+            />
+          </div>
         </div>
 
         {/* Enhanced Notification with better animations */}
