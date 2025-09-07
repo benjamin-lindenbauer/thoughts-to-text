@@ -6,6 +6,7 @@ import { AppProvider } from "@/contexts/AppContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { GlobalErrorHandler } from "@/components/GlobalErrorHandler";
 import { AppOptimizer } from "@/components/AppOptimizer";
+import Script from "next/script";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -67,60 +68,59 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="Thoughts to Text" />
         <meta name="mobile-web-app-capable" content="yes" />
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              // Initialize PWA features
-              if ('serviceWorker' in navigator) {
-                window.addEventListener('load', async function() {
-                  try {
-                    const registration = await navigator.serviceWorker.register('/sw.js', {
-                      scope: '/'
-                    });
-                    console.log('SW registered: ', registration);
-                    
-                    // Listen for service worker messages
-                    navigator.serviceWorker.addEventListener('message', function(event) {
-                      const { data } = event;
-                      if (data.type === 'PROCESS_TRANSCRIPTION_QUEUE' || data.type === 'PROCESS_REWRITE_QUEUE') {
-                        // Dispatch custom event for the app to handle
-                        window.dispatchEvent(new CustomEvent('sw-sync-request', { detail: data }));
-                      }
-                    });
-                    
-                    // Register for background sync if supported
-                    if ('sync' in window.ServiceWorkerRegistration.prototype) {
-                      console.log('Background sync supported');
-                    }
-                    
-                  } catch (error) {
-                    console.log('SW registration failed: ', error);
-                  }
-                });
-              }
-              
-              // Setup PWA install prompt
-              let deferredPrompt;
-              window.addEventListener('beforeinstallprompt', function(e) {
-                e.preventDefault();
-                deferredPrompt = e;
-                // Dispatch event for app to handle
-                window.dispatchEvent(new CustomEvent('pwa-install-available'));
-              });
-              
-              window.addEventListener('appinstalled', function() {
-                console.log('PWA installed');
-                deferredPrompt = null;
-                window.dispatchEvent(new CustomEvent('pwa-installed'));
-              });
-            `,
-          }}
-        />
+        
       </head>
       <body
         suppressHydrationWarning
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        <Script id="pwa-init" strategy="afterInteractive">
+{`
+  // Initialize PWA features
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', async function() {
+      try {
+        const registration = await navigator.serviceWorker.register('/sw.js', {
+          scope: '/'
+        });
+        console.log('SW registered: ', registration);
+
+        // Listen for service worker messages
+        navigator.serviceWorker.addEventListener('message', function(event) {
+          const { data } = event;
+          if (data.type === 'PROCESS_TRANSCRIPTION_QUEUE' || data.type === 'PROCESS_REWRITE_QUEUE') {
+            // Dispatch custom event for the app to handle
+            window.dispatchEvent(new CustomEvent('sw-sync-request', { detail: data }));
+          }
+        });
+
+        // Register for background sync if supported
+        if ('sync' in window.ServiceWorkerRegistration.prototype) {
+          console.log('Background sync supported');
+        }
+
+      } catch (error) {
+        console.log('SW registration failed: ', error);
+      }
+    });
+  }
+
+  // Setup PWA install prompt
+  let deferredPrompt;
+  window.addEventListener('beforeinstallprompt', function(e) {
+    e.preventDefault();
+    deferredPrompt = e;
+    // Dispatch event for app to handle
+    window.dispatchEvent(new CustomEvent('pwa-install-available'));
+  });
+
+  window.addEventListener('appinstalled', function() {
+    console.log('PWA installed');
+    deferredPrompt = null;
+    window.dispatchEvent(new CustomEvent('pwa-installed'));
+  });
+`}
+        </Script>
         <ErrorBoundary showErrorDetails={process.env.NODE_ENV === 'development'}>
           <ThemeProvider>
             <AppProvider>

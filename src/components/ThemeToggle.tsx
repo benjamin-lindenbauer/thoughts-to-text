@@ -51,7 +51,7 @@ export function ThemeToggle() {
             return (
               <div
                 key={option.value}
-                className="flex flex-col items-center gap-3 p-4 rounded-xl border border-border bg-card text-muted-foreground min-h-[88px]"
+                className="flex flex-col items-center gap-3 p-4 rounded-xl border border-border bg-card text-muted-foreground"
               >
                 <Icon className="h-5 w-5" />
                 <span className="text-xs font-medium">{option.label}</span>
@@ -83,7 +83,7 @@ export function ThemeToggle() {
               onClick={() => setTheme(option.value)}
               className={cn(
                 'flex flex-col items-center gap-3 p-4 rounded-xl border transition-all duration-200',
-                'min-h-[88px] touch-manipulation active:scale-95',
+                'touch-manipulation active:scale-95',
                 isSelected
                   ? 'border-indigo-500 bg-indigo-500/10 text-indigo-500 shadow-sm'
                   : 'border-border bg-card text-muted-foreground hover:text-foreground hover:bg-accent hover:border-accent-foreground/20'

@@ -36,7 +36,7 @@ export function AppLayout({
       {/* Main content area - scrollable */}
       <main 
         className={cn(
-          'flex-1 overflow-y-auto overflow-x-hidden safe-area-top w-full',
+          'flex-1 overflow-y-auto overflow-x-hidden safe-area-top w-full min-h-0',
           // Standard padding
           'px-2 md:px-4',
           // Account for navigation height + safe area
@@ -44,7 +44,7 @@ export function AppLayout({
           className
         )}
       >
-        <div className="mx-auto max-w-3xl w-full">
+        <div className="mx-auto max-w-3xl w-full h-full min-h-0">
           {children}
         </div>
       </main>

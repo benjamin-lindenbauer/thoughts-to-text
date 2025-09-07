@@ -206,9 +206,10 @@ export default function NotesPage() {
   };
 
   return (
-    <AppLayout>
-      <div className="flex">
-        <div className="w-full max-w-3xl p-2 md:p-4">
+    <AppLayout className="overflow-hidden">
+      <div className="flex justify-center h-full">
+        <div className="w-full max-w-3xl p-2 md:p-4 flex flex-col h-full min-h-0">
+
           {/* Header */}
           <div className="mb-6 md:mb-8">
             <div className="flex flex-row gap-2">
@@ -229,53 +230,56 @@ export default function NotesPage() {
             </p>
           </div>
 
-        {/* Error Display */}
-        {error && (
+          {/* Error Display */}
+          {error && (
+            <div className="mb-6">
+              <APIErrorDisplay
+                error={{
+                  type: 'unknown',
+                  message: error,
+                  retryable: false,
+                }}
+                onRetry={clearError}
+                onDismiss={clearError}
+              />
+            </div>
+          )}
+
+          {/* Search and Filter */}
           <div className="mb-6">
-            <APIErrorDisplay
-              error={{
-                type: 'unknown',
-                message: error,
-                retryable: false,
-              }}
-              onRetry={clearError}
-              onDismiss={clearError}
+            <NotesSearch
+              onSearch={handleSearch}
+              onFilter={handleFilter}
+              searchQuery={searchQuery}
+              totalNotes={notes.length}
+              filteredCount={filteredNotes.length}
             />
           </div>
-        )}
 
-        {/* Search and Filter */}
-        <div className="mb-6">
-          <NotesSearch
-            onSearch={handleSearch}
-            onFilter={handleFilter}
-            searchQuery={searchQuery}
-            totalNotes={notes.length}
-            filteredCount={filteredNotes.length}
+          {/* Notes List */}
+          <div className="flex-1 min-h-0">
+            <NotesList
+              className="h-full"
+              notes={filteredNotes}
+              loading={loading}
+              onDeleteNote={handleDeleteNote}
+              onGenerateMetadata={generateMetadata}
+              onEditNote={handleEditNote}
+              onShareNote={handleShareNote}
+              onViewNote={handleViewNote}
+            />
+          </div>
+
+          {/* Delete Confirmation Dialog */}
+          <DeleteConfirmationDialog
+            isOpen={showDeleteDialog}
+            onClose={closeDeleteDialog}
+            onConfirm={confirmDeleteNote}
+            title="Delete Note"
+            description="Are you sure you want to delete this note? This action cannot be undone and will permanently remove the note, its audio recording, and any associated photo."
+            itemName={noteToDelete?.title}
+            isDeleting={deleting}
           />
-        </div>
-
-        {/* Notes List */}
-        <NotesList
-          notes={filteredNotes}
-          loading={loading}
-          onDeleteNote={handleDeleteNote}
-          onGenerateMetadata={generateMetadata}
-          onEditNote={handleEditNote}
-          onShareNote={handleShareNote}
-          onViewNote={handleViewNote}
-        />
-
-        {/* Delete Confirmation Dialog */}
-        <DeleteConfirmationDialog
-          isOpen={showDeleteDialog}
-          onClose={closeDeleteDialog}
-          onConfirm={confirmDeleteNote}
-          title="Delete Note"
-          description="Are you sure you want to delete this note? This action cannot be undone and will permanently remove the note, its audio recording, and any associated photo."
-          itemName={noteToDelete?.title}
-          isDeleting={deleting}
-        />
 
           {/* Toast Notifications */}
           <ToastContainer toasts={toasts} onRemoveToast={removeToast} />

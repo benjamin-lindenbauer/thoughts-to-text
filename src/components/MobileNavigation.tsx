@@ -11,6 +11,7 @@ interface NavItem {
   href: string;
   icon: React.ComponentType<{ className?: string }>;
   label: string;
+  className?: string;
 }
 
 const navItems: NavItem[] = [
@@ -23,6 +24,7 @@ const navItems: NavItem[] = [
     href: '/',
     icon: Mic,
     label: 'Record',
+    className: 'text-purple-500 hover:text-purple-500',
   },
   {
     href: '/settings',
@@ -56,8 +58,9 @@ export function MobileNavigation() {
                   'min-w-[72px] min-h-[56px] touch-manipulation relative',
                   'active:scale-95 active:bg-accent/50',
                   isActive
-                    ? 'text-indigo-500 bg-indigo-500/10 shadow-sm'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+                    ? 'text-purple-500 bg-gradient-to-r from-indigo-100 to-purple-100 shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-accent',
+                  item.className
                 )}
               >
                 <Icon className={cn(

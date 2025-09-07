@@ -15,9 +15,12 @@ import {
     Tag,
     Wand2
 } from 'lucide-react';
+import { cn } from '@/lib/utils';
+
 import { useFocusManagement } from '@/hooks/useKeyboardNavigation';
 import { useAriaLiveRegion } from '@/hooks/useAccessibility';
 import { LazyComponent } from '@/components/LazyComponent';
+
 // Simple audio player component for inline playback
 function SimpleAudioPlayer({ audioBlob, onEnded }: { audioBlob: Blob; onEnded: () => void }) {
     const audioRef = useRef<HTMLAudioElement>(null);
@@ -110,6 +113,7 @@ interface NotesListProps {
     onEditNote?: (note: Note) => void;
     onShareNote?: (note: Note) => void;
     onViewNote?: (note: Note) => void;
+    className?: string;
 }
 
 interface ContextMenuState {
@@ -130,7 +134,8 @@ export function NotesList({
     onGenerateMetadata,
     onEditNote,
     onShareNote,
-    onViewNote
+    onViewNote,
+    className
 }: NotesListProps) {
     const [contextMenu, setContextMenu] = useState<ContextMenuState>({
         isOpen: false,
@@ -305,7 +310,7 @@ export function NotesList({
     }
 
     return (
-        <div className="relative">
+        <div className="relative h-full min-h-0 flex flex-col">
             {/* Live region for announcements */}
             <LiveRegion />
             
@@ -319,6 +324,7 @@ export function NotesList({
                 role="list"
                 aria-label={`Notes list with ${notes.length} notes`}
                 tabIndex={0}
+                className={cn('overflow-y-auto h-full', className)}
             >
                 <div style={{ position: 'relative' }}>
                     <div style={{ transform: `translateY(${offsetY}px)` }}>
