@@ -509,10 +509,15 @@ export class AudioPlayer {
       };
     }
 
+    const rawDuration = this.audio.duration;
+    const safeDuration = Number.isFinite(rawDuration) && !Number.isNaN(rawDuration) && rawDuration > 0
+      ? rawDuration
+      : 0;
+
     return {
       isPlaying: !this.audio.paused && !this.audio.ended,
       currentTime: this.audio.currentTime,
-      duration: this.audio.duration || 0,
+      duration: safeDuration,
       volume: this.audio.volume
     };
   }
@@ -562,6 +567,9 @@ export class AudioPlayer {
 
 // Utility functions
 export function formatDuration(milliseconds: number): string {
+  if (!Number.isFinite(milliseconds) || milliseconds <= 0) {
+    return '0:00';
+  }
   const seconds = Math.floor(milliseconds / 1000);
   const minutes = Math.floor(seconds / 60);
   const remainingSeconds = seconds % 60;

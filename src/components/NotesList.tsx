@@ -160,7 +160,6 @@ export function NotesList({
         Math.ceil((scrollTop + containerHeight) / ITEM_HEIGHT) + BUFFER_SIZE
     );
     const visibleNotes = notes.slice(startIndex, endIndex);
-    const totalHeight = notes.length * ITEM_HEIGHT;
     const offsetY = startIndex * ITEM_HEIGHT;
 
     // Handle scroll for virtual scrolling
@@ -321,7 +320,7 @@ export function NotesList({
                 aria-label={`Notes list with ${notes.length} notes`}
                 tabIndex={0}
             >
-                <div style={{ height: totalHeight, position: 'relative' }}>
+                <div style={{ position: 'relative' }}>
                     <div style={{ transform: `translateY(${offsetY}px)` }}>
                         {visibleNotes.map((note, index) => {
                             const isExpanded = expandedNoteId === note.id;

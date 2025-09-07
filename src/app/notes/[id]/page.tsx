@@ -194,6 +194,7 @@ export default function NoteDetailsPage() {
   };
 
   const formatDuration = (seconds: number) => {
+    if (!Number.isFinite(seconds) || seconds <= 0) return '0:00';
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = Math.floor(seconds % 60);
     return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
@@ -337,10 +338,12 @@ export default function NoteDetailsPage() {
                     <Clock className="h-4 w-4" />
                     {formatTime(note.createdAt)}
                   </div>
-                  <div className="flex items-center gap-1">
-                    <Mic className="h-4 w-4" />
-                    {formatDuration(note.duration)}
-                  </div>
+                  {Number.isFinite(note.duration) && note.duration > 0 && (
+                    <div className="flex items-center gap-1">
+                      <Mic className="h-4 w-4" />
+                      {formatDuration(note.duration)}
+                    </div>
+                  )}
                   <div className="text-xs bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
                     {note.language.toUpperCase()}
                   </div>
@@ -427,6 +430,7 @@ export default function NoteDetailsPage() {
                 audioBlob={note.audioBlob}
                 showVolumeControl={true}
                 showTimeDisplay={true}
+                initialDurationSeconds={Number.isFinite(note.duration) && note.duration > 0 ? note.duration : 0}
               />
             </CardContent>
           </Card>

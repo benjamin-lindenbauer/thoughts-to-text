@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Play, Pause, Square, Volume2, VolumeX } from 'lucide-react';
-import { AudioPlayer as AudioPlayerClass, formatDuration } from '@/lib/audio';
+import { AudioPlayer as AudioPlayerClass, formatDuration, getAudioDuration } from '@/lib/audio';
 import { AudioPlaybackState } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
@@ -15,6 +15,7 @@ interface AudioPlayerProps {
   showVolumeControl?: boolean;
   showTimeDisplay?: boolean;
   autoPlay?: boolean;
+  initialDurationSeconds?: number;
   onPlay?: () => void;
   onPause?: () => void;
   onStop?: () => void;
@@ -27,6 +28,7 @@ export function AudioPlayer({
   showVolumeControl = true,
   showTimeDisplay = true,
   autoPlay = false,
+  initialDurationSeconds,
   onPlay,
   onPause,
   onStop,
@@ -35,7 +37,7 @@ export function AudioPlayer({
   const [playbackState, setPlaybackState] = useState<AudioPlaybackState>({
     isPlaying: false,
     currentTime: 0,
-    duration: 0,
+    duration: initialDurationSeconds && initialDurationSeconds > 0 ? initialDurationSeconds : 0,
     volume: 1
   });
   const [isLoading, setIsLoading] = useState(true);
@@ -52,7 +54,11 @@ export function AudioPlayer({
 
   // Handle state changes from audio player
   const handleStateChange = useCallback((state: AudioPlaybackState) => {
-    setPlaybackState(state);
+    setPlaybackState(prev => ({
+      ...state,
+      // Preserve any known duration if the incoming duration is still 0
+      duration: state.duration && state.duration > 0 ? state.duration : prev.duration
+    }));
   }, []);
 
   // Handle errors from audio player
@@ -82,12 +88,29 @@ export function AudioPlayer({
           playerRef.current.cleanup();
         }
 
+        // Optionally pre-read exact duration so UI can show it before playing
+        try {
+          const ms = await getAudioDuration(audioBlob);
+          if (Number.isFinite(ms) && ms > 0) {
+            const seconds = Math.max(0, Math.round(ms / 100) / 10); // keep one decimal for UX
+            setPlaybackState(prev => ({ ...prev, duration: seconds }));
+          }
+        } catch {}
+
         // Create new player
         playerRef.current = new AudioPlayerClass(handleStateChange, handleError);
         
-        // Load audio
-        await playerRef.current.loadAudio(audioBlob);
-        
+        // Begin loading audio asynchronously; don't block UI
+        void playerRef.current.loadAudio(audioBlob)
+          .then(() => {
+            setIsLoading(false);
+          })
+          .catch((err) => {
+            const msg = err instanceof Error ? err.message : 'Failed to load audio';
+            if (onError) onError(new Error(msg)); else setError(msg);
+            setIsLoading(false);
+          });
+        // Allow UI to become interactive while loading proceeds
         setIsLoading(false);
 
         // Auto play if requested
@@ -218,14 +241,17 @@ export function AudioPlayer({
     }
   }, [isMuted, previousVolume, playbackState.volume, isLoading]);
 
-  // Calculate progress percentage
-  const progressPercentage = playbackState.duration > 0 
-    ? (playbackState.currentTime / playbackState.duration) * 100 
+  // Calculate progress percentage (use safe duration)
+  const safeDurationSec = Number.isFinite(playbackState.duration) && playbackState.duration > 0
+    ? playbackState.duration
+    : 0;
+  const progressPercentage = safeDurationSec > 0 
+    ? (playbackState.currentTime / safeDurationSec) * 100 
     : 0;
 
-  // Format time display
+  // Format time display (use safe duration)
   const currentTimeFormatted = formatDuration(playbackState.currentTime * 1000);
-  const durationFormatted = formatDuration(playbackState.duration * 1000);
+  const durationFormatted = formatDuration(safeDurationSec * 1000);
 
   if (error) {
     return (
@@ -279,7 +305,7 @@ export function AudioPlayer({
 
       {/* Progress Bar */}
       <div className="flex-1 flex items-center gap-2" role="group" aria-label="Audio progress">
-        {showTimeDisplay && (
+        {showTimeDisplay && Number.isFinite(playbackState.duration) && playbackState.duration > 0 && (
           <span 
             className="text-xs text-gray-500 dark:text-gray-400 min-w-[35px]"
             aria-label={`Current time: ${currentTimeFormatted}`}
@@ -292,7 +318,7 @@ export function AudioPlayer({
           <Slider
             value={[progressPercentage]}
             onValueChange={handleSeek}
-            disabled={isLoading || playbackState.duration === 0}
+            disabled={isLoading || !Number.isFinite(playbackState.duration) || playbackState.duration === 0}
             max={100}
             step={0.1}
             aria-label={`Audio progress: ${Math.round(progressPercentage)}% of ${durationFormatted}`}
@@ -300,7 +326,7 @@ export function AudioPlayer({
           />
         </div>
 
-        {showTimeDisplay && (
+        {showTimeDisplay && Number.isFinite(playbackState.duration) && playbackState.duration > 0 && (
           <span 
             className="text-xs text-gray-500 dark:text-gray-400 min-w-[35px]"
             aria-label={`Total duration: ${durationFormatted}`}
