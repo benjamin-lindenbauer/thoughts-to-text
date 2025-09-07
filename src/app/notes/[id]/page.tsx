@@ -11,7 +11,6 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
 import {
   ArrowLeft,
   Edit3,
@@ -246,7 +245,7 @@ export default function NoteDetailsPage() {
     <AppLayout>
       <div className="max-w-3xl mx-auto">
         {/* Header */}
-        <div className="sticky top-0 z-10 bg-white p-2">
+        <div className="sticky top-0 z-10 bg-white py-2">
           <div className="flex items-center justify-between">
             <Button
               variant="ghost"
