@@ -10,6 +10,8 @@ import { useNotesFilter } from "@/hooks/useNotesFilter";
 import { useWebShare } from "@/hooks/useWebShare";
 import { useToast } from "@/hooks/useToast";
 import { ToastContainer } from "@/components/Toast";
+import { Button } from "@/components/ui/button";
+import { ArrowLeft } from "lucide-react";
 import { DeleteConfirmationDialog } from "@/components/DeleteConfirmationDialog";
 import { Note, APIError } from "@/types";
 import { 
@@ -209,9 +211,19 @@ export default function NotesPage() {
         <div className="w-full max-w-3xl p-4 md:p-6">
           {/* Header */}
           <div className="mb-6 md:mb-8">
-            <h1 className="text-xl md:text-2xl font-bold text-foreground mb-2">
-              Your Notes
-            </h1>
+            <div className="flex flex-row gap-2">
+              <Button
+                variant="ghost"
+                onClick={() => router.back()}
+                className="flex items-center gap-2"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Back
+              </Button>
+              <h1 className="text-xl md:text-2xl font-bold text-foreground mb-2">
+                Your Notes
+              </h1>
+            </div>
             <p className="text-sm md:text-base text-muted-foreground">
               Browse and manage your recorded thoughts
             </p>
