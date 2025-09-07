@@ -18,6 +18,7 @@ interface UseRecordingReturn {
   error: string | null;
   formattedDuration: string;
   clearError: () => void;
+  resetRecording: () => void;
 }
 
 export function useRecording(options: UseRecordingOptions = {}): UseRecordingReturn {
@@ -221,6 +222,38 @@ export function useRecording(options: UseRecordingOptions = {}): UseRecordingRet
     }
   }, []);
 
+  const resetRecording = useCallback(() => {
+    // Stop any timers
+    if (durationIntervalRef.current) {
+      clearInterval(durationIntervalRef.current);
+      durationIntervalRef.current = null;
+    }
+    if (maxDurationTimeoutRef.current) {
+      clearTimeout(maxDurationTimeoutRef.current);
+      maxDurationTimeoutRef.current = null;
+    }
+
+    // Cleanup recorder
+    if (recorderRef.current) {
+      try {
+        recorderRef.current.cleanup();
+      } catch (_) {
+        // noop
+      }
+      recorderRef.current = null;
+    }
+
+    // Reset error and state
+    setError(null);
+    setRecordingState({
+      isRecording: false,
+      duration: 0,
+      audioBlob: undefined,
+      isTranscribing: false,
+      transcript: undefined
+    });
+  }, []);
+
   const formattedDuration = formatDuration(recordingState.duration);
 
   return {
@@ -232,6 +265,7 @@ export function useRecording(options: UseRecordingOptions = {}): UseRecordingRet
     isSupported,
     error,
     formattedDuration,
-    clearError
+    clearError,
+    resetRecording
   };
 }

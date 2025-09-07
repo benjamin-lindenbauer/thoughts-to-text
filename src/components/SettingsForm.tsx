@@ -250,7 +250,6 @@ export function SettingsForm() {
                   value={apiKeyInput}
                   onChange={(e) => handleApiKeyChange(e.target.value)}
                   className={cn(
-                    apiKeyStatus === 'valid' && 'border-green-500 focus:ring-green-500',
                     apiKeyStatus === 'invalid' && 'border-destructive focus:ring-destructive'
                   )}
                 />

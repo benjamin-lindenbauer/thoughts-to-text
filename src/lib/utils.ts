@@ -1,3 +1,4 @@
+import { RewritePrompt } from "@/types";
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
 
@@ -154,6 +155,35 @@ export function throttle<T extends (...args: any[]) => any>(
   };
 }
 
+// Default rewrite prompts
+export const DEFAULT_REWRITE_PROMPTS: RewritePrompt[] = [
+  {
+    id: 'default',
+    name: 'Clean & Polish',
+    prompt: 'Please clean up and polish this text, fixing any grammar issues, improving clarity, and making it more professional while maintaining the original meaning and tone.',
+    isDefault: true
+  },
+  {
+    id: 'summarize',
+    name: 'Summarize',
+    prompt: 'Please create a concise summary of this text, capturing the main points and key ideas.',
+    isDefault: false
+  },
+  {
+    id: 'expand',
+    name: 'Expand & Detail',
+    prompt: 'Please expand on this text, adding more detail, context, and explanation while maintaining the original ideas.',
+    isDefault: false
+  },
+  {
+    id: 'formal',
+    name: 'Make Formal',
+    prompt: 'Please rewrite this text in a formal, professional tone suitable for business or academic contexts.',
+    isDefault: false
+  }
+];
+
+// Language options
 export const LANGUAGE_OPTIONS = [
   { code: 'auto', name: 'Auto-detect recording language', nativeName: '', flag: '' },
   { code: 'af', name: 'Afrikaans', nativeName: 'Afrikaans', flag: '🇿🇦' },

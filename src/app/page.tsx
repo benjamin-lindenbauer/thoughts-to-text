@@ -21,8 +21,8 @@ export default function Home() {
     setIsLoaded(true);
   }, []);
 
-  // Handle recording completion
-  const handleRecordingComplete = useCallback((audioBlob: Blob, transcript?: string, photo?: Blob, rewrittenText?: string) => {
+  // Handle save after user clicks Save in RecordingInterface
+  const handleSave = useCallback((audioBlob: Blob, transcript?: string, photo?: Blob, rewrittenText?: string) => {
     console.log('Recording completed:', {
       audioSize: audioBlob.size,
       hasTranscript: !!transcript,
@@ -102,7 +102,7 @@ export default function Home() {
         <div className={`w-full ${isLoaded ? animations.scaleIn : 'opacity-0 scale-95'} transition-all duration-500 delay-200`}>
           <RecordingInterface
             selectedLanguage={selectedLanguage}
-            onRecordingComplete={handleRecordingComplete}
+            onSave={handleSave}
             onTranscriptionStart={handleTranscriptionStart}
             onTranscriptionComplete={handleTranscriptionComplete}
             onError={handleError}

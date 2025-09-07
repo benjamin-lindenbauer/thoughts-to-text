@@ -1,55 +1,26 @@
 'use client';
 
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { Mic, MicOff, Camera, Square, Wand2, RefreshCw, X } from 'lucide-react';
+import { Mic, MicOff, Camera, Square, Wand2, RefreshCw, X, Trash, Save } from 'lucide-react';
 import { useRecording } from '@/hooks/useRecording';
 import { useAppState } from '@/hooks/useAppState';
 import { useHapticFeedback } from '@/hooks/useHapticFeedback';
-import { useKeyboardNavigation } from '@/hooks/useKeyboardNavigation';
 import { useAriaLiveRegion } from '@/hooks/useAccessibility';
-import { cn } from '@/lib/utils';
+import { cn, DEFAULT_REWRITE_PROMPTS } from '@/lib/utils';
 import { RewritePrompt } from '@/types';
 
 interface RecordingInterfaceProps {
   selectedLanguage: string;
-  onRecordingComplete?: (audioBlob: Blob, transcript?: string, photo?: Blob, rewrittenText?: string) => void;
+  onSave?: (audioBlob: Blob, transcript?: string, photo?: Blob, rewrittenText?: string) => void;
   onTranscriptionStart?: () => void;
   onTranscriptionComplete?: (transcript: string) => void;
   onError?: (error: string) => void;
   className?: string;
 }
 
-// Default rewrite prompts
-const DEFAULT_REWRITE_PROMPTS: RewritePrompt[] = [
-  {
-    id: 'default',
-    name: 'Clean & Polish',
-    prompt: 'Please clean up and polish this text, fixing any grammar issues, improving clarity, and making it more professional while maintaining the original meaning and tone.',
-    isDefault: true
-  },
-  {
-    id: 'summarize',
-    name: 'Summarize',
-    prompt: 'Please create a concise summary of this text, capturing the main points and key ideas.',
-    isDefault: false
-  },
-  {
-    id: 'expand',
-    name: 'Expand & Detail',
-    prompt: 'Please expand on this text, adding more detail, context, and explanation while maintaining the original ideas.',
-    isDefault: false
-  },
-  {
-    id: 'formal',
-    name: 'Make Formal',
-    prompt: 'Please rewrite this text in a formal, professional tone suitable for business or academic contexts.',
-    isDefault: false
-  }
-];
-
 export function RecordingInterface({
   selectedLanguage,
-  onRecordingComplete,
+  onSave,
   onTranscriptionStart,
   onTranscriptionComplete,
   onError,
@@ -61,10 +32,10 @@ export function RecordingInterface({
   const [transcript, setTranscript] = useState<string | null>(null);
   const [isRewriting, setIsRewriting] = useState(false);
   const [rewrittenText, setRewrittenText] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
   const [selectedPrompt, setSelectedPrompt] = useState<string>('default');
   const [rewritePrompts] = useState<RewritePrompt[]>(DEFAULT_REWRITE_PROMPTS);
   const [isMounted, setIsMounted] = useState(false);
-
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -225,7 +196,8 @@ export function RecordingInterface({
     isSupported,
     error: recordingError,
     formattedDuration,
-    clearError
+    clearError,
+    resetRecording
   } = useRecording({
     // Keep the pipeline simple: record directly in a supported format (webm/opus) without conversion
     autoCompress: false,
@@ -515,8 +487,6 @@ export function RecordingInterface({
       setTranscript(result.transcript);
       onTranscriptionComplete?.(result.transcript);
 
-      // Auto-save transcript immediately
-      await saveTranscriptUpdate(result.transcript);
 
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Transcription failed';
@@ -524,7 +494,7 @@ export function RecordingInterface({
     } finally {
       setIsTranscribing(false);
     }
-  }, [selectedLanguage, onTranscriptionStart, onTranscriptionComplete, onError, saveTranscriptUpdate]);
+  }, [selectedLanguage, onTranscriptionStart, onTranscriptionComplete, onError]);
 
   // Handle text rewriting
   const handleRewrite = useCallback(async () => {
@@ -556,8 +526,6 @@ export function RecordingInterface({
 
       setRewrittenText(result.rewrittenText);
 
-      // Auto-save rewritten text immediately
-      await saveRewrittenTextUpdate(result.rewrittenText);
 
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Rewriting failed';
@@ -566,25 +534,121 @@ export function RecordingInterface({
     } finally {
       setIsRewriting(false);
     }
-  }, [transcript, selectedPrompt, rewritePrompts, onError, saveRewrittenTextUpdate]);
+  }, [transcript, selectedPrompt, rewritePrompts, onError]);
 
-  // Handle recording completion and save note immediately
+  // Save and discard handlers
+  const handleDiscard = useCallback(() => {
+    // Clear photo preview URL
+    if (photoPreview && typeof URL !== 'undefined') {
+      try { URL.revokeObjectURL(photoPreview); } catch {}
+    }
+
+    // Reset local UI state
+    setTranscript(null);
+    setRewrittenText(null);
+    setSelectedPrompt('default');
+    setPhoto(null);
+    setPhotoPreview(null);
+
+    // Close camera if active
+    if (isCameraActive || isCameraLoading) {
+      handleCloseCamera();
+    }
+
+    // Reset recording hook state (duration, blob, flags)
+    resetRecording();
+
+    // Reset internal flags/ids
+    transcriptionStartedRef.current = false;
+    currentNoteIdRef.current = null;
+    setCurrentNoteId(null);
+  }, [photoPreview, isCameraActive, isCameraLoading, handleCloseCamera, resetRecording]);
+
+  const handleSaveNote = useCallback(async () => {
+    try {
+      setIsSaving(true);
+      if (!recordingState.audioBlob || !transcript) {
+        onError?.('Nothing to save yet.');
+        return;
+      }
+
+      // Prepare base note fields
+      const noteId = crypto.randomUUID();
+      const durationMs = recordingState.duration || 0;
+      const durationSeconds = Math.round(durationMs / 1000);
+      const baseText = rewrittenText && rewrittenText.trim().length > 0 ? rewrittenText : transcript;
+
+      // Generate metadata if API key exists
+      let title = `Recording ${new Date().toLocaleString()}`;
+      let description = '';
+      let keywords: string[] = [];
+      try {
+        const { retrieveApiKey } = await import('@/lib/storage');
+        const apiKey = await retrieveApiKey();
+        if (apiKey && baseText.trim()) {
+          const { generateNoteMetadata } = await import('@/lib/api');
+          const generated = await generateNoteMetadata(baseText, apiKey);
+          title = generated.title || (baseText.slice(0, 50) + (baseText.length > 50 ? '...' : '')) || title;
+          description = generated.description || (baseText.slice(0, 200) + (baseText.length > 200 ? '...' : ''));
+          keywords = generated.keywords || [];
+        } else if (baseText.trim()) {
+          // Fallback metadata without API key
+          title = baseText.slice(0, 50) + (baseText.length > 50 ? '...' : '');
+          description = baseText.slice(0, 200) + (baseText.length > 200 ? '...' : '');
+        }
+      } catch (metaErr) {
+        console.warn('Failed to generate note metadata, using fallbacks:', metaErr);
+        if (baseText.trim()) {
+          title = baseText.slice(0, 50) + (baseText.length > 50 ? '...' : '');
+          description = baseText.slice(0, 200) + (baseText.length > 200 ? '...' : '');
+        }
+      }
+
+      const newNote = {
+        id: noteId,
+        title,
+        description,
+        transcript,
+        rewrittenText: rewrittenText || undefined,
+        keywords,
+        language: selectedLanguage,
+        duration: durationSeconds,
+        audioBlob: recordingState.audioBlob,
+        photoBlob: photo || undefined,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+
+      await notes.addNote(newNote);
+
+      haptic.buttonPress();
+      announce('Note saved', 'polite');
+
+      // Notify parent that the recording and transcript were saved successfully
+      onSave?.(recordingState.audioBlob, transcript, photo || undefined, rewrittenText || undefined);
+
+      // Reset UI after save
+      handleDiscard();
+
+    } catch (error) {
+      console.error('Failed to save note:', error);
+      onError?.('Failed to save note. Please try again.');
+    } finally {
+      setIsSaving(false);
+    }
+  }, [recordingState.audioBlob, recordingState.duration, transcript, rewrittenText, selectedLanguage, photo, notes, haptic, announce, onError, handleDiscard]);
+
+  // Handle recording completion and transcribe immediately
   React.useEffect(() => {
     if (recordingState.audioBlob && !recordingState.isRecording && !transcriptionStartedRef.current) {
       transcriptionStartedRef.current = true;
 
       (async () => {
-        // Save note immediately after recording stops (await to ensure ID is available)
-        await saveNoteAfterRecording(recordingState.audioBlob!, recordingState.duration);
-
         // Automatically start transcription after recording
         await handleTranscription(recordingState.audioBlob!);
-
-        // Call completion callback with rewritten text if available
-        onRecordingComplete?.(recordingState.audioBlob!, transcript || undefined, photo || undefined, rewrittenText || undefined);
       })();
     }
-  }, [recordingState.audioBlob, recordingState.isRecording, saveNoteAfterRecording, handleTranscription, onRecordingComplete, transcript, photo, rewrittenText]);
+  }, [recordingState.audioBlob, recordingState.isRecording, handleTranscription]);
 
   // Handle recording errors
   React.useEffect(() => {
@@ -675,19 +739,49 @@ export function RecordingInterface({
         </div>
       )}
 
-      {/* Duration display */}
+      {/* Duration display + actions */}
       {(recordingState.isRecording || recordingState.duration > 0) && (
-        <div className="text-center" id="recording-status">
-          <div
-            className="text-2xl md:text-3xl font-mono font-bold text-foreground"
-            aria-live="polite"
-            aria-atomic="true"
-          >
-            {formattedDuration}
+        <div className="flex items-center gap-4">
+          <div className="text-center" id="recording-status">
+            <div
+              className="text-2xl md:text-3xl font-mono font-bold text-foreground"
+              aria-live="polite"
+              aria-atomic="true"
+            >
+              {formattedDuration}
+            </div>
+            <p className="text-sm text-muted-foreground mt-1">
+              {recordingState.isRecording ? 'Recording...' : 'Recording complete'}
+            </p>
           </div>
-          <p className="text-sm text-muted-foreground mt-1">
-            {recordingState.isRecording ? 'Recording...' : 'Recording complete'}
-          </p>
+
+          {/* Show Save/Discard only after transcript is ready */}
+          {!recordingState.isRecording && recordingState.duration > 0 && !isTranscribing && Boolean(transcript) && (
+            <div className="flex items-center gap-2 ml-8">
+              <button
+                onClick={handleSaveNote}
+                className={cn(
+                  'flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-white shadow-sm hover:shadow-md active:scale-95 transition-all',
+                  'bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600',
+                  'disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-sm disabled:active:scale-100'
+                )}
+                aria-label="Save recording and transcript"
+                disabled={isSaving}
+              >
+                <Save className="w-4 h-4" />
+                Save
+              </button>
+              <button
+                onClick={handleDiscard}
+                className="px-4 py-2 rounded-lg text-sm font-medium bg-card border border-border hover:bg-accent transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                aria-label="Discard recording and transcript"
+                disabled={isSaving}
+              >
+                <Trash className="w-4 h-4" />
+                Discard
+              </button>
+            </div>
+          )}
         </div>
       )}
 
