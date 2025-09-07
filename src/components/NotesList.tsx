@@ -322,7 +322,7 @@ export function NotesList({
                 role="list"
                 aria-label={`Notes list with ${notes.length} notes`}
                 tabIndex={0}
-                className={cn('overflow-y-auto flex-1 min-h-0', className)}
+                className={className}
             >
                 {notes.map((note) => {
                             const isExpanded = expandedNoteId === note.id;

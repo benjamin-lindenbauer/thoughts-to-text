@@ -169,9 +169,14 @@ export function RecordingInterface({
     if (!noteId) return;
 
     try {
-      // Get the current note
-      const currentNote = notes.getNote(noteId);
-      if (!currentNote) return;
+      // Get the current note from state or fall back to storage if not yet in state
+      let currentNote = notes.getNote(noteId);
+      if (!currentNote) {
+        const { retrieveNote } = await import('@/lib/storage');
+        const stored = await retrieveNote(noteId);
+        if (!stored) return;
+        currentNote = stored;
+      }
 
       // Update note with rewritten text
       const updatedNote = {
@@ -526,6 +531,13 @@ export function RecordingInterface({
 
       setRewrittenText(result.rewrittenText);
 
+      // Persist rewritten text to the current note (if a note exists)
+      try {
+        await saveRewrittenTextUpdate(result.rewrittenText);
+      } catch (persistErr) {
+        console.warn('Failed to persist rewritten text immediately:', persistErr);
+      }
+
 
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Rewriting failed';
@@ -644,6 +656,13 @@ export function RecordingInterface({
       transcriptionStartedRef.current = true;
 
       (async () => {
+        // Create a new note immediately after recording stops so we have an ID to update
+        try {
+          await saveNoteAfterRecording(recordingState.audioBlob!, recordingState.duration || 0);
+        } catch (createErr) {
+          console.warn('Failed to create note after recording:', createErr);
+        }
+
         // Automatically start transcription after recording
         await handleTranscription(recordingState.audioBlob!);
       })();

@@ -64,7 +64,7 @@ export default function Home() {
   return (
     <AppLayout>
       {/* Fixed Header with gradient background */}
-      <div className="fixed top-0 left-0 right-0 z-30 bg-gradient-to-b from-background via-background/95 to-background/80 backdrop-blur-md border-b border-border/50">
+      <div className="fixed top-0 left-0 right-0 z-30 bg-gradient-to-b from-background via-background/95 to-background/80 backdrop-blur-md">
         <div className={`text-center py-6 px-6 ${isLoaded ? animations.fadeIn : 'opacity-0'}`}>
           <div className="flex items-center justify-center gap-2 mb-2">
             <Sparkles className="w-6 h-6 text-indigo-500" />
@@ -79,7 +79,7 @@ export default function Home() {
         </div>
       </div>
 
-      <div className="flex flex-col items-center justify-center p-2 md:p-4 pt-32 md:pt-40 w-full max-w-full">
+      <div className="flex flex-col items-center justify-center p-2 md:p-4 pt-36 md:pt-36 w-full max-w-full">
         {/* Language selection with enhanced styling */}
         {/*
         <div className={`mb-8 w-full max-w-sm ${isLoaded ? animations.slideInFromTop : 'opacity-0 translate-y-4'}`}>

@@ -215,9 +215,9 @@ export default function NoteDetailsPage() {
 
   return (
     <AppLayout>
-      <div className="max-w-3xl mx-auto">
+      <div className="flex flex-col max-w-3xl mx-auto h-full min-h-0">
         {/* Header */}
-        <div className="sticky top-0 z-10 py-2 md:py-4">
+        <div className="z-10 py-2 md:py-4">
           <div className="flex items-center justify-between">
             <Button
               variant="ghost"
@@ -311,7 +311,7 @@ export default function NoteDetailsPage() {
           </div>
         )}
 
-        <div className="space-y-6 my-2">
+        <div className="flex-1 min-h-0 overflow-y-auto space-y-6 my-2">
           {/* Title and Metadata */}
           <Card>
             <CardHeader>
@@ -354,7 +354,7 @@ export default function NoteDetailsPage() {
             <CardContent className="space-y-4">
               {/* Description */}
               <div>
-                <h3 className="font-medium mb-2">Description</h3>
+                <h3 className="mb-2">Description</h3>
                 {isEditing ? (
                   <Textarea
                     value={editedNote.description || ''}
@@ -371,7 +371,7 @@ export default function NoteDetailsPage() {
 
               {/* Keywords */}
               <div>
-                <h3 className="font-medium mb-2">Keywords</h3>
+                <h3 className="mb-2">Keywords</h3>
                 {isEditing ? (
                   <div className="space-y-2">
                     {(editedNote.keywords || []).map((keyword, index) => (
@@ -420,10 +420,10 @@ export default function NoteDetailsPage() {
           {/* Audio Player */}
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <h3 className="flex items-center gap-2">
                 <Mic className="h-5 w-5" />
                 Original Recording
-              </CardTitle>
+              </h3>
             </CardHeader>
             <CardContent>
               <AudioPlayer
@@ -439,10 +439,10 @@ export default function NoteDetailsPage() {
           {note.photoBlob && (
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+                <h3 className="flex items-center gap-2">
                   <Camera className="h-5 w-5" />
                   Associated Photo
-                </CardTitle>
+                </h3>
               </CardHeader>
               <CardContent>
                 <div className="rounded-lg overflow-hidden">
@@ -459,10 +459,10 @@ export default function NoteDetailsPage() {
           {/* Transcript */}
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <h3 className="flex items-center gap-2">
                 <FileText className="h-5 w-5" />
                 Transcript
-              </CardTitle>
+              </h3>
             </CardHeader>
             <CardContent>
               <div className="prose prose-sm max-w-none dark:prose-invert">
@@ -477,10 +477,10 @@ export default function NoteDetailsPage() {
           {note.rewrittenText && (
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+                <h3 className="flex items-center gap-2">
                   <Sparkles className="h-5 w-5" />
                   Enhanced Text
-                </CardTitle>
+                </h3>
               </CardHeader>
               <CardContent>
                 <div className="prose prose-sm max-w-none dark:prose-invert">

@@ -222,85 +222,84 @@ export default function NotesPage() {
   };
 
   return (
-    <AppLayout className="overflow-y-hidden">
-      <div className="flex justify-center h-full min-h-0">
-        <div className="w-full max-w-3xl p-2 md:p-4 flex flex-col h-full min-h-0">
+    <AppLayout>
+      <div className="w-full max-w-3xl p-2 md:p-4 flex flex-col h-full min-h-0">
 
-          {/* Header */}
-          <div className="mb-6 md:mb-8">
-            <div className="flex flex-row gap-2">
-              <Button
-                variant="ghost"
-                onClick={() => router.push('/')}
-                className="flex items-center gap-2"
-              >
-                <ArrowLeft className="h-4 w-4" />
-                Back
-              </Button>
-              <h1 className="text-xl md:text-2xl font-bold text-foreground mb-2">
-                Your Notes
-              </h1>
-            </div>
-            <p className="text-sm md:text-base text-muted-foreground">
-              Browse and manage your recorded thoughts
-            </p>
+        {/* Header */}
+        <div className="mb-6 md:mb-8">
+          <div className="flex flex-row gap-2">
+            <Button
+              variant="ghost"
+              onClick={() => router.push('/')}
+              className="flex items-center gap-2"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back
+            </Button>
+            <h1 className="text-xl md:text-2xl font-bold text-foreground mb-2">
+              Your Notes
+            </h1>
           </div>
-
-          {/* Error Display */}
-          {error && (
-            <div className="mb-6">
-              <APIErrorDisplay
-                error={{
-                  type: 'unknown',
-                  message: error,
-                  retryable: false,
-                }}
-                onRetry={clearError}
-                onDismiss={clearError}
-              />
-            </div>
-          )}
-
-          {/* Search and Filter */}
-          <div className="mb-6">
-            <NotesSearch
-              onSearch={handleSearch}
-              onFilter={handleFilter}
-              searchQuery={searchQuery}
-              totalNotes={notes.length}
-              filteredCount={filteredNotes.length}
-            />
-          </div>
-
-          {/* Notes List */}
-          <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
-            <NotesList
-              notes={notesToRender}
-              loading={loading}
-              onDeleteNote={handleDeleteNote}
-              onGenerateMetadata={generateMetadata}
-              onEditNote={handleEditNote}
-              onShareNote={handleShareNote}
-              onViewNote={handleViewNote}
-              onEndReached={hasMore ? handleEndReached : undefined}
-              hasMore={hasMore}
-            />
-          </div>
-
-          {/* Delete Confirmation Dialog */}
-          <DeleteConfirmationDialog
-            isOpen={showDeleteDialog}
-            onClose={closeDeleteDialog}
-            onConfirm={confirmDeleteNote}
-            title="Delete Note"
-            description="Are you sure you want to delete this note? This action cannot be undone and will permanently remove the note, its audio recording, and any associated photo."
-            itemName={noteToDelete?.title}
-            isDeleting={deleting}
-          />
-
-          {/* Toast Notifications */}
-          <ToastContainer toasts={toasts} onRemoveToast={removeToast} />
+          <p className="text-sm md:text-base text-muted-foreground">
+            Browse and manage your recorded thoughts
+          </p>
         </div>
+
+        {/* Error Display */}
+        {error && (
+          <div className="mb-6">
+            <APIErrorDisplay
+              error={{
+                type: 'unknown',
+                message: error,
+                retryable: false,
+              }}
+              onRetry={clearError}
+              onDismiss={clearError}
+            />
+          </div>
+        )}
+
+        {/* Search and Filter */}
+        <div className="mb-6">
+          <NotesSearch
+            onSearch={handleSearch}
+            onFilter={handleFilter}
+            searchQuery={searchQuery}
+            totalNotes={notes.length}
+            filteredCount={filteredNotes.length}
+          />
+        </div>
+
+        {/* Notes List */}
+        <div className="flex-1 min-h-0">
+          <NotesList
+            notes={notesToRender}
+            loading={loading}
+            onDeleteNote={handleDeleteNote}
+            onGenerateMetadata={generateMetadata}
+            onEditNote={handleEditNote}
+            onShareNote={handleShareNote}
+            onViewNote={handleViewNote}
+            className="flex-1 min-h-0 overflow-y-auto"
+            onEndReached={hasMore ? handleEndReached : undefined}
+            hasMore={hasMore}
+          />
+        </div>
+
+        {/* Delete Confirmation Dialog */}
+        <DeleteConfirmationDialog
+          isOpen={showDeleteDialog}
+          onClose={closeDeleteDialog}
+          onConfirm={confirmDeleteNote}
+          title="Delete Note"
+          description="Are you sure you want to delete this note? This action cannot be undone and will permanently remove the note, its audio recording, and any associated photo."
+          itemName={noteToDelete?.title}
+          isDeleting={deleting}
+        />
+
+        {/* Toast Notifications */}
+        <ToastContainer toasts={toasts} onRemoveToast={removeToast} />
       </div>
     </AppLayout>
   );
