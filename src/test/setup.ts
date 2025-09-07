@@ -41,8 +41,23 @@ Object.defineProperty(window, 'localStorage', {
 // Mock crypto.randomUUID
 Object.defineProperty(global, 'crypto', {
   value: {
-    randomUUID: () => 'test-uuid-' + Math.random().toString(36).substr(2, 9)
-  }
+    randomUUID: () => 'test-uuid-' + Math.random().toString(36).substr(2, 9),
+    getRandomValues: (arr: any) => {
+      for (let i = 0; i < arr.length; i++) {
+        arr[i] = Math.floor(Math.random() * 256);
+      }
+      return arr;
+    },
+    subtle: {
+      encrypt: vi.fn().mockResolvedValue(new ArrayBuffer(16)),
+      decrypt: vi.fn().mockResolvedValue(new ArrayBuffer(16)),
+      generateKey: vi.fn().mockResolvedValue({}),
+      importKey: vi.fn().mockResolvedValue({}),
+      digest: vi.fn().mockResolvedValue(new ArrayBuffer(32)),
+    }
+  },
+  writable: true,
+  configurable: true
 })
 
 // Mock navigator.storage
@@ -58,6 +73,12 @@ Object.defineProperty(navigator, 'storage', {
 // Mock btoa and atob for encryption tests
 global.btoa = (str: string) => Buffer.from(str, 'binary').toString('base64')
 global.atob = (str: string) => Buffer.from(str, 'base64').toString('binary')
+
+// Mock URL.createObjectURL and revokeObjectURL
+global.URL = {
+  createObjectURL: vi.fn(() => 'blob:mock-url'),
+  revokeObjectURL: vi.fn(),
+} as any
 
 // Mock localforage
 vi.mock('localforage', () => {

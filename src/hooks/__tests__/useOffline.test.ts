@@ -25,8 +25,8 @@ Object.defineProperty(navigator, 'connection', {
   writable: true,
   value: {
     effectiveType: '4g',
-    addEventListener: jest.fn(),
-    removeEventListener: jest.fn(),
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
   },
 });
 

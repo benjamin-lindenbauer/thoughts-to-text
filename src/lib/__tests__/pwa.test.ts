@@ -38,7 +38,7 @@ describe('PWAManager', () => {
         installing: null,
         waiting: null,
         active: null,
-        addEventListener: jest.fn(),
+        addEventListener: vi.fn(),
       };
       
       (navigator.serviceWorker.register as any).mockResolvedValue(mockRegistration);

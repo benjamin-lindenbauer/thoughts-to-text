@@ -494,6 +494,33 @@ export function formatFileSize(bytes: number): string {
   return `${size.toFixed(1)} ${units[unitIndex]}`;
 }
 
+/**
+ * Compress audio blob using Web Audio API
+ */
+export async function compressAudio(audioBlob: Blob, quality: number = 0.7): Promise<Blob> {
+  const compressor = new AudioCompressor();
+  try {
+    return await compressor.compressAudio(audioBlob, quality);
+  } finally {
+    compressor.cleanup();
+  }
+}
+
+/**
+ * Convert audio format
+ */
+export async function convertAudioFormat(audioBlob: Blob, targetFormat: string): Promise<Blob> {
+  // For now, return the original blob with updated type
+  // In a real implementation, this would use Web Audio API to convert formats
+  if (!targetFormat.startsWith('audio/')) {
+    throw new Error(`Unsupported format: ${targetFormat}`);
+  }
+  
+  // Simple format conversion by changing the MIME type
+  // This is a simplified implementation - real conversion would require audio processing
+  return new Blob([audioBlob], { type: targetFormat });
+}
+
 export async function getAudioDuration(audioBlob: Blob): Promise<number> {
   return new Promise((resolve, reject) => {
     const audio = new Audio();

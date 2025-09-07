@@ -28,12 +28,12 @@ const ENCRYPTION_KEY = 'thoughts-to-text-encryption';
 // Simple encryption/decryption utilities
 class SimpleEncryption {
   private static encode(text: string): string {
-    return btoa(unescape(encodeURIComponent(text)));
+    return btoa(encodeURIComponent(text));
   }
 
   private static decode(encoded: string): string {
     try {
-      return decodeURIComponent(escape(atob(encoded)));
+      return decodeURIComponent(atob(encoded));
     } catch {
       throw new Error('Failed to decrypt data');
     }
@@ -426,5 +426,43 @@ export async function cleanupOrphanedFiles(): Promise<number> {
     return cleanedCount;
   } catch (error) {
     throw new Error(`Failed to cleanup orphaned files: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+}
+
+// Encryption utilities for tests
+export async function encryptData(data: string, password: string): Promise<string> {
+  try {
+    // Simple encryption for testing - in production, use proper crypto
+    return SimpleEncryption.encrypt(data, password);
+  } catch (error) {
+    throw new Error(`Encryption failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+}
+
+export async function decryptData(encryptedData: string, password: string): Promise<string> {
+  try {
+    return SimpleEncryption.decrypt(encryptedData, password);
+  } catch (error) {
+    throw new Error(`Decryption failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+}
+
+export async function hashData(data: string): Promise<string> {
+  try {
+    // Simple hash for testing - in production, use crypto.subtle.digest
+    const encoder = new TextEncoder();
+    const dataBuffer = encoder.encode(data);
+    
+    // Simple hash algorithm (not cryptographically secure)
+    let hash = 0;
+    for (let i = 0; i < dataBuffer.length; i++) {
+      const char = dataBuffer[i];
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash; // Convert to 32-bit integer
+    }
+    
+    return Math.abs(hash).toString(16);
+  } catch (error) {
+    throw new Error(`Hashing failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }

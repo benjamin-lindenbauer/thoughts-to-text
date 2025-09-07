@@ -214,7 +214,7 @@ export default function NotesPage() {
             <div className="flex flex-row gap-2">
               <Button
                 variant="ghost"
-                onClick={() => router.back()}
+                onClick={() => router.push('/')}
                 className="flex items-center gap-2"
               >
                 <ArrowLeft className="h-4 w-4" />

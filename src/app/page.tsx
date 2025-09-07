@@ -4,7 +4,7 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { AppLayout } from "@/components/AppLayout";
 import { RecordingInterface } from "@/components/RecordingInterface";
 import { AlertCircle, CheckCircle, Sparkles } from "lucide-react";
-import { animations, animationPresets } from "@/lib/animations";
+import { animations } from "@/lib/animations";
 import { useAppState } from "@/hooks/useAppState";
 
 const LANGUAGE_OPTIONS = [

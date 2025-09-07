@@ -135,7 +135,7 @@ export function PerformanceDebugger() {
     if (process.env.NODE_ENV !== 'development') return;
 
     const interval = setInterval(() => {
-      const currentMetrics = performanceMonitor.getMetrics();
+      const currentMetrics = performanceMonitor.getAllMetrics();
       setMetrics(currentMetrics.slice(-20)); // Show last 20 metrics
     }, 1000);
 
