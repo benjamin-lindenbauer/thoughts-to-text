@@ -5,10 +5,10 @@ export async function POST(request: NextRequest) {
   try {
     // Get the API key from headers
     const apiKey = request.headers.get('x-openai-api-key');
-    
+
     if (!apiKey) {
       return NextResponse.json(
-        { 
+        {
           error: 'API key is required',
           type: 'auth',
           retryable: false
@@ -26,6 +26,8 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData();
     const audioFile = formData.get('audio') as File;
     const language = formData.get('language') as string || 'en';
+    const prompt = formData.get('prompt') as string || '';
+    const model = formData.get('model') as string || 'gpt-4o-transcribe';
 
     if (!audioFile) {
       return NextResponse.json(
@@ -50,17 +52,31 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Call OpenAI Whisper API for transcription
-    const transcription = await openai.audio.transcriptions.create({
+    // Prepare transcription parameters
+    const transcriptionParams: any = {
       file: audioFile,
-      model: 'whisper-1', // Using whisper-1 as gpt-4o-transcribe is not available
-      language: language,
+      model: model,
       response_format: 'json',
-    });
+    };
+
+    // Add language parameter only for whisper-1 model
+    // gpt-4o models handle language detection automatically
+    if (model === 'whisper-1' && language && language !== 'auto') {
+      transcriptionParams.language = language;
+    }
+
+    // Add prompt if provided (helps with accuracy, especially for technical terms)
+    if (prompt) {
+      transcriptionParams.prompt = prompt;
+    }
+
+    // Call OpenAI API for transcription
+    const transcription = await openai.audio.transcriptions.create(transcriptionParams);
 
     return NextResponse.json({
       transcript: transcription.text,
       language: language,
+      model: model,
     });
 
   } catch (error: any) {
@@ -79,9 +95,9 @@ export async function POST(request: NextRequest) {
     }
 
     if (error?.status === 429) {
-      const retryAfter = error?.headers?.['retry-after'] ? 
+      const retryAfter = error?.headers?.['retry-after'] ?
         parseInt(error.headers['retry-after']) : 60;
-      
+
       return NextResponse.json(
         {
           error: 'Rate limit exceeded. Please try again later.',

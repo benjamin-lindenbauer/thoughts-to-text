@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { Mic, MicOff, Camera, Square, Wand2, RefreshCw } from 'lucide-react';
+import { Mic, MicOff, Camera, Square, Wand2, RefreshCw, X } from 'lucide-react';
 import { useRecording } from '@/hooks/useRecording';
 import { useAppState } from '@/hooks/useAppState';
 import { useHapticFeedback } from '@/hooks/useHapticFeedback';
@@ -84,7 +84,7 @@ export function RecordingInterface({
   // Track client-side mounting to prevent hydration mismatches
   useEffect(() => {
     setIsMounted(true);
-    
+
     // Cleanup function
     return () => {
       if (cameraLoadingTimeoutRef.current) {
@@ -263,6 +263,24 @@ export function RecordingInterface({
     }
   }, [recordingState.isRecording, startRecording, stopRecording, clearError, onError, haptic, announce]);
 
+  // Handle closing camera without taking photo
+  const handleCloseCamera = useCallback(() => {
+    // Clear any existing timeout
+    if (cameraLoadingTimeoutRef.current) {
+      clearTimeout(cameraLoadingTimeoutRef.current);
+      cameraLoadingTimeoutRef.current = null;
+    }
+
+    // Stop camera stream
+    if (videoRef.current?.srcObject) {
+      const stream = videoRef.current.srcObject as MediaStream;
+      stream.getTracks().forEach(track => track.stop());
+      videoRef.current.srcObject = null;
+    }
+    setIsCameraActive(false);
+    setIsCameraLoading(false);
+  }, []);
+
   // Handle photo capture from camera
   const handleCameraCapture = useCallback(async () => {
     // Only run on client side
@@ -284,7 +302,7 @@ export function RecordingInterface({
         console.log('Video dimensions:', video.videoWidth, 'x', video.videoHeight);
         console.log('Video ready state:', video.readyState);
         console.log('Video current time:', video.currentTime);
-        
+
         if (context && video.videoWidth > 0 && video.videoHeight > 0) {
           canvas.width = video.videoWidth;
           canvas.height = video.videoHeight;
@@ -319,10 +337,10 @@ export function RecordingInterface({
       // Start camera
       setIsCameraLoading(true);
       console.log('Starting camera...');
-      
+
       // Wait a tick for React to re-render and create the video element
       await new Promise(resolve => setTimeout(resolve, 10));
-      
+
       try {
         // Try with simpler constraints first
         let stream;
@@ -414,12 +432,12 @@ export function RecordingInterface({
           console.log('videoRef.current:', videoRef.current);
           console.log('stream:', stream);
           setIsCameraLoading(false);
-          
+
           // Stop the stream if we can't use it
           if (stream) {
             stream.getTracks().forEach(track => track.stop());
           }
-          
+
           onError?.('Failed to initialize camera.');
         }
       } catch (error) {
@@ -581,56 +599,6 @@ export function RecordingInterface({
 
   return (
     <div className={cn("flex flex-col items-center gap-6 w-full", className)}>
-      {/* Camera preview or photo preview */}
-      {(isCameraActive || isCameraLoading || photoPreview) && (
-        <div className="relative w-full max-w-sm">
-          {(isCameraLoading || isCameraActive) ? (
-            <div className="relative">
-              <video
-                ref={videoRef}
-                className="w-full h-auto rounded-lg shadow-lg bg-gray-100 dark:bg-gray-800"
-                autoPlay
-                playsInline
-                muted
-                style={{ minHeight: '200px' }}
-              />
-              {isCameraLoading && (
-                <div className="absolute inset-0 w-full h-full rounded-lg shadow-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
-                  <div className="text-center">
-                    <div className="animate-spin w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full mx-auto mb-2"></div>
-                    <p className="text-sm text-muted-foreground">Starting camera...</p>
-                  </div>
-                </div>
-              )}
-            </div>
-          ) : photoPreview ? (
-            <img
-              src={photoPreview}
-              alt="Captured"
-              className="w-full rounded-lg shadow-lg"
-            />
-          ) : null}
-
-          {photoPreview && (
-            <button
-              onClick={() => {
-                setPhoto(null);
-                setPhotoPreview(null);
-                if (photoPreview && typeof URL !== 'undefined') {
-                  URL.revokeObjectURL(photoPreview);
-                }
-              }}
-              className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
-            >
-              <Square className="w-4 h-4" />
-            </button>
-          )}
-        </div>
-      )}
-
-      {/* Hidden canvas for photo capture */}
-      <canvas ref={canvasRef} className="hidden" />
-
       {/* Live region for screen reader announcements */}
       <LiveRegion />
 
@@ -640,8 +608,8 @@ export function RecordingInterface({
           onClick={handleRecordingToggle}
           disabled={isTranscribing}
           aria-label={
-            recordingState.isRecording 
-              ? `Stop recording. Current duration: ${formattedDuration}` 
+            recordingState.isRecording
+              ? `Stop recording. Current duration: ${formattedDuration}`
               : 'Start recording'
           }
           aria-pressed={recordingState.isRecording}
@@ -672,7 +640,7 @@ export function RecordingInterface({
       {/* Duration display */}
       {(recordingState.isRecording || recordingState.duration > 0) && (
         <div className="text-center" id="recording-status">
-          <div 
+          <div
             className="text-2xl md:text-3xl font-mono font-bold text-foreground"
             aria-live="polite"
             aria-atomic="true"
@@ -778,48 +746,120 @@ export function RecordingInterface({
         </div>
       )}
 
-      {/* Photo controls */}
-      <div className="flex gap-3">
-        <button
-          onClick={() => {
-            haptic.buttonPress();
-            handleCameraCapture();
-          }}
-          disabled={isCameraLoading}
-          aria-label={
-            isCameraLoading 
-              ? 'Starting camera...' 
-              : isCameraActive 
-                ? 'Capture photo from camera' 
-                : 'Open camera to take photo'
-          }
-          className="flex items-center gap-2 px-4 py-2 bg-card border border-border rounded-lg hover:bg-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-indigo-500"
-        >
-          <Camera className="w-4 h-4" />
-          <span className="text-sm">
-            {isCameraLoading ? 'Starting...' : isCameraActive ? 'Capture' : 'Camera'}
-          </span>
-        </button>
+      {/* Camera preview or photo preview */}
+      {(isCameraActive || isCameraLoading || photoPreview) && (
+        <div className="relative w-full max-w-sm">
+          {(isCameraLoading || isCameraActive) ? (
+            <div className="relative rounded-lg overflow-hidden">
+              <video
+                ref={videoRef}
+                className="w-full h-auto"
+                autoPlay
+                playsInline
+                muted
+              />
+              {isCameraLoading && (
+                <div className="absolute inset-0 w-full h-full rounded-lg shadow-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+                  <div className="text-center">
+                    <div className="animate-spin w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full mx-auto mb-2"></div>
+                    <p className="text-sm text-muted-foreground">Starting camera...</p>
+                  </div>
+                </div>
+              )}
 
-        <button
-          onClick={() => {
-            haptic.buttonPress();
-            fileInputRef.current?.click();
-          }}
-          aria-label="Upload photo from device"
-          className="flex items-center gap-2 px-4 py-2 bg-card border border-border rounded-lg hover:bg-accent transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500"
-        >
-          <span className="text-sm">Upload Photo</span>
-        </button>
+              {/* Close camera button overlay */}
+              {(isCameraActive || isCameraLoading) && (
+                <button
+                  onClick={() => {
+                    haptic.buttonPress();
+                    handleCloseCamera();
+                  }}
+                  aria-label="Close camera"
+                  className="absolute top-2 right-2 p-2 bg-black/50 backdrop-blur-sm text-white rounded-full hover:bg-black/70 transition-colors focus:outline-none focus:ring-2 focus:ring-white/50"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+          ) : photoPreview ? (
+            <img
+              src={photoPreview}
+              alt="Captured"
+              className="w-full rounded-lg shadow-lg"
+            />
+          ) : null}
 
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*"
-          onChange={handlePhotoUpload}
-          className="hidden"
-        />
-      </div>
+          {photoPreview && (
+            <button
+              onClick={() => {
+                setPhoto(null);
+                setPhotoPreview(null);
+                if (photoPreview && typeof URL !== 'undefined') {
+                  URL.revokeObjectURL(photoPreview);
+                }
+              }}
+              aria-label="Remove captured photo"
+              className="absolute top-2 right-2 p-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors focus:outline-none focus:ring-2 focus:ring-red-300"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Hidden canvas for photo capture */}
+      <canvas ref={canvasRef} className="hidden" />
+
+      {transcript && (
+      <>
+        <p className="text-sm md:text-base text-muted-foreground">
+          Add an image to your recording
+        </p>
+
+        {/* Photo controls */}
+        <div className="flex gap-4">
+          <button
+            onClick={() => {
+              haptic.buttonPress();
+              handleCameraCapture();
+            }}
+            disabled={isCameraLoading}
+            aria-label={
+              isCameraLoading
+                ? 'Starting camera...'
+                : isCameraActive
+                  ? 'Capture photo from camera'
+                  : 'Open camera to take photo'
+            }
+            className="flex items-center gap-2 px-4 py-2 bg-card border border-border rounded-lg hover:bg-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          >
+            <Camera className="w-4 h-4" />
+            <span className="text-sm">
+              {isCameraLoading ? 'Starting...' : isCameraActive ? 'Capture' : 'Camera'}
+            </span>
+          </button>
+
+          <button
+            onClick={() => {
+              haptic.buttonPress();
+              fileInputRef.current?.click();
+            }}
+            aria-label="Upload photo from device"
+            className="flex items-center gap-2 px-4 py-2 bg-card border border-border rounded-lg hover:bg-accent transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          >
+            <span className="text-sm">Upload Photo</span>
+          </button>
+
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handlePhotoUpload}
+            className="hidden"
+          />
+        </div>
+      </>
+      )}
     </div>
   );
 }
