@@ -372,6 +372,7 @@ export class AudioPlayer {
         }
 
         let timeoutId: any;
+        let resolveAnywayId: any;
 
         const resolveSuccess = () => {
           cleanup();
@@ -382,37 +383,38 @@ export class AudioPlayer {
         const onLoadedData = () => resolveSuccess();
         const onCanPlay = () => resolveSuccess();
         const onCanPlayThrough = () => resolveSuccess();
-        const onError = () => {
-          cleanup();
-          reject(new Error('Failed to load audio'));
-        };
 
         const cleanup = () => {
           if (!this.audio) return;
           clearTimeout(timeoutId);
+          clearTimeout(resolveAnywayId);
           this.audio.removeEventListener('loadedmetadata', onLoadedMetadata);
           this.audio.removeEventListener('loadeddata', onLoadedData);
           this.audio.removeEventListener('canplay', onCanPlay);
           this.audio.removeEventListener('canplaythrough', onCanPlayThrough);
-          this.audio.removeEventListener('error', onError as any);
         };
 
         this.audio.addEventListener('loadedmetadata', onLoadedMetadata);
         this.audio.addEventListener('loadeddata', onLoadedData);
         this.audio.addEventListener('canplay', onCanPlay);
         this.audio.addEventListener('canplaythrough', onCanPlayThrough, { once: true });
-        this.audio.addEventListener('error', onError as any);
 
         // As a safety net, accept readiness after a short timeout if browser has enough data
         timeoutId = setTimeout(() => {
           if (!this.audio) return;
           try {
-            // HAVE_CURRENT_DATA = 2, HAVE_FUTURE_DATA = 3
-            if ((this.audio.readyState >= 2) || (this.audio.duration && this.audio.duration > 0)) {
+            // HAVE_METADATA = 1, HAVE_CURRENT_DATA = 2, HAVE_FUTURE_DATA = 3
+            if ((this.audio.readyState >= 1) || (this.audio.duration && this.audio.duration > 0)) {
               resolveSuccess();
             }
           } catch {}
-        }, 1500);
+        }, 4000);
+
+        // Additionally, resolve after a short grace period to avoid false negatives
+        // on browsers that defer metadata until user interaction.
+        resolveAnywayId = setTimeout(() => {
+          resolveSuccess();
+        }, 600);
 
         // Trigger load explicitly
         try { this.audio.load(); } catch {}

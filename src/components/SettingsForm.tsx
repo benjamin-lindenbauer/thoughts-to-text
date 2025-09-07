@@ -213,7 +213,7 @@ export function SettingsForm() {
       )}
 
       {/* Settings Sections */}
-      <div className="space-y-6 md:space-y-8 max-w-3xl">
+      <div className="space-y-6 my-2 md:my-4 max-w-3xl">
         {/* Theme Settings */}
         <div className="space-y-4">
           <ThemeToggle />
@@ -229,49 +229,31 @@ export function SettingsForm() {
           </div>
           
           <div className="space-y-3">
+            <div className="flex items-center gap-2">
             <label className="block text-sm font-medium text-foreground">
               OpenAI API Key
             </label>
-            
+            <div className="flex items-center gap-1">
+              {apiKeyStatus === 'valid' && (
+                <CheckCircle2 className="h-4 w-4 text-green-500" />
+              )}
+              {apiKeyStatus === 'invalid' && (
+                <AlertCircle className="h-4 w-4 text-destructive" />
+              )}
+            </div>
+            </div>            
             <div className="space-y-2">
-              <div className="relative">
+              <div className="flex flex-row items-center gap-2">
                 <Input
                   type={apiKeyVisible ? 'text' : 'password'}
                   placeholder="sk-..."
                   value={apiKeyInput}
                   onChange={(e) => handleApiKeyChange(e.target.value)}
                   className={cn(
-                    'pr-20',
                     apiKeyStatus === 'valid' && 'border-green-500 focus:ring-green-500',
                     apiKeyStatus === 'invalid' && 'border-destructive focus:ring-destructive'
                   )}
                 />
-                
-                <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
-                  {apiKeyStatus === 'valid' && (
-                    <CheckCircle2 className="h-4 w-4 text-green-500" />
-                  )}
-                  {apiKeyStatus === 'invalid' && (
-                    <AlertCircle className="h-4 w-4 text-destructive" />
-                  )}
-                  
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setApiKeyVisible(!apiKeyVisible)}
-                    className="h-6 w-6 p-0 hover:bg-transparent"
-                  >
-                    {apiKeyVisible ? '🙈' : '👁️'}
-                  </Button>
-                </div>
-              </div>
-              
-              <div className="flex items-center justify-between">
-                <p className="text-xs text-muted-foreground">
-                  Your API key is stored locally and never sent to our servers
-                </p>
-                
                 <Button
                   onClick={handleSaveApiKey}
                   disabled={isSaving || !apiKeyInput.trim() || apiKeyInput === settings?.settings?.openaiApiKey}
@@ -279,6 +261,12 @@ export function SettingsForm() {
                 >
                   {isSaving ? 'Saving...' : 'Save'}
                 </Button>
+              </div>
+              
+              <div className="flex items-center justify-between">
+                <p className="text-xs text-muted-foreground">
+                  Your API key is stored locally and never sent to our servers
+                </p>
               </div>
             </div>
           </div>

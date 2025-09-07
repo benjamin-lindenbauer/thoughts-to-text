@@ -208,7 +208,7 @@ export default function NotesPage() {
   return (
     <AppLayout>
       <div className="flex">
-        <div className="w-full max-w-3xl p-2">
+        <div className="w-full max-w-3xl p-2 md:p-4">
           {/* Header */}
           <div className="mb-6 md:mb-8">
             <div className="flex flex-row gap-2">

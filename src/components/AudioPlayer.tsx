@@ -42,6 +42,7 @@ export function AudioPlayer({
   const [error, setError] = useState<string | null>(null);
   const [isMuted, setIsMuted] = useState(false);
   const [previousVolume, setPreviousVolume] = useState(1);
+  const [fallbackUrl, setFallbackUrl] = useState<string | null>(null);
 
   const playerRef = useRef<AudioPlayerClass | null>(null);
   const isSeekingRef = useRef(false);
@@ -70,6 +71,11 @@ export function AudioPlayer({
       try {
         setIsLoading(true);
         setError(null);
+        // Clear any previous fallback URL when re-initializing
+        if (fallbackUrl) {
+          try { URL.revokeObjectURL(fallbackUrl); } catch {}
+          setFallbackUrl(null);
+        }
 
         // Clean up previous player
         if (playerRef.current) {
@@ -109,6 +115,18 @@ export function AudioPlayer({
       }
     };
   }, [audioBlob, autoPlay, handleStateChange, handleError]);
+
+  // When an error occurs, build a fallback URL for native audio and clean it up on change/unmount
+  useEffect(() => {
+    if (!error) return;
+    try {
+      const url = URL.createObjectURL(audioBlob);
+      setFallbackUrl(url);
+      return () => {
+        try { URL.revokeObjectURL(url); } catch {}
+      };
+    } catch {}
+  }, [error, audioBlob]);
 
   // Play/pause toggle
   const togglePlayback = useCallback(() => {
@@ -211,10 +229,8 @@ export function AudioPlayer({
 
   if (error) {
     return (
-      <div className={`flex items-center justify-center p-4 bg-red-50 dark:bg-red-900/20 rounded-lg ${className}`}>
-        <p className="text-red-600 dark:text-red-400 text-sm">
-          Audio Error: {error}
-        </p>
+      <div className={`flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg ${className}`}>
+        <audio controls src={fallbackUrl || ''} className="w-full" />
       </div>
     );
   }
