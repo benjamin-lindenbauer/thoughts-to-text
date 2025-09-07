@@ -171,13 +171,19 @@ export async function rewriteText(
       }
 
       const result = await response.json();
+
+      const mapped = {
+        rewrittenText: result.rewrittenText ?? '',
+        originalText: result.originalText ?? text,
+        prompt,
+      };
       
       errorLogger.info('api', 'Text rewrite completed', {
-        originalLength: text.length,
-        rewrittenLength: result.rewrittenText?.length || 0,
+        originalLength: mapped.originalText.length,
+        rewrittenLength: mapped.rewrittenText.length,
       });
 
-      return result;
+      return mapped;
     } catch (error) {
       const { errorLogger } = await import('./error-logging');
       
@@ -201,13 +207,16 @@ export async function generateNoteMetadata(
   transcript: string,
   apiKey: string
 ): Promise<{ title: string; description: string; keywords: string[] }> {
-  const metadataPrompt = `Based on the following transcript, generate:
-1. A concise title (max 50 characters)
-2. A brief description (max 150 characters)
-3. 3-5 relevant keywords
+  const metadataPrompt = `Based on the following transcript, perform these tasks:
+1. Rewrite/improve the text.
+2. Provide a concise title (max 50 characters).
+3. Provide a brief description (max 150 characters).
+4. Provide exactly 3 relevant keywords.
 
-Format your response as JSON:
+Return JSON with exactly these fields:
 {
+  "originalText": "...",        // echo of the provided transcript
+  "rewrittenText": "...",       // improved text
   "title": "...",
   "description": "...",
   "keywords": ["...", "...", "..."]
@@ -232,23 +241,12 @@ Format your response as JSON:
     }
 
     const result = await response.json();
-    
-    try {
-      // Try to parse the rewritten text as JSON
-      const metadata = JSON.parse(result.rewrittenText);
-      return {
-        title: metadata.title || 'Untitled Note',
-        description: metadata.description || 'No description available',
-        keywords: Array.isArray(metadata.keywords) ? metadata.keywords : [],
-      };
-    } catch {
-      // Fallback if JSON parsing fails
-      return {
-        title: transcript.slice(0, 50) + (transcript.length > 50 ? '...' : ''),
-        description: transcript.slice(0, 150) + (transcript.length > 150 ? '...' : ''),
-        keywords: [],
-      };
-    }
+    // Server always returns structured output with fields: originalText, rewrittenText, description, keywords, title
+    return {
+      title: result.title ?? 'Untitled Note',
+      description: result.description ?? 'No description available',
+      keywords: result.keywords ?? [],
+    };
   });
 }
 

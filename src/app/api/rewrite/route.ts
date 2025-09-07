@@ -51,41 +51,100 @@ export async function POST(request: NextRequest) {
     // Create the full prompt for rewriting
     const fullPrompt = `${prompt}\n\nOriginal text:\n${text}`;
 
-    // Call OpenAI GPT API for text rewriting
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-4o', // Using gpt-4o as gpt-5 is not available yet
-      messages: [
-        {
-          role: 'system',
-          content: 'You are a helpful assistant that rewrites and enhances text based on the given instructions. Return only the rewritten text without any additional commentary or formatting.'
+    // Strict JSON schema for the final structured output (always enforced)
+    const jsonSchema = {
+      name: 'note_rewrite_output',
+      strict: true,
+      schema: {
+        type: 'object',
+        additionalProperties: false,
+        properties: {
+          originalText: {
+            type: 'string',
+            description: 'Echo of the provided original text.'
+          },
+          rewrittenText: {
+            type: 'string',
+            description: 'The rewritten/improved version of the original text. Plain text only.'
+          },
+          title: {
+            type: 'string',
+            description: 'A concise title summarizing the transcript (max 50 characters).',
+            maxLength: 50,
+          },
+          description: {
+            type: 'string',
+            description: 'A brief description of the transcript (max 150 characters).',
+            maxLength: 150,
+          },
+          keywords: {
+            type: 'array',
+            description: '3 relevant keywords.',
+            items: { type: 'string' },
+            minItems: 3,
+            maxItems: 3,
+          },
         },
-        {
-          role: 'user',
-          content: fullPrompt
-        }
-      ],
-      max_tokens: 2000,
-      temperature: 0.7,
-    });
+        required: ['originalText', 'rewrittenText', 'title', 'description', 'keywords'],
+      },
+    } as const;
 
-    const rewrittenText = completion.choices[0]?.message?.content;
+    // Build the Responses API request (always gpt-5 and structured)
+    const baseRequest: any = {
+      model: 'gpt-5',
+      instructions:
+        'You are a helpful assistant. Return only valid JSON matching the provided JSON schema. Do not include extra keys or any prose. Use "rewrittenText" for the improved text.',
+      input: fullPrompt,
+      max_output_tokens: 2000,
+      text: {
+        format: {
+          type: 'json_schema',
+          name: jsonSchema.name,
+          strict: jsonSchema.strict,
+          schema: jsonSchema.schema,
+        },
+      },
+    };
 
-    if (!rewrittenText) {
+    const response = await openai.responses.create(baseRequest);
+
+    // Parse JSON from Responses API
+    const outputText: string | undefined = (response as any)?.output_text;
+    if (!outputText) {
       return NextResponse.json(
         {
-          error: 'No rewritten text was generated',
+          error: 'No output was generated',
           type: 'server',
-          retryable: true
+          retryable: true,
         },
         { status: 500 }
       );
     }
 
-    return NextResponse.json({
-      rewrittenText: rewrittenText.trim(),
-      originalText: text,
-      prompt: prompt,
-    });
+    let parsed: any;
+    try {
+      parsed = JSON.parse(outputText);
+    } catch (e) {
+      return NextResponse.json(
+        {
+          error: 'Failed to parse structured JSON output',
+          type: 'server',
+          retryable: true,
+        },
+        { status: 500 }
+      );
+    }
+
+    // Ensure shape and return exactly the 5 fields
+    const result = {
+      originalText: String(parsed.originalText ?? text),
+      rewrittenText: String(parsed.rewrittenText ?? ''),
+      description: String(parsed.description ?? ''),
+      keywords: Array.isArray(parsed.keywords) ? parsed.keywords : [],
+      title: String(parsed.title ?? ''),
+    };
+
+    return NextResponse.json(result);
 
   } catch (error: any) {
     console.error('Rewrite error:', error);
