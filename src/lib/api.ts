@@ -71,8 +71,8 @@ const parseAPIError = async (response: Response): Promise<APIError> => {
 // Transcribe audio using OpenAI Whisper
 export async function transcribeAudio(
   audioBlob: Blob,
-  language: string,
-  apiKey: string
+  apiKey: string,
+  language: string = 'auto'
 ): Promise<{ transcript: string; language: string }> {
   return withRetry(async () => {
     try {

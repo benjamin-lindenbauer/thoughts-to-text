@@ -185,7 +185,7 @@ export const DEFAULT_REWRITE_PROMPTS: RewritePrompt[] = [
 
 // Language options
 export const LANGUAGE_OPTIONS = [
-  { code: 'auto', name: 'Auto-detect recording language', nativeName: '', flag: '' },
+  { code: 'auto', name: 'Same language as recording', nativeName: '', flag: '' },
   { code: 'af', name: 'Afrikaans', nativeName: 'Afrikaans', flag: '🇿🇦' },
   { code: 'ar', name: 'Arabic', nativeName: 'العربية', flag: '' },
   { code: 'hy', name: 'Armenian', nativeName: 'Հայերեն', flag: '' },

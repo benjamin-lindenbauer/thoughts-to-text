@@ -5,11 +5,8 @@ import { AppLayout } from "@/components/AppLayout";
 import { RecordingInterface } from "@/components/RecordingInterface";
 import { AlertCircle, CheckCircle, Sparkles } from "lucide-react";
 import { animations } from "@/lib/animations";
-import { useAppState } from "@/hooks/useAppState";
 
 export default function Home() {
-  const { state } = useAppState();
-  const [selectedLanguage, setSelectedLanguage] = useState('auto');
   const [notification, setNotification] = useState<{
     type: 'success' | 'error';
     message: string;
@@ -80,29 +77,10 @@ export default function Home() {
       </div>
 
       <div className="flex flex-col items-center justify-center p-2 md:p-4 pt-36 md:pt-36 w-full max-w-full">
-        {/* Language selection with enhanced styling */}
-        {/*
-        <div className={`mb-8 w-full max-w-sm ${isLoaded ? animations.slideInFromTop : 'opacity-0 translate-y-4'}`}>
-          <select
-            value={selectedLanguage}
-            disabled
-            onChange={(e) => setSelectedLanguage(e.target.value)}
-            className={`w-full p-4 rounded-xl border border-border bg-card text-foreground shadow-sm ${animationPresets.button.idle} hover:shadow-md hover:border-indigo-300 focus:border-transparent focus:shadow-lg`}
-          >
-            {LANGUAGE_OPTIONS.map((lang) => (
-              <option key={lang.code} value={lang.code}>
-                {lang.flag} {lang.name} {lang.nativeName ? `(${lang.nativeName})` : ''}
-              </option>
-            ))}
-          </select>
-        </div>
-        */}
-
         {/* Recording Interface with enhanced card container */}
         <div className={`w-full ${isLoaded ? animations.scaleIn : 'opacity-0 scale-95'} transition-all duration-500 delay-200`}>
           <div className="max-w-2xl mx-auto rounded-2xl bg-card border border-border/60 shadow-sm p-4 md:p-6">
             <RecordingInterface
-              selectedLanguage={selectedLanguage}
               onSave={handleSave}
               onTranscriptionStart={handleTranscriptionStart}
               onTranscriptionComplete={handleTranscriptionComplete}
@@ -131,6 +109,8 @@ export default function Home() {
           <div className="absolute top-1/4 left-1/4 w-48 h-48 bg-indigo-500/5 rounded-full blur-3xl animate-pulse transform -translate-x-1/2 -translate-y-1/2"></div>
           <div className="absolute bottom-1/4 right-1/4 w-48 h-48 bg-purple-500/5 rounded-full blur-3xl animate-pulse delay-1000 transform translate-x-1/2 translate-y-1/2"></div>
         </div>
+        {/* Spacer to ensure content can scroll above bottom navigation */}
+        <div className="h-20" aria-hidden="true" />
       </div>
     </AppLayout>
   );

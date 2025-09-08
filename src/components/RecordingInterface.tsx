@@ -8,13 +8,12 @@ import { useHapticFeedback } from '@/hooks/useHapticFeedback';
 import { useAriaLiveRegion } from '@/hooks/useAccessibility';
 import { useOffline } from '@/hooks/useOffline';
 import { retrieveApiKey } from '@/lib/storage';
-import { cn, DEFAULT_REWRITE_PROMPTS } from '@/lib/utils';
+import { cn, DEFAULT_REWRITE_PROMPTS, LANGUAGE_OPTIONS } from '@/lib/utils';
 import { rewriteText, transcribeAudio, generateNoteMetadata } from '@/lib/api';
 import { RewritePrompt } from '@/types';
 import Link from 'next/link';
 
 interface RecordingInterfaceProps {
-  selectedLanguage: string;
   onSave?: (audioBlob: Blob, transcript?: string, photo?: Blob, rewrittenText?: string) => void;
   onTranscriptionStart?: () => void;
   onTranscriptionComplete?: (transcript: string) => void;
@@ -23,7 +22,6 @@ interface RecordingInterfaceProps {
 }
 
 export function RecordingInterface({
-  selectedLanguage,
   onSave,
   onTranscriptionStart,
   onTranscriptionComplete,
@@ -51,6 +49,7 @@ export function RecordingInterface({
   const [hasApiKey, setHasApiKey] = useState(false);
   const [transcriptionAttempted, setTranscriptionAttempted] = useState(false);
   const [apiKey, setApiKey] = useState<string | null>(null);
+  const [selectedLanguage, setSelectedLanguage] = useState('auto');
 
   // Use app state hooks
   const { notes } = useAppState();
@@ -384,7 +383,7 @@ export function RecordingInterface({
       if (!key) {
         throw new Error('OpenAI API key not configured. Please set your API key in settings.');
       }
-      const result = await transcribeAudio(audioBlob, selectedLanguage, key);
+      const result = await transcribeAudio(audioBlob, key);
 
       setTranscript(result.transcript);
       onTranscriptionComplete?.(result.transcript);
@@ -395,7 +394,7 @@ export function RecordingInterface({
     } finally {
       setIsTranscribing(false);
     }
-  }, [selectedLanguage, onTranscriptionStart, onTranscriptionComplete, onError]);
+  }, [onTranscriptionStart, onTranscriptionComplete, onError]);
 
   // Handle text rewriting
   const handleRewrite = useCallback(async () => {
@@ -646,7 +645,7 @@ export function RecordingInterface({
 
       {/* Duration display + actions */}
       {(recordingState.isRecording || recordingState.duration > 0) && (
-        <div className={`flex w-full max-w-lg items-center ${!recordingState.isRecording ? 'justify-between' : 'justify-center'} gap-4`}>
+        <div className={`flex w-full items-center ${!recordingState.isRecording ? 'justify-between' : 'justify-center'} gap-4`}>
           <div className="text-center" id="recording-status">
             <div
               className="text-2xl md:text-3xl font-mono font-bold text-foreground"
@@ -720,7 +719,7 @@ export function RecordingInterface({
 
       {/* Guidance when we cannot transcribe now (offline or missing API key) */}
       {!showMinimalUI && !isTranscribing && !transcriptionAttempted && (!isOnline || !hasApiKey) && (
-        <div className="w-full max-w-lg space-y-2">
+        <div className="w-full space-y-2">
           {!isOnline && (
             <div className="text-sm text-amber-800 bg-amber-50 dark:text-amber-200 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800 rounded-md p-3">
               You are offline. You can save now and transcribe later.
@@ -736,7 +735,7 @@ export function RecordingInterface({
 
       {/* Transcript area (only after a transcription attempt and non-empty transcript) */}
       {!showMinimalUI && !isTranscribing && transcriptionAttempted && transcript?.trim().length ? (
-        <div className="w-full max-w-lg space-y-4">
+        <div className="w-full space-y-4">
           <div className="p-4 bg-secondary border border-border rounded-lg">
             <h3 className="font-medium text-foreground mb-2">Original Transcript:</h3>
             <textarea
@@ -766,6 +765,20 @@ export function RecordingInterface({
                 ))}
               </select>
             </div>
+
+            {/* Language selection */}
+            <select
+              value={selectedLanguage}
+              disabled
+              onChange={(e) => setSelectedLanguage(e.target.value)}
+              className="w-full p-2 rounded-lg border border-border bg-secondary text-foreground text-sm transition-colors hover:bg-accent focus:border-transparent disabled:opacity-50"
+            >
+              {LANGUAGE_OPTIONS.map((lang) => (
+                <option key={lang.code} value={lang.code}>
+                  {lang.flag} {lang.name} {lang.nativeName ? `(${lang.nativeName})` : ''}
+                </option>
+              ))}
+            </select>
 
             <button
               onClick={handleRewrite}
@@ -826,7 +839,7 @@ export function RecordingInterface({
 
       {/* Camera preview or photo preview (only after recording stops) */}
       {!showMinimalUI && (isCameraActive || isCameraLoading || photoPreview) && (
-        <div className="relative w-full max-w-lg">
+        <div className="relative w-full">
           {(isCameraLoading || isCameraActive) ? (
             <div className="relative rounded-lg overflow-hidden">
               <video
