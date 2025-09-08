@@ -224,6 +224,8 @@ export default function NotesPage() {
   return (
     <AppLayout>
       <div className="w-full max-w-3xl p-2 md:p-4 flex flex-col h-full min-h-0">
+        {/* Toast Notifications */}
+        <ToastContainer toasts={toasts} onRemoveToast={removeToast} />
 
         {/* Header */}
         <div className="mb-6 md:mb-8">
@@ -297,9 +299,6 @@ export default function NotesPage() {
           itemName={noteToDelete?.title}
           isDeleting={deleting}
         />
-
-        {/* Toast Notifications */}
-        <ToastContainer toasts={toasts} onRemoveToast={removeToast} />
       </div>
     </AppLayout>
   );

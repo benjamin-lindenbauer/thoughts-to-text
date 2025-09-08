@@ -3,107 +3,10 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Note } from '@/types';
 import * as dateFns from 'date-fns';
-import {
-    MoreVertical,
-    Edit,
-    Trash2,
-    Share2,
-    Play,
-    Pause,
-    Clock,
-    Calendar,
-    Tag,
-    Wand2
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
-
+import { MoreVertical, Edit, Trash2, Share2, Clock, Calendar, Tag, Wand2 } from 'lucide-react';
 import { useFocusManagement } from '@/hooks/useKeyboardNavigation';
 import { useAriaLiveRegion } from '@/hooks/useAccessibility';
 import { LazyComponent } from '@/components/LazyComponent';
-
-// Simple audio player component for inline playback
-function SimpleAudioPlayer({ audioBlob, onEnded }: { audioBlob: Blob; onEnded: () => void }) {
-    const audioRef = useRef<HTMLAudioElement>(null);
-    const [currentTime, setCurrentTime] = useState(0);
-    const [duration, setDuration] = useState(0);
-    const [isLoading, setIsLoading] = useState(true);
-
-    useEffect(() => {
-        const audio = audioRef.current;
-        if (!audio) return;
-
-        const audioUrl = URL.createObjectURL(audioBlob);
-        audio.src = audioUrl;
-
-        const handleLoadedMetadata = () => {
-            setDuration(audio.duration);
-            setIsLoading(false);
-        };
-
-        const handleTimeUpdate = () => {
-            setCurrentTime(audio.currentTime);
-        };
-
-        const handleEnded = () => {
-            onEnded();
-        };
-
-        audio.addEventListener('loadedmetadata', handleLoadedMetadata);
-        audio.addEventListener('timeupdate', handleTimeUpdate);
-        audio.addEventListener('ended', handleEnded);
-
-        // Auto play
-        audio.play().catch(console.error);
-
-        return () => {
-            audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
-            audio.removeEventListener('timeupdate', handleTimeUpdate);
-            audio.removeEventListener('ended', handleEnded);
-            URL.revokeObjectURL(audioUrl);
-        };
-    }, [audioBlob, onEnded]);
-
-    const formatTime = (seconds: number) => {
-        const mins = Math.floor(seconds / 60);
-        const secs = Math.floor(seconds % 60);
-        return `${mins}:${secs.toString().padStart(2, '0')}`;
-    };
-
-    const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const audio = audioRef.current;
-        if (!audio) return;
-
-        const seekTime = (parseFloat(e.target.value) / 100) * duration;
-        audio.currentTime = seekTime;
-    };
-
-    if (isLoading) {
-        return (
-            <div className="flex items-center gap-2 p-2 bg-muted rounded-lg">
-                <div className="w-4 h-4 animate-spin rounded-full border-2 border-muted-foreground border-t-indigo-500" />
-                <span className="text-sm text-muted-foreground">Loading audio...</span>
-            </div>
-        );
-    }
-
-    return (
-        <div className="flex items-center gap-3 p-2 bg-muted rounded-lg">
-            <audio ref={audioRef} />
-            <Play className="w-4 h-4 text-indigo-500" />
-            <input
-                type="range"
-                min="0"
-                max="100"
-                value={duration > 0 ? (currentTime / duration) * 100 : 0}
-                onChange={handleSeek}
-                className="flex-1 h-2 bg-border rounded-lg appearance-none cursor-pointer"
-            />
-            <span className="text-xs text-muted-foreground min-w-[60px]">
-                {formatTime(currentTime)} / {formatTime(duration)}
-            </span>
-        </div>
-    );
-}
 
 interface NotesListProps {
     notes: Note[];
@@ -144,10 +47,8 @@ export function NotesList({
         y: 0,
         noteId: null,
     });
-    const [playingNoteId, setPlayingNoteId] = useState<string | null>(null);
     const [expandedNoteId, setExpandedNoteId] = useState<string | null>(null);
     const [generatingMetadata, setGeneratingMetadata] = useState<Set<string>>(new Set());
-    const [selectedNoteIndex, setSelectedNoteIndex] = useState(-1);
 
     const containerRef = useRef<HTMLDivElement>(null);
     const contextMenuRef = useRef<HTMLDivElement>(null);
@@ -326,7 +227,6 @@ export function NotesList({
             >
                 {notes.map((note) => {
                             const isExpanded = expandedNoteId === note.id;
-                            const isPlaying = playingNoteId === note.id;
 
                             return (
                                 <LazyComponent
@@ -429,16 +329,6 @@ export function NotesList({
                                                     <div>
                                                         <h4 className="text-sm font-medium text-foreground mb-1">Enhanced Text</h4>
                                                         <p className="text-sm text-muted-foreground">{note.rewrittenText}</p>
-                                                    </div>
-                                                )}
-
-                                                {/* Audio player */}
-                                                {isPlaying && (
-                                                    <div className="mt-3">
-                                                        <SimpleAudioPlayer
-                                                            audioBlob={note.audioBlob}
-                                                            onEnded={() => setPlayingNoteId(null)}
-                                                        />
                                                     </div>
                                                 )}
                                             </div>

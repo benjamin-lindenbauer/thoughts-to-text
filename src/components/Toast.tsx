@@ -66,7 +66,7 @@ export function Toast({ id, type, title, description, duration = 5000, onClose }
   return (
     <div
       className={cn(
-        'fixed bottom-4 right-4 z-50 w-full max-w-sm rounded-lg border p-4 shadow-lg transition-all duration-200',
+        'w-full max-w-sm rounded-lg border p-4 shadow-lg transition-all duration-200',
         getBackgroundColor(),
         isVisible && !isLeaving ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'
       )}
@@ -106,7 +106,7 @@ interface ToastContainerProps {
 
 export function ToastContainer({ toasts, onRemoveToast }: ToastContainerProps) {
   return (
-    <div className="fixed bottom-0 right-0 z-50 p-4 space-y-2 pointer-events-none">
+    <div className="fixed top-0 right-0 z-50 p-4 space-y-2 pointer-events-none">
       {toasts.map((toast) => (
         <div key={toast.id} className="pointer-events-auto">
           <Toast

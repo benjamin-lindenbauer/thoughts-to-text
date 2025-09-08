@@ -6,8 +6,12 @@ import { useRecording } from '@/hooks/useRecording';
 import { useAppState } from '@/hooks/useAppState';
 import { useHapticFeedback } from '@/hooks/useHapticFeedback';
 import { useAriaLiveRegion } from '@/hooks/useAccessibility';
+import { useOffline } from '@/hooks/useOffline';
+import { retrieveApiKey } from '@/lib/storage';
 import { cn, DEFAULT_REWRITE_PROMPTS } from '@/lib/utils';
+import { rewriteText, transcribeAudio, generateNoteMetadata } from '@/lib/api';
 import { RewritePrompt } from '@/types';
+import Link from 'next/link';
 
 interface RecordingInterfaceProps {
   selectedLanguage: string;
@@ -43,9 +47,10 @@ export function RecordingInterface({
   const cameraLoadingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [isCameraActive, setIsCameraActive] = useState(false);
   const [isCameraLoading, setIsCameraLoading] = useState(false);
-  const [currentNoteId, setCurrentNoteId] = useState<string | null>(null);
-  // Keep a ref in sync for immediate availability across async boundaries
-  const currentNoteIdRef = useRef<string | null>(null);
+  const { isOnline } = useOffline();
+  const [hasApiKey, setHasApiKey] = useState(false);
+  const [transcriptionAttempted, setTranscriptionAttempted] = useState(false);
+  const [apiKey, setApiKey] = useState<string | null>(null);
 
   // Use app state hooks
   const { notes } = useAppState();
@@ -71,71 +76,41 @@ export function RecordingInterface({
     };
   }, []);
 
-  // Auto-save function for recordings and transcripts
-  const saveNoteAfterRecording = useCallback(async (audioBlob: Blob, durationMs: number) => {
-    try {
-      // Generate a unique ID for the note
-      const noteId = crypto.randomUUID();
-      // Update both state and ref immediately to avoid races
-      currentNoteIdRef.current = noteId;
-      setCurrentNoteId(noteId);
-
-      // Create initial note with recording
-      const newNote = {
-        id: noteId,
-        title: `Recording ${new Date().toLocaleString()}`,
-        description: '',
-        transcript: '',
-        rewrittenText: undefined,
-        keywords: [],
-        language: selectedLanguage,
-        // Store duration in SECONDS to match consumers (e.g., formatters expect seconds)
-        duration: Math.round((durationMs || 0) / 1000),
-        audioBlob,
-        photoBlob: photo || undefined,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      };
-
-      // Save note immediately after recording
-      await notes.addNote(newNote);
-
-    } catch (error) {
-      console.error('Failed to save recording:', error);
-      onError?.('Failed to save recording. Please try again.');
-    }
-  }, [selectedLanguage, photo, onError, notes]);
-
-  // Auto-save function for rewritten text updates
-  const saveRewrittenTextUpdate = useCallback(async (rewrittenText: string) => {
-    const noteId = currentNoteIdRef.current || currentNoteId;
-    if (!noteId) return;
-
-    try {
-      // Get the current note from state or fall back to storage if not yet in state
-      let currentNote = notes.getNote(noteId);
-      if (!currentNote) {
-        const { retrieveNote } = await import('@/lib/storage');
-        const stored = await retrieveNote(noteId);
-        if (!stored) return;
-        currentNote = stored;
+  // Load API key once on mount and cache presence for guidance messages/UI
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const k = await retrieveApiKey();
+        if (!cancelled) {
+          setApiKey(k || null);
+          setHasApiKey(!!k);
+        }
+      } catch {
+        if (!cancelled) {
+          setApiKey(null);
+          setHasApiKey(false);
+        }
       }
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
-      // Update note with rewritten text
-      const updatedNote = {
-        ...currentNote,
-        rewrittenText,
-        updatedAt: new Date()
-      };
-
-      // Save updated note immediately
-      await notes.updateNote(updatedNote);
-
-    } catch (error) {
-      console.error('Failed to save rewritten text:', error);
-      onError?.('Failed to save rewritten text. Please try again.');
+  // Helper to retrieve API key using cached state when available
+  const getApiKey = React.useCallback(async (): Promise<string | null> => {
+    if (apiKey) return apiKey;
+    try {
+      const k = await retrieveApiKey();
+      setApiKey(k || null);
+      setHasApiKey(!!k);
+      return k || null;
+    } catch {
+      setHasApiKey(false);
+      return null;
     }
-  }, [currentNoteId, onError, notes]);
+  }, [apiKey]);
+
+  // Note: We intentionally avoid any auto-save behavior here. Saving occurs only on explicit Save.
 
   const {
     recordingState,
@@ -168,26 +143,11 @@ export function RecordingInterface({
       haptic.recordingStop();
       announce('Recording stopped', 'polite');
     } else {
-      // Check for API key before starting recording
-      try {
-        const { retrieveApiKey } = await import('@/lib/storage');
-        const apiKey = await retrieveApiKey();
-
-        if (!apiKey) {
-          onError?.('OpenAI API key not configured. Please set your API key in settings before recording.');
-          return;
-        }
-      } catch (error) {
-        onError?.('Failed to check API key. Please try again.');
-        return;
-      }
-
       // Clear previous transcript and rewritten text when starting new recording
       setTranscript(null);
       setRewrittenText(null);
-      setCurrentNoteId(null);
-      currentNoteIdRef.current = null;
       transcriptionStartedRef.current = false;
+      setTranscriptionAttempted(false);
 
       try {
         await startRecording();
@@ -420,21 +380,14 @@ export function RecordingInterface({
     onTranscriptionStart?.();
 
     try {
-      // Get API key from encrypted storage
-      const { retrieveApiKey } = await import('@/lib/storage');
-      const apiKey = await retrieveApiKey();
-
-      if (!apiKey) {
+      const key = await getApiKey();
+      if (!key) {
         throw new Error('OpenAI API key not configured. Please set your API key in settings.');
       }
-
-      // Use the API utility function
-      const { transcribeAudio } = await import('@/lib/api');
-      const result = await transcribeAudio(audioBlob, selectedLanguage, apiKey);
+      const result = await transcribeAudio(audioBlob, selectedLanguage, key);
 
       setTranscript(result.transcript);
       onTranscriptionComplete?.(result.transcript);
-
 
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Transcription failed';
@@ -451,11 +404,8 @@ export function RecordingInterface({
     setIsRewriting(true);
 
     try {
-      // Get API key from encrypted storage
-      const { retrieveApiKey } = await import('@/lib/storage');
-      const apiKey = await retrieveApiKey();
-
-      if (!apiKey) {
+      const key = await getApiKey();
+      if (!key) {
         throw new Error('OpenAI API key not configured. Please set your API key in settings.');
       }
 
@@ -464,23 +414,13 @@ export function RecordingInterface({
         throw new Error('Selected rewrite prompt not found.');
       }
 
-      // Use the API utility function
-      const { rewriteText } = await import('@/lib/api');
-      const result = await rewriteText(transcript, selectedPromptObj.prompt, apiKey);
+      const result = await rewriteText(transcript, selectedPromptObj.prompt, key);
 
       if (!result.rewrittenText) {
         throw new Error('No rewritten text was generated. Please try again.');
       }
 
       setRewrittenText(result.rewrittenText);
-
-      // Persist rewritten text to the current note (if a note exists)
-      try {
-        await saveRewrittenTextUpdate(result.rewrittenText);
-      } catch (persistErr) {
-        console.warn('Failed to persist rewritten text immediately:', persistErr);
-      }
-
 
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Rewriting failed';
@@ -515,14 +455,13 @@ export function RecordingInterface({
 
     // Reset internal flags/ids
     transcriptionStartedRef.current = false;
-    currentNoteIdRef.current = null;
-    setCurrentNoteId(null);
+    setTranscriptionAttempted(false);
   }, [photoPreview, isCameraActive, isCameraLoading, handleCloseCamera, resetRecording]);
 
   const handleSaveNote = useCallback(async () => {
     try {
       setIsSaving(true);
-      if (!recordingState.audioBlob || !transcript) {
+      if (!recordingState.audioBlob) {
         onError?.('Nothing to save yet.');
         return;
       }
@@ -531,29 +470,30 @@ export function RecordingInterface({
       const noteId = crypto.randomUUID();
       const durationMs = recordingState.duration || 0;
       const durationSeconds = Math.round(durationMs / 1000);
-      const baseText = rewrittenText && rewrittenText.trim().length > 0 ? rewrittenText : transcript;
+      const baseTextRaw = (typeof rewrittenText === 'string' && rewrittenText.trim().length > 0)
+        ? rewrittenText
+        : (transcript ?? '');
+      const baseText = baseTextRaw.trim();
 
       // Generate metadata if API key exists
       let title = `Recording ${new Date().toLocaleString()}`;
       let description = '';
       let keywords: string[] = [];
       try {
-        const { retrieveApiKey } = await import('@/lib/storage');
         const apiKey = await retrieveApiKey();
-        if (apiKey && baseText.trim()) {
-          const { generateNoteMetadata } = await import('@/lib/api');
+        if (apiKey && baseText) {
           const generated = await generateNoteMetadata(baseText, apiKey);
           title = generated.title || (baseText.slice(0, 50) + (baseText.length > 50 ? '...' : '')) || title;
           description = generated.description || (baseText.slice(0, 200) + (baseText.length > 200 ? '...' : ''));
           keywords = generated.keywords || [];
-        } else if (baseText.trim()) {
+        } else if (baseText) {
           // Fallback metadata without API key
           title = baseText.slice(0, 50) + (baseText.length > 50 ? '...' : '');
           description = baseText.slice(0, 200) + (baseText.length > 200 ? '...' : '');
         }
       } catch (metaErr) {
         console.warn('Failed to generate note metadata, using fallbacks:', metaErr);
-        if (baseText.trim()) {
+        if (baseText) {
           title = baseText.slice(0, 50) + (baseText.length > 50 ? '...' : '');
           description = baseText.slice(0, 200) + (baseText.length > 200 ? '...' : '');
         }
@@ -563,7 +503,7 @@ export function RecordingInterface({
         id: noteId,
         title,
         description,
-        transcript,
+        transcript: transcript ?? '',
         rewrittenText: rewrittenText || undefined,
         keywords,
         language: selectedLanguage,
@@ -580,7 +520,7 @@ export function RecordingInterface({
       announce('Note saved', 'polite');
 
       // Notify parent that the recording and transcript were saved successfully
-      onSave?.(recordingState.audioBlob, transcript, photo || undefined, rewrittenText || undefined);
+      onSave?.(recordingState.audioBlob, transcript || undefined, photo || undefined, rewrittenText || undefined);
 
       // Reset UI after save
       handleDiscard();
@@ -593,24 +533,27 @@ export function RecordingInterface({
     }
   }, [recordingState.audioBlob, recordingState.duration, transcript, rewrittenText, selectedLanguage, photo, notes, haptic, announce, onError, handleDiscard]);
 
-  // Handle recording completion and transcribe immediately
+  // Handle recording completion: auto-transcribe only when online and API key exists
   React.useEffect(() => {
     if (recordingState.audioBlob && !recordingState.isRecording && !transcriptionStartedRef.current) {
       transcriptionStartedRef.current = true;
-
       (async () => {
-        // Create a new note immediately after recording stops so we have an ID to update
         try {
-          await saveNoteAfterRecording(recordingState.audioBlob!, recordingState.duration || 0);
-        } catch (createErr) {
-          console.warn('Failed to create note after recording:', createErr);
+          const key = await getApiKey();
+          setHasApiKey(!!key);
+          if (isOnline && key) {
+            setTranscriptionAttempted(true);
+            await handleTranscription(recordingState.audioBlob!);
+          } else {
+            setTranscriptionAttempted(false);
+          }
+        } catch {
+          setHasApiKey(false);
+          setTranscriptionAttempted(false);
         }
-
-        // Automatically start transcription after recording
-        await handleTranscription(recordingState.audioBlob!);
       })();
     }
-  }, [recordingState.audioBlob, recordingState.isRecording, handleTranscription]);
+  }, [recordingState.audioBlob, recordingState.isRecording, isOnline, handleTranscription, getApiKey]);
 
   // Handle recording errors
   React.useEffect(() => {
@@ -671,9 +614,9 @@ export function RecordingInterface({
             onClick={handleRecordingToggle}
             disabled={isTranscribing}
             aria-label={
-            recordingState.isRecording
-              ? `Stop recording. Current duration: ${formattedDuration}`
-              : 'Start recording'
+              recordingState.isRecording
+                ? `Stop recording. Current duration: ${formattedDuration}`
+                : 'Start recording'
             }
             aria-pressed={recordingState.isRecording}
             aria-describedby="recording-status"
@@ -703,7 +646,7 @@ export function RecordingInterface({
 
       {/* Duration display + actions */}
       {(recordingState.isRecording || recordingState.duration > 0) && (
-        <div className={`flex w-full max-w-lg items-center ${transcript?.length ? 'justify-between' : 'justify-center'} gap-4`}>
+        <div className={`flex w-full max-w-lg items-center ${!recordingState.isRecording ? 'justify-between' : 'justify-center'} gap-4`}>
           <div className="text-center" id="recording-status">
             <div
               className="text-2xl md:text-3xl font-mono font-bold text-foreground"
@@ -717,8 +660,8 @@ export function RecordingInterface({
             </p>
           </div>
 
-          {/* Show Save/Discard after transcription completes (even if empty) */}
-          {!recordingState.isRecording && recordingState.duration > 0 && !isTranscribing && transcript !== null && (
+          {/* Show Save/Discard after recording stops (transcript may be absent) */}
+          {!recordingState.isRecording && recordingState.duration > 0 && (
             <div className="flex items-center gap-2 ml-8">
               <button
                 onClick={handleSaveNote}
@@ -727,11 +670,20 @@ export function RecordingInterface({
                   'bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600',
                   'disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-sm disabled:active:scale-100'
                 )}
-                aria-label="Save recording and transcript"
-                disabled={isSaving || !transcript.length}
+                aria-label="Save recording"
+                disabled={isSaving || !recordingState.audioBlob}
               >
-                <Save className="w-4 h-4" />
-                Save
+                {isSaving ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                    <span>Saving...</span>
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-4 h-4" />
+                    <span>Save</span>
+                  </>
+                )}
               </button>
               <button
                 onClick={handleDiscard}
@@ -766,17 +718,33 @@ export function RecordingInterface({
         </div>
       )}
 
-      {/* Transcript area (only after recording stops). Show info box if empty string. */}
-      {showMinimalUI || isTranscribing ? null : transcript?.trim().length ? (
+      {/* Guidance when we cannot transcribe now (offline or missing API key) */}
+      {!showMinimalUI && !isTranscribing && !transcriptionAttempted && (!isOnline || !hasApiKey) && (
+        <div className="w-full max-w-lg space-y-2">
+          {!isOnline && (
+            <div className="text-sm text-amber-800 bg-amber-50 dark:text-amber-200 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800 rounded-md p-3">
+              You are offline. You can save now and transcribe later.
+            </div>
+          )}
+          {isOnline && !hasApiKey && (
+            <div className="text-sm text-amber-800 bg-amber-50 dark:text-amber-200 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800 rounded-md p-3">
+              OpenAI API key not configured. Please set your API key in <Link href="/settings" className="underline">Settings</Link> to enable transcription.
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Transcript area (only after a transcription attempt and non-empty transcript) */}
+      {!showMinimalUI && !isTranscribing && transcriptionAttempted && transcript?.trim().length ? (
         <div className="w-full max-w-lg space-y-4">
           <div className="p-4 bg-secondary border border-border rounded-lg">
             <h3 className="font-medium text-foreground mb-2">Original Transcript:</h3>
-              <textarea
-                className="w-full p-3 rounded-md border border-border bg-background text-sm text-foreground resize-y min-h-[120px] focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                value={transcript}
-                onChange={(e) => setTranscript(e.target.value)}
-                aria-label="Edit transcript"
-              />
+            <textarea
+              className="w-full p-3 rounded-md border border-border bg-background text-sm text-foreground resize-y min-h-[120px] focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              value={transcript}
+              onChange={(e) => setTranscript(e.target.value)}
+              aria-label="Edit transcript"
+            />
           </div>
 
           {/* Rewrite prompt selection and button */}
@@ -847,7 +815,10 @@ export function RecordingInterface({
             </div>
           )}
         </div>
-      ) : (
+      ) : null}
+
+      {/* No speech detected message when transcription attempted but empty */}
+      {!showMinimalUI && !isTranscribing && transcriptionAttempted && !(transcript?.trim().length) && (
         <div className="text-sm text-red-700 bg-red-50 dark:text-red-300 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-md p-3">
           No speech detected.
         </div>
@@ -917,35 +888,36 @@ export function RecordingInterface({
       {/* Hidden canvas for photo capture */}
       <canvas ref={canvasRef} className="hidden" />
 
-      {/* Photo controls (only after recording stops) */}
-      {!showMinimalUI && transcript && (
-      <>
-        <p className="text-sm md:text-base text-muted-foreground">
-          Add an image to your recording
-        </p>
+      {/* Photo controls (only after recording stops and valid transcript) */}
+      {!showMinimalUI && transcriptionAttempted && transcript && (
+        <>
+          <p className="text-sm md:text-base text-muted-foreground">
+            Add an image to your recording
+          </p>
 
-        {/* Photo controls */}
-        <div className="flex gap-4">
-          <button
-            onClick={() => {
-              haptic.buttonPress();
-              handleCameraCapture();
-            }}
-            disabled={isCameraLoading}
-            aria-label={
-              isCameraLoading
-                ? 'Starting camera...'
-                : isCameraActive
-                  ? 'Capture photo from camera'
-                  : 'Open camera to take photo'
-            }
-            className="flex items-center gap-2 px-4 py-2 bg-secondary border border-border rounded-lg hover:bg-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <Camera className="w-4 h-4" />
-            <span className="text-sm">
-              {isCameraLoading ? 'Starting...' : isCameraActive ? 'Capture' : 'Camera'}
-            </span>
-          </button>
+          {/* Photo controls */}
+          <div className="flex gap-4">
+            <button
+              onClick={() => {
+                haptic.buttonPress();
+                handleCameraCapture();
+              }}
+              disabled={isCameraLoading}
+              aria-label={
+                isCameraLoading
+                  ? 'Starting camera...'
+                  : isCameraActive
+                    ? 'Capture photo from camera'
+                    : 'Open camera to take photo'
+              }
+              className="flex items-center gap-2 px-4 py-2 bg-secondary border border-border rounded-lg hover:bg-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Camera className="w-4 h-4" />
+              <span className="text-sm">
+                {isCameraLoading ? 'Starting...' : isCameraActive ? 'Capture' : 'Camera'}
+              </span>
+            </button>
+
 
           <button
             onClick={() => {
