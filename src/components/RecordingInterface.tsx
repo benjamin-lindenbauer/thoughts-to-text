@@ -822,121 +822,121 @@ export function RecordingInterface({
         </div>
       )}
 
-      {/* Camera preview or photo preview (only after recording stops) */}
-      {!showMinimalUI && (isCameraActive || isCameraLoading || photoPreview) && (
-        <div className="relative w-full">
-          {(isCameraLoading || isCameraActive) ? (
-            <div className="relative rounded-lg overflow-hidden">
-              <video
-                ref={videoRef}
-                className="w-full h-auto"
-                autoPlay
-                playsInline
-                muted
-              />
-              {isCameraLoading && (
-                <div className="absolute inset-0 w-full h-full rounded-lg shadow-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
-                  <div className="text-center">
-                    <div className="animate-spin w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full mx-auto mb-2"></div>
-                    <p className="text-sm text-muted-foreground">Starting camera...</p>
-                  </div>
-                </div>
-              )}
+      {/* Photo controls (only after recording stops and valid transcript) */}
+      {!showMinimalUI && transcriptionAttempted && transcript && (
+        <div className="flex flex-row gap-4 w-full">
+          <div className="flex flex-col gap-2">
+            <p className="text-sm md:text-base text-muted-foreground">
+              Add an image to your recording
+            </p>
 
-              {/* Close camera button overlay */}
-              {(isCameraActive || isCameraLoading) && (
+            {/* Photo controls */}
+            <div className="flex gap-4">
+              <button
+                onClick={() => {
+                  haptic.buttonPress();
+                  handleCameraCapture();
+                }}
+                disabled={isCameraLoading}
+                aria-label={
+                  isCameraLoading
+                    ? 'Starting camera...'
+                    : isCameraActive
+                      ? 'Capture photo from camera'
+                      : 'Open camera to take photo'
+                }
+                className="flex items-center gap-2 px-4 py-2 bg-secondary border border-border rounded-lg hover:bg-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Camera className="w-4 h-4" />
+                <span className="text-sm">
+                  {isCameraLoading ? 'Starting...' : isCameraActive ? 'Capture' : 'Camera'}
+                </span>
+              </button>
+              
+              <button
+                onClick={() => {
+                  haptic.buttonPress();
+                  fileInputRef.current?.click();
+                }}
+                aria-label="Upload photo from device"
+                className="flex items-center gap-2 px-4 py-2 bg-secondary border border-border rounded-lg hover:bg-accent transition-colors"
+              >
+                <span className="text-sm">Upload Photo</span>
+              </button>
+
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handlePhotoUpload}
+                className="hidden"
+              />
+            </div>
+          </div>
+
+          {/* Camera preview or photo preview (only after recording stops) */}
+          {!showMinimalUI && (isCameraActive || isCameraLoading || photoPreview) && (
+            <div className="relative w-full">
+              {(isCameraLoading || isCameraActive) ? (
+                <div className="relative rounded-lg overflow-hidden">
+                  <video
+                    ref={videoRef}
+                    className="w-full h-auto"
+                    autoPlay
+                    playsInline
+                    muted
+                  />
+                  {isCameraLoading && (
+                    <div className="absolute inset-0 w-full h-full rounded-lg shadow-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+                      <div className="text-center">
+                        <div className="animate-spin w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full mx-auto mb-2"></div>
+                        <p className="text-sm text-muted-foreground">Starting camera...</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Close camera button overlay */}
+                  {(isCameraActive || isCameraLoading) && (
+                    <button
+                      onClick={() => {
+                        haptic.buttonPress();
+                        handleCloseCamera();
+                      }}
+                      aria-label="Close camera"
+                      className="absolute top-2 right-2 p-2 bg-black/50 backdrop-blur-sm text-white rounded-full hover:bg-black/70 transition-colors"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+              ) : photoPreview ? (
+                <img
+                  src={photoPreview}
+                  alt="Captured"
+                  className="w-full rounded-lg shadow-lg"
+                />
+              ) : null}
+
+              {photoPreview && (
                 <button
                   onClick={() => {
-                    haptic.buttonPress();
-                    handleCloseCamera();
+                    setPhoto(null);
+                    setPhotoPreview(null);
+                    if (photoPreview && typeof URL !== 'undefined') {
+                      URL.revokeObjectURL(photoPreview);
+                    }
                   }}
-                  aria-label="Close camera"
-                  className="absolute top-2 right-2 p-2 bg-black/50 backdrop-blur-sm text-white rounded-full hover:bg-black/70 transition-colors"
+                  aria-label="Remove captured photo"
+                  className="absolute top-2 right-2 p-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
                 >
                   <X className="w-4 h-4" />
                 </button>
               )}
             </div>
-          ) : photoPreview ? (
-            <img
-              src={photoPreview}
-              alt="Captured"
-              className="w-full rounded-lg shadow-lg"
-            />
-          ) : null}
-
-          {photoPreview && (
-            <button
-              onClick={() => {
-                setPhoto(null);
-                setPhotoPreview(null);
-                if (photoPreview && typeof URL !== 'undefined') {
-                  URL.revokeObjectURL(photoPreview);
-                }
-              }}
-              aria-label="Remove captured photo"
-              className="absolute top-2 right-2 p-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
-            >
-              <X className="w-4 h-4" />
-            </button>
           )}
+          {/* Hidden canvas for photo capture */}
+          <canvas ref={canvasRef} className="hidden" />
         </div>
-      )}
-
-      {/* Hidden canvas for photo capture */}
-      <canvas ref={canvasRef} className="hidden" />
-
-      {/* Photo controls (only after recording stops and valid transcript) */}
-      {!showMinimalUI && transcriptionAttempted && transcript && (
-        <>
-          <p className="text-sm md:text-base text-muted-foreground">
-            Add an image to your recording
-          </p>
-
-          {/* Photo controls */}
-          <div className="flex gap-4">
-            <button
-              onClick={() => {
-                haptic.buttonPress();
-                handleCameraCapture();
-              }}
-              disabled={isCameraLoading}
-              aria-label={
-                isCameraLoading
-                  ? 'Starting camera...'
-                  : isCameraActive
-                    ? 'Capture photo from camera'
-                    : 'Open camera to take photo'
-              }
-              className="flex items-center gap-2 px-4 py-2 bg-secondary border border-border rounded-lg hover:bg-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <Camera className="w-4 h-4" />
-              <span className="text-sm">
-                {isCameraLoading ? 'Starting...' : isCameraActive ? 'Capture' : 'Camera'}
-              </span>
-            </button>
-
-
-          <button
-            onClick={() => {
-              haptic.buttonPress();
-              fileInputRef.current?.click();
-            }}
-            aria-label="Upload photo from device"
-            className="flex items-center gap-2 px-4 py-2 bg-secondary border border-border rounded-lg hover:bg-accent transition-colors"
-          >
-            <span className="text-sm">Upload Photo</span>
-          </button>
-
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            onChange={handlePhotoUpload}
-            className="hidden"
-          />
-        </div>
-      </>
       )}
     </div>
   );
