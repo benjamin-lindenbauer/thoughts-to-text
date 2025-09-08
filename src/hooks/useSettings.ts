@@ -1,52 +1,9 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { AppSettings, RewritePrompt, LanguageOption } from '@/types';
+import { AppSettings, RewritePrompt } from '@/types';
 import { storeSettings, retrieveSettings } from '@/lib/storage';
-
-// Default language options for speech-to-text
-export const LANGUAGE_OPTIONS: LanguageOption[] = [
-  { code: 'en', name: 'English', nativeName: 'English' },
-  { code: 'es', name: 'Spanish', nativeName: 'Español' },
-  { code: 'fr', name: 'French', nativeName: 'Français' },
-  { code: 'de', name: 'German', nativeName: 'Deutsch' },
-  { code: 'it', name: 'Italian', nativeName: 'Italiano' },
-  { code: 'pt', name: 'Portuguese', nativeName: 'Português' },
-  { code: 'ja', name: 'Japanese', nativeName: '日本語' },
-  { code: 'ko', name: 'Korean', nativeName: '한국어' },
-  { code: 'zh', name: 'Chinese', nativeName: '中文' },
-  { code: 'ru', name: 'Russian', nativeName: 'Русский' },
-  { code: 'ar', name: 'Arabic', nativeName: 'العربية' },
-  { code: 'hi', name: 'Hindi', nativeName: 'हिन्दी' },
-];
-
-// Default rewrite prompts
-const DEFAULT_REWRITE_PROMPTS: RewritePrompt[] = [
-  {
-    id: 'default',
-    name: 'Default',
-    prompt: 'Improve the clarity and grammar of the following text while maintaining the original meaning and tone. Make it more professional and well-structured:',
-    isDefault: true,
-  },
-  {
-    id: 'concise',
-    name: 'Make Concise',
-    prompt: 'Rewrite the following text to be more concise and to the point while preserving all important information:',
-    isDefault: false,
-  },
-  {
-    id: 'formal',
-    name: 'Make Formal',
-    prompt: 'Rewrite the following text in a formal, professional tone suitable for business communication:',
-    isDefault: false,
-  },
-  {
-    id: 'casual',
-    name: 'Make Casual',
-    prompt: 'Rewrite the following text in a casual, friendly tone suitable for informal communication:',
-    isDefault: false,
-  },
-];
+import { DEFAULT_REWRITE_PROMPTS, LANGUAGE_OPTIONS } from '@/lib/utils';
 
 // Default settings
 const DEFAULT_SETTINGS: AppSettings = {

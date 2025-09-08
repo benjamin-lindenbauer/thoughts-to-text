@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Key, Globe, MessageSquare, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { useAppState } from '@/hooks/useAppState';
 import { useTheme } from '@/contexts/ThemeContext';
-import { LANGUAGE_OPTIONS } from '@/hooks/useSettings';
+import { DEFAULT_REWRITE_PROMPTS, LANGUAGE_OPTIONS } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -29,11 +29,6 @@ export function SettingsForm() {
   // Validation helpers
   const validateApiKey = (apiKey: string): boolean => {
     return apiKey.startsWith('sk-') && apiKey.length > 20;
-  };
-
-  const getLanguageDisplayName = (code: string): string => {
-    const language = LANGUAGE_OPTIONS.find(lang => lang.code === code);
-    return language ? `${language.nativeName} (${language.name})` : code;
   };
 
   // Update functions
@@ -92,16 +87,6 @@ export function SettingsForm() {
       defaultRewritePrompt: promptId,
     });
   };
-
-  const languageOptions = LANGUAGE_OPTIONS;
-  const defaultRewritePrompts = [
-    {
-      id: 'default',
-      name: 'Default',
-      prompt: 'Improve the clarity and grammar of the following text while maintaining the original meaning and tone.',
-      isDefault: true,
-    }
-  ];
 
   // Local form state
   const [apiKeyInput, setApiKeyInput] = useState('');
@@ -293,7 +278,7 @@ export function SettingsForm() {
                 <SelectValue placeholder="Select default language" />
               </SelectTrigger>
               <SelectContent>
-                {languageOptions.map((language) => (
+                {LANGUAGE_OPTIONS.map((language) => (
                   <SelectItem key={language.code} value={language.code}>
                     {language.nativeName} ({language.name})
                   </SelectItem>
@@ -328,7 +313,7 @@ export function SettingsForm() {
               onUpdatePrompt={updateRewritePrompt}
               onDeletePrompt={deleteRewritePrompt}
               onSetDefault={setDefaultRewritePrompt}
-              defaultPromptIds={defaultRewritePrompts.map(p => p.id)}
+              defaultPromptIds={DEFAULT_REWRITE_PROMPTS.map(p => p.id)}
             />
           </div>
         </div>
