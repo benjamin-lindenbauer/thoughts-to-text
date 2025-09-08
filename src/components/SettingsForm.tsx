@@ -7,13 +7,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { DEFAULT_REWRITE_PROMPTS, LANGUAGE_OPTIONS } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { RewritePromptManager } from '@/components/RewritePromptManager';
 import { PWAInstallButton } from '@/components/PWAInstallPrompt';

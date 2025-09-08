@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { Mic, MicOff, Camera, Square, Wand2, RefreshCw, X, Trash, Save } from 'lucide-react';
+import { Mic, MicOff, Camera, Square, Wand2, RefreshCw, X, Save, Trash2 } from 'lucide-react';
 import { useRecording } from '@/hooks/useRecording';
 import { useAppState } from '@/hooks/useAppState';
 import { useHapticFeedback } from '@/hooks/useHapticFeedback';
@@ -15,16 +15,12 @@ import Link from 'next/link';
 
 interface RecordingInterfaceProps {
   onSave?: (audioBlob: Blob, transcript?: string, photo?: Blob, rewrittenText?: string) => void;
-  onTranscriptionStart?: () => void;
-  onTranscriptionComplete?: (transcript: string) => void;
   onError?: (error: string) => void;
   className?: string;
 }
 
 export function RecordingInterface({
   onSave,
-  onTranscriptionStart,
-  onTranscriptionComplete,
   onError,
   className
 }: RecordingInterfaceProps) {
@@ -36,7 +32,6 @@ export function RecordingInterface({
   const [rewrittenText, setRewrittenText] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [selectedPrompt, setSelectedPrompt] = useState<string>('default');
-  const [rewritePrompts] = useState<RewritePrompt[]>(DEFAULT_REWRITE_PROMPTS);
   const [isMounted, setIsMounted] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -52,7 +47,20 @@ export function RecordingInterface({
   const [selectedLanguage, setSelectedLanguage] = useState('auto');
 
   // Use app state hooks
-  const { notes } = useAppState();
+  const { notes, settings } = useAppState();
+
+  // Use prompts from settings, fall back to defaults
+  const rewritePrompts: RewritePrompt[] =
+    (settings?.settings?.rewritePrompts && settings.settings.rewritePrompts.length > 0)
+      ? settings.settings.rewritePrompts
+      : DEFAULT_REWRITE_PROMPTS;
+
+  // Keep selectedPrompt in sync with settings' default when available
+  useEffect(() => {
+    const defaultId = settings?.settings?.defaultRewritePrompt || 'default';
+    const hasDefault = rewritePrompts.some(p => p.id === defaultId);
+    setSelectedPrompt(hasDefault ? defaultId : (rewritePrompts[0]?.id || 'default'));
+  }, [settings?.settings?.defaultRewritePrompt, settings?.settings?.rewritePrompts, rewritePrompts]);
 
   // Accessibility and haptic feedback hooks
   const haptic = useHapticFeedback({ enabled: true });
@@ -197,10 +205,6 @@ export function RecordingInterface({
         const canvas = canvasRef.current;
         const context = canvas.getContext('2d');
 
-        console.log('Video dimensions:', video.videoWidth, 'x', video.videoHeight);
-        console.log('Video ready state:', video.readyState);
-        console.log('Video current time:', video.currentTime);
-
         if (context && video.videoWidth > 0 && video.videoHeight > 0) {
           canvas.width = video.videoWidth;
           canvas.height = video.videoHeight;
@@ -234,7 +238,6 @@ export function RecordingInterface({
 
       // Start camera
       setIsCameraLoading(true);
-      console.log('Starting camera...');
 
       // Wait a tick for React to re-render and create the video element
       await new Promise(resolve => setTimeout(resolve, 10));
@@ -243,7 +246,6 @@ export function RecordingInterface({
         // Try with simpler constraints first
         let stream;
         try {
-          console.log('Trying back camera...');
           // Try with back camera first
           stream = await navigator.mediaDevices.getUserMedia({
             video: {
@@ -253,7 +255,6 @@ export function RecordingInterface({
             }
           });
         } catch (backCameraError) {
-          console.log('Back camera failed, trying any camera...', backCameraError);
           // Fallback to any available camera
           stream = await navigator.mediaDevices.getUserMedia({
             video: {
@@ -263,24 +264,18 @@ export function RecordingInterface({
           });
         }
 
-        console.log('Got camera stream:', stream);
-        console.log('Video ref current:', videoRef.current);
-
         // Wait for video element to be available if it's not ready yet
         let retries = 0;
         while (!videoRef.current && retries < 10) {
-          console.log(`Waiting for video element, retry ${retries + 1}`);
           await new Promise(resolve => setTimeout(resolve, 100));
           retries++;
         }
 
         if (videoRef.current && stream) {
-          console.log('Setting stream to video element');
           videoRef.current.srcObject = stream;
 
           // Set up timeout first
           cameraLoadingTimeoutRef.current = setTimeout(() => {
-            console.log('Camera timeout reached, forcing activation');
             setIsCameraActive(true);
             setIsCameraLoading(false);
             cameraLoadingTimeoutRef.current = null;
@@ -288,10 +283,8 @@ export function RecordingInterface({
 
           // Wait for video to be ready
           videoRef.current.onloadedmetadata = () => {
-            console.log('Video metadata loaded');
             if (videoRef.current) {
               videoRef.current.play().then(() => {
-                console.log('Video playing successfully');
                 if (cameraLoadingTimeoutRef.current) {
                   clearTimeout(cameraLoadingTimeoutRef.current);
                   cameraLoadingTimeoutRef.current = null;
@@ -312,9 +305,7 @@ export function RecordingInterface({
 
           // Also try to play immediately in case metadata is already loaded
           if (videoRef.current.readyState >= 1) {
-            console.log('Video ready state is good, playing immediately');
             videoRef.current.play().then(() => {
-              console.log('Video playing immediately');
               if (cameraLoadingTimeoutRef.current) {
                 clearTimeout(cameraLoadingTimeoutRef.current);
                 cameraLoadingTimeoutRef.current = null;
@@ -327,8 +318,6 @@ export function RecordingInterface({
           }
         } else {
           console.error('No video ref or stream');
-          console.log('videoRef.current:', videoRef.current);
-          console.log('stream:', stream);
           setIsCameraLoading(false);
 
           // Stop the stream if we can't use it
@@ -376,7 +365,6 @@ export function RecordingInterface({
     if (!audioBlob) return;
 
     setIsTranscribing(true);
-    onTranscriptionStart?.();
 
     try {
       const key = await getApiKey();
@@ -386,7 +374,6 @@ export function RecordingInterface({
       const result = await transcribeAudio(audioBlob, key);
 
       setTranscript(result.transcript);
-      onTranscriptionComplete?.(result.transcript);
 
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Transcription failed';
@@ -394,7 +381,7 @@ export function RecordingInterface({
     } finally {
       setIsTranscribing(false);
     }
-  }, [onTranscriptionStart, onTranscriptionComplete, onError]);
+  }, [onError]);
 
   // Handle text rewriting
   const handleRewrite = useCallback(async () => {
@@ -663,6 +650,7 @@ export function RecordingInterface({
           {!recordingState.isRecording && recordingState.duration > 0 && (
             <div className="flex items-center gap-2 ml-8">
               <button
+                type="button"
                 onClick={handleSaveNote}
                 className={cn(
                   'flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-white shadow-sm hover:shadow-md active:scale-95 transition-all',
@@ -690,7 +678,7 @@ export function RecordingInterface({
                 aria-label="Discard recording and transcript"
                 disabled={isSaving}
               >
-                <Trash className="w-4 h-4" />
+                <Trash2 className="w-4 h-4" />
                 Discard
               </button>
             </div>
@@ -781,6 +769,7 @@ export function RecordingInterface({
             </select>
 
             <button
+              type="button"
               onClick={handleRewrite}
               disabled={
                 isRewriting ||

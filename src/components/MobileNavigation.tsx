@@ -58,7 +58,7 @@ export function MobileNavigation() {
                   'min-w-[72px] min-h-[56px] touch-manipulation relative',
                   'active:scale-95 active:bg-accent/50',
                   isActive
-                    ? 'text-purple-500 bg-gradient-to-r from-indigo-100 to-purple-100 shadow-sm'
+                    ? 'text-indigo-500 bg-gradient-to-r from-indigo-100 to-purple-100 shadow-sm'
                     : 'text-muted-foreground hover:text-foreground hover:bg-accent',
                   item.className
                 )}

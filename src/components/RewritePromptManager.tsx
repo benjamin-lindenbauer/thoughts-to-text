@@ -157,11 +157,12 @@ export function RewritePromptManager({
         {prompts.map((prompt) => (
           <div
             key={prompt.id}
+            onClick={() => handleSetDefault(prompt.id)}
             className={cn(
               'p-4 rounded-xl border transition-all duration-200',
               prompt.id === defaultPromptId
                 ? 'border-indigo-500 bg-indigo-500/10 shadow-sm'
-                : 'border-border bg-card hover:bg-accent/50'
+                : 'border-border bg-card hover:bg-accent/50 cursor-pointer'
             )}
           >
             <div className="flex items-start justify-between gap-3">
@@ -182,18 +183,6 @@ export function RewritePromptManager({
               </div>
               
               <div className="flex items-center gap-1 flex-shrink-0">
-                {prompt.id !== defaultPromptId && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleSetDefault(prompt.id)}
-                    className="h-8 w-8 p-0 hover:bg-indigo-500/10 hover:text-indigo-500"
-                    title="Set as default"
-                  >
-                    <Check className="h-4 w-4" />
-                  </Button>
-                )}
-                
                 <Button
                   variant="ghost"
                   size="sm"
@@ -204,7 +193,7 @@ export function RewritePromptManager({
                   <Edit2 className="h-4 w-4" />
                 </Button>
                 
-                {!defaultPromptIds.includes(prompt.id) && (
+                {prompt.id !== defaultPromptId && (
                   <Button
                     variant="ghost"
                     size="sm"

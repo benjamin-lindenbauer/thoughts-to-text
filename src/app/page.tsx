@@ -36,16 +36,6 @@ export default function Home() {
     setTimeout(() => setNotification(null), 3000);
   }, []);
 
-  // Handle transcription start
-  const handleTranscriptionStart = useCallback(() => {
-    console.log('Transcription started');
-  }, []);
-
-  // Handle transcription completion
-  const handleTranscriptionComplete = useCallback((transcript: string) => {
-    console.log('Transcription completed:', transcript);
-  }, []);
-
   // Handle errors
   const handleError = useCallback((error: string) => {
     console.error('Recording error:', error);
@@ -82,8 +72,6 @@ export default function Home() {
           <div className="max-w-2xl mx-auto rounded-2xl bg-card border border-border/60 shadow-sm p-4 md:p-6">
             <RecordingInterface
               onSave={handleSave}
-              onTranscriptionStart={handleTranscriptionStart}
-              onTranscriptionComplete={handleTranscriptionComplete}
               onError={handleError}
             />
           </div>

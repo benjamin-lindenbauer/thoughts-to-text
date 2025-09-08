@@ -146,6 +146,45 @@ export function useNotes() {
   };
 }
 
+// Hook for recording state management
+export function useRecording() {
+  const { state, dispatch } = useAppContext();
+
+  const startRecording = useCallback(() => {
+    dispatch({ type: 'START_RECORDING' });
+  }, [dispatch]);
+
+  const stopRecording = useCallback((audioBlob: Blob, duration: number) => {
+    dispatch({ type: 'STOP_RECORDING', payload: { audioBlob, duration } });
+  }, [dispatch]);
+
+  const updateDuration = useCallback((duration: number) => {
+    dispatch({ type: 'UPDATE_RECORDING_DURATION', payload: duration });
+  }, [dispatch]);
+
+  const startTranscription = useCallback(() => {
+    dispatch({ type: 'START_TRANSCRIPTION' });
+  }, [dispatch]);
+
+  const completeTranscription = useCallback((transcript: string) => {
+    dispatch({ type: 'COMPLETE_TRANSCRIPTION', payload: transcript });
+  }, [dispatch]);
+
+  const resetRecording = useCallback(() => {
+    dispatch({ type: 'RESET_RECORDING' });
+  }, [dispatch]);
+
+  return {
+    recording: state.recording,
+    startRecording,
+    stopRecording,
+    updateDuration,
+    startTranscription,
+    completeTranscription,
+    resetRecording
+  };
+}
+
 // Hook for UI state management
 export function useUI() {
   const { state, dispatch } = useAppContext();
@@ -211,6 +250,7 @@ export function useAppState() {
     // Individual hooks for specific functionality
     settings: useSettings(),
     notes: useNotes(),
+    recording: useRecording(),
     ui: useUI(),
     offlineQueue: useOfflineQueue(),
     

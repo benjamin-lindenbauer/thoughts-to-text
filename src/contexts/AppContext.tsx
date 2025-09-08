@@ -1,9 +1,10 @@
 'use client';
 
 import React, { createContext, useContext, useReducer, useEffect, useState, ReactNode } from 'react';
-import { AppState, AppAction, Note, AppSettings, RewritePrompt } from '@/types';
-import { retrieveSettings, retrieveApiKey, getAllNotes } from '@/lib/storage';
+import { AppState, AppAction, AppSettings } from '@/types';
+import { retrieveSettings, getAllNotes, storeSettings } from '@/lib/storage';
 import { StatePersistence } from '@/lib/state-persistence';
+import { DEFAULT_REWRITE_PROMPTS } from '@/lib/utils';
 
 // Initial state
 const initialState: AppState = {
@@ -242,8 +243,6 @@ interface AppContextType {
 // Create context
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
-
-
 // Provider component
 export function AppProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(appReducer, initialState);
@@ -278,9 +277,24 @@ export function AppProvider({ children }: { children: ReactNode }) {
         }});
 
         // Load settings from storage
-        const settings = await retrieveSettings();
+        let settings = await retrieveSettings();
         if (settings) {
           dispatch({ type: 'LOAD_SETTINGS', payload: settings });
+        } else {
+          // Only initialize defaults if settings key is not present at all (first run)
+          const existingRaw = localStorage.getItem('thoughts-to-text-settings');
+          if (existingRaw === null) {
+            const defaultSettings: AppSettings = {
+              openaiApiKey: '',
+              defaultLanguage: 'en',
+              theme: 'auto',
+              rewritePrompts: DEFAULT_REWRITE_PROMPTS,
+              defaultRewritePrompt: 'default'
+            };
+            await storeSettings(defaultSettings);
+            dispatch({ type: 'LOAD_SETTINGS', payload: defaultSettings });
+          }
+          // If the key exists but retrieval failed (e.g., corrupted), do not overwrite existing data
         }
         dispatch({ type: 'SETTINGS_LOADED' });
 

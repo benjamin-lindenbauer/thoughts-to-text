@@ -9,7 +9,7 @@ interface StateDebugProps {
 
 // Debug component to show global state information
 export function StateDebug({ show = false }: StateDebugProps) {
-  const { state, settings, notes, recording, ui, offlineQueue } = useAppState();
+  const { settings, notes, recording, ui, offlineQueue } = useAppState();
   const { isReady, isHydrating, hasError, initializationError } = useAppInitialization();
   const { storageInfo, isStorageHealthy } = useStorageHealth();
 
