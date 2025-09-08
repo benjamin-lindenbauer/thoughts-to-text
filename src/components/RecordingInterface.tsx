@@ -106,63 +106,6 @@ export function RecordingInterface({
     }
   }, [selectedLanguage, photo, onError, notes]);
 
-  // Auto-save function for transcript updates
-  const saveTranscriptUpdate = useCallback(async (transcript: string) => {
-    const noteId = currentNoteIdRef.current || currentNoteId;
-    if (!noteId) return;
-
-    try {
-      // Get the current note from state or fall back to storage if not yet in state
-      let currentNote = notes.getNote(noteId);
-      if (!currentNote) {
-        const { retrieveNote } = await import('@/lib/storage');
-        const stored = await retrieveNote(noteId);
-        if (!stored) return;
-        currentNote = stored;
-      }
-
-      // Generate title and description from transcript
-      const { generateNoteMetadata } = await import('@/lib/api');
-      const { retrieveApiKey } = await import('@/lib/storage');
-      const apiKey = await retrieveApiKey();
-
-      let title = currentNote.title;
-      let description = currentNote.description;
-      let keywords = currentNote.keywords;
-
-      if (apiKey && transcript.trim()) {
-        try {
-          const generated = await generateNoteMetadata(transcript, apiKey);
-          title = generated.title || title;
-          description = generated.description || description;
-          keywords = generated.keywords || keywords;
-        } catch (error) {
-          console.warn('Failed to generate title/description:', error);
-          // Use fallback title/description
-          title = transcript.slice(0, 50) + (transcript.length > 50 ? '...' : '');
-          description = transcript.slice(0, 200) + (transcript.length > 200 ? '...' : '');
-        }
-      }
-
-      // Update note with transcript and generated metadata
-      const updatedNote = {
-        ...currentNote,
-        title,
-        description,
-        transcript,
-        keywords,
-        updatedAt: new Date()
-      };
-
-      // Save updated note immediately
-      await notes.updateNote(updatedNote);
-
-    } catch (error) {
-      console.error('Failed to save transcript:', error);
-      onError?.('Failed to save transcript. Please try again.');
-    }
-  }, [currentNoteId, onError, notes]);
-
   // Auto-save function for rewritten text updates
   const saveRewrittenTextUpdate = useCallback(async (rewrittenText: string) => {
     const noteId = currentNoteIdRef.current || currentNoteId;
@@ -760,7 +703,7 @@ export function RecordingInterface({
 
       {/* Duration display + actions */}
       {(recordingState.isRecording || recordingState.duration > 0) && (
-        <div className="flex items-center gap-4">
+        <div className={`flex w-full max-w-lg items-center ${transcript?.length ? 'justify-between' : 'justify-center'} gap-4`}>
           <div className="text-center" id="recording-status">
             <div
               className="text-2xl md:text-3xl font-mono font-bold text-foreground"
@@ -774,8 +717,8 @@ export function RecordingInterface({
             </p>
           </div>
 
-          {/* Show Save/Discard only after transcript is ready */}
-          {!recordingState.isRecording && recordingState.duration > 0 && !isTranscribing && Boolean(transcript) && (
+          {/* Show Save/Discard after transcription completes (even if empty) */}
+          {!recordingState.isRecording && recordingState.duration > 0 && !isTranscribing && transcript !== null && (
             <div className="flex items-center gap-2 ml-8">
               <button
                 onClick={handleSaveNote}
@@ -785,7 +728,7 @@ export function RecordingInterface({
                   'disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-sm disabled:active:scale-100'
                 )}
                 aria-label="Save recording and transcript"
-                disabled={isSaving}
+                disabled={isSaving || !transcript.length}
               >
                 <Save className="w-4 h-4" />
                 Save
@@ -823,12 +766,17 @@ export function RecordingInterface({
         </div>
       )}
 
-      {/* Transcript preview (only after recording stops) */}
-      {!showMinimalUI && transcript && (
-        <div className="w-full max-w-md space-y-4">
+      {/* Transcript area (only after recording stops). Show info box if empty string. */}
+      {showMinimalUI || isTranscribing ? null : transcript?.trim().length ? (
+        <div className="w-full max-w-lg space-y-4">
           <div className="p-4 bg-secondary border border-border rounded-lg">
             <h3 className="font-medium text-foreground mb-2">Original Transcript:</h3>
-            <p className="text-sm text-muted-foreground">{transcript}</p>
+              <textarea
+                className="w-full p-3 rounded-md border border-border bg-background text-sm text-foreground resize-y min-h-[120px] focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                value={transcript}
+                onChange={(e) => setTranscript(e.target.value)}
+                aria-label="Edit transcript"
+              />
           </div>
 
           {/* Rewrite prompt selection and button */}
@@ -853,7 +801,11 @@ export function RecordingInterface({
 
             <button
               onClick={handleRewrite}
-              disabled={isRewriting || !transcript}
+              disabled={
+                isRewriting ||
+                transcript === null ||
+                (typeof transcript === 'string' && transcript.trim().length === 0)
+              }
               className={cn(
                 "w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-medium transition-all duration-200",
                 "bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600",
@@ -895,11 +847,15 @@ export function RecordingInterface({
             </div>
           )}
         </div>
+      ) : (
+        <div className="text-sm text-red-700 bg-red-50 dark:text-red-300 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-md p-3">
+          No speech detected.
+        </div>
       )}
 
       {/* Camera preview or photo preview (only after recording stops) */}
       {!showMinimalUI && (isCameraActive || isCameraLoading || photoPreview) && (
-        <div className="relative w-full max-w-sm">
+        <div className="relative w-full max-w-lg">
           {(isCameraLoading || isCameraActive) ? (
             <div className="relative rounded-lg overflow-hidden">
               <video

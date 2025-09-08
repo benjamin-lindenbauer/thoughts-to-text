@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
 
-// Ensure this route runs in the Node.js runtime where the OpenAI SDK is fully supported
-export const runtime = 'nodejs';
+const defaultPrompt = 'Provide an accurate transcription of the audio file. If there is no audio, return ""';
 
 export async function POST(request: NextRequest) {
   try {
@@ -29,7 +28,7 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData();
     const audioFile = formData.get('audio') as File;
     const language = formData.get('language') as string || 'en';
-    const prompt = formData.get('prompt') as string || '';
+    const prompt = formData.get('prompt') as string || defaultPrompt;
     const model = formData.get('model') as string || 'gpt-4o-transcribe';
 
     if (!audioFile) {

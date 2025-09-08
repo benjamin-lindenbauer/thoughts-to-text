@@ -115,12 +115,19 @@ export async function transcribeAudio(
 
       const result = await response.json();
       
+      // Normalize transcripts that are quote-only or whitespace-only
+      const rawTranscript: string = typeof result.transcript === 'string' ? result.transcript : '';
+      const trimmed = rawTranscript.trim();
+      // Remove leading/trailing common quote characters and re-check emptiness
+      const strippedQuotes = trimmed.replace(/^["'“”‘’]+|["'“”‘’]+$/g, '').trim();
+      const normalizedTranscript = strippedQuotes.length === 0 ? '' : rawTranscript;
+
       errorLogger.info('api', 'Audio transcription completed', {
-        transcriptLength: result.transcript?.length || 0,
+        transcriptLength: normalizedTranscript.length,
         detectedLanguage: result.language,
       });
 
-      return result;
+      return { ...result, transcript: normalizedTranscript };
     } catch (error) {
       const { errorLogger } = await import('./error-logging');
       
