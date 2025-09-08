@@ -10,11 +10,11 @@ import { useOffline } from '@/hooks/useOffline';
 import { retrieveApiKey } from '@/lib/storage';
 import { cn, DEFAULT_REWRITE_PROMPTS, LANGUAGE_OPTIONS } from '@/lib/utils';
 import { rewriteText, transcribeAudio, generateNoteMetadata } from '@/lib/api';
-import { RewritePrompt } from '@/types';
+import { RewritePrompt, Note } from '@/types';
 import Link from 'next/link';
 
 interface RecordingInterfaceProps {
-  onSave?: (audioBlob: Blob, transcript?: string, photo?: Blob, rewrittenText?: string) => void;
+  onSave?: (noteId: string, note: Note) => void;
   onError?: (error: string) => void;
   className?: string;
 }
@@ -505,11 +505,10 @@ export function RecordingInterface({
       haptic.buttonPress();
       announce('Note saved', 'polite');
 
-      // Notify parent that the recording and transcript were saved successfully
-      onSave?.(recordingState.audioBlob, transcript || undefined, photo || undefined, rewrittenText || undefined);
+      // Notify parent of the newly created note so it can decide next actions (e.g., navigate)
+      onSave?.(noteId, newNote);
 
-      // Reset UI after save
-      handleDiscard();
+      // Navigation is handled by the parent via onSave
 
     } catch (error) {
       console.error('Failed to save note:', error);
@@ -517,7 +516,7 @@ export function RecordingInterface({
     } finally {
       setIsSaving(false);
     }
-  }, [recordingState.audioBlob, recordingState.duration, transcript, rewrittenText, selectedLanguage, photo, notes, haptic, announce, onError, handleDiscard]);
+  }, [recordingState.audioBlob, recordingState.duration, transcript, rewrittenText, selectedLanguage, photo, notes, haptic, announce, onError]);
 
   // Handle recording completion: auto-transcribe only when online and API key exists
   React.useEffect(() => {

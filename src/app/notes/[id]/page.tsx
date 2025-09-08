@@ -10,33 +10,22 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { useOffline } from '@/hooks/useOffline';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  ArrowLeft,
-  Edit3,
-  Save,
-  X,
-  Share,
-  Trash2,
-  Calendar,
-  Clock,
-  Mic,
-  FileText,
-  Sparkles,
-  Camera
-} from 'lucide-react';
+import { ArrowLeft, Edit3, Save, X, Share, Trash2, Calendar, Clock, Mic, FileText, Sparkles, Camera } from 'lucide-react';
 import { Note } from '@/types';
-import { retrieveNote, updateNote, deleteNote } from '@/lib/storage';
+import { retrieveNote, updateNote, deleteNote, retrieveApiKey } from '@/lib/storage';
 import { useWebShare } from '@/hooks/useWebShare';
 import { useToast } from '@/hooks/useToast';
 import { ToastContainer } from '@/components/Toast';
+import { transcribeAudio } from '@/lib/api';
 
 export default function NoteDetailsPage() {
   const params = useParams();
   const router = useRouter();
   const { shareNote } = useWebShare();
   const { toasts, removeToast, success, error: showError } = useToast();
-
+  const { isOnline } = useOffline();
   const [note, setNote] = useState<Note | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -45,6 +34,7 @@ export default function NoteDetailsPage() {
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [transcribing, setTranscribing] = useState(false);
 
   const noteId = params.id as string;
 
@@ -137,6 +127,38 @@ export default function NoteDetailsPage() {
 
   const closeDeleteDialog = () => {
     setShowDeleteDialog(false);
+  };
+
+  // Transcribe audio for this note
+  const handleTranscribe = async () => {
+    if (!note) return;
+    try {
+      setTranscribing(true);
+      setError(null);
+      const apiKey = await retrieveApiKey();
+      if (!apiKey) {
+        showError('OpenAI API key not configured', 'Please set your API key in Settings to enable transcription.');
+        return;
+      }
+
+      const result = await transcribeAudio(note.audioBlob, apiKey, note.language || 'auto');
+      const updatedNote: Note = {
+        ...note,
+        transcript: result.transcript || '',
+        language: result.language || note.language,
+        updatedAt: new Date(),
+      };
+
+      await updateNote(updatedNote);
+      setNote(updatedNote);
+      success('Transcription complete', 'The transcript was added to your note.');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to transcribe audio';
+      setError(message);
+      showError('Transcription failed', message);
+    } finally {
+      setTranscribing(false);
+    }
   };
 
   // Share note
@@ -354,7 +376,6 @@ export default function NoteDetailsPage() {
             <CardContent className="space-y-4">
               {/* Description */}
               <div>
-                <h3 className="mb-2">Description</h3>
                 {isEditing ? (
                   <Textarea
                     value={editedNote.description || ''}
@@ -371,7 +392,6 @@ export default function NoteDetailsPage() {
 
               {/* Keywords */}
               <div>
-                <h3 className="mb-2">Keywords</h3>
                 {isEditing ? (
                   <div className="space-y-2">
                     {(editedNote.keywords || []).map((keyword, index) => (
@@ -465,11 +485,33 @@ export default function NoteDetailsPage() {
               </h3>
             </CardHeader>
             <CardContent>
-              <div className="prose prose-sm max-w-none dark:prose-invert">
-                <p className="whitespace-pre-wrap text-foreground leading-relaxed">
-                  {note.transcript}
-                </p>
-              </div>
+              {typeof note.transcript === 'string' && note.transcript.trim().length > 0 ? (
+                <div className="prose prose-sm max-w-none dark:prose-invert">
+                  <p className="whitespace-pre-wrap text-foreground leading-relaxed">
+                    {note.transcript}
+                  </p>
+                </div>
+              ) : (
+                <div className="flex flex-row items-center gap-3">
+                  <p className="text-sm text-muted-foreground">No transcript available.</p>
+                  {isOnline && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleTranscribe}
+                      disabled={transcribing}
+                      className="flex items-center gap-2"
+                    >
+                      {transcribing ? (
+                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-indigo-500" />
+                      ) : (
+                        <FileText className="h-4 w-4" />
+                      )}
+                      {transcribing ? 'Transcribing…' : 'Transcribe'}
+                    </Button>
+                  )}
+                </div>
+              )}
             </CardContent>
           </Card>
 

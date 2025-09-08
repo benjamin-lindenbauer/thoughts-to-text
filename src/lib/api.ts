@@ -68,7 +68,7 @@ const parseAPIError = async (response: Response): Promise<APIError> => {
   }
 };
 
-// Transcribe audio using OpenAI Whisper
+// Transcribe audio using OpenAI GPT-4o
 export async function transcribeAudio(
   audioBlob: Blob,
   apiKey: string,

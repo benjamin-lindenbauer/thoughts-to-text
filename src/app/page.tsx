@@ -1,12 +1,15 @@
 'use client';
 
 import React, { useState, useCallback, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { AppLayout } from "@/components/AppLayout";
 import { RecordingInterface } from "@/components/RecordingInterface";
 import { AlertCircle, CheckCircle, Sparkles } from "lucide-react";
 import { animations } from "@/lib/animations";
+import { Note } from "@/types";
 
 export default function Home() {
+  const router = useRouter();
   const [notification, setNotification] = useState<{
     type: 'success' | 'error';
     message: string;
@@ -19,22 +22,26 @@ export default function Home() {
   }, []);
 
   // Handle save after user clicks Save in RecordingInterface
-  const handleSave = useCallback((audioBlob: Blob, transcript?: string, photo?: Blob, rewrittenText?: string) => {
-    console.log('Recording completed:', {
-      audioSize: audioBlob.size,
-      hasTranscript: !!transcript,
-      hasPhoto: !!photo,
-      hasRewrittenText: !!rewrittenText
+  const handleSave = useCallback((noteId: string, note: Note) => {
+    console.log('Recording saved:', {
+      noteId,
+      title: note.title,
+      hasTranscript: !!note.transcript,
+      hasPhoto: !!note.photoBlob,
+      hasRewrittenText: !!note.rewrittenText
     });
 
     setNotification({
       type: 'success',
-      message: 'Recording saved successfully!'
+      message: 'Recording saved successfully! Redirecting...'
     });
+
+    // Navigate to the newly created note
+    router.push(`/notes/${noteId}`);
 
     // Clear notification after 3 seconds
     setTimeout(() => setNotification(null), 3000);
-  }, []);
+  }, [router]);
 
   // Handle errors
   const handleError = useCallback((error: string) => {
