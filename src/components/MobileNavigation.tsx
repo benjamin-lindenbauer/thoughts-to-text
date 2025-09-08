@@ -24,7 +24,6 @@ const navItems: NavItem[] = [
     href: '/',
     icon: Mic,
     label: 'Record',
-    className: 'text-indigo-500 hover:text-indigo-500',
   },
   {
     href: '/settings',

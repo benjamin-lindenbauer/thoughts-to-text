@@ -93,7 +93,7 @@ export class ErrorBoundary extends Component<Props, State> {
   render() {
     if (this.state.hasError) {
       return this.props.fallback || (
-        <div className="min-h-screen flex flex-col items-center justify-center p-8 text-center bg-background">
+        <div className="flex flex-col items-center justify-center p-8 text-center bg-background">
           <div className="max-w-md w-full space-y-6">
             <div className="text-red-500 text-6xl mb-4">
               <AlertTriangle className="w-16 h-16 mx-auto" />

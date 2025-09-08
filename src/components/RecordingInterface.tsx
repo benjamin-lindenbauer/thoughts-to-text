@@ -631,7 +631,7 @@ export function RecordingInterface({
 
       {/* Duration display + actions */}
       {(recordingState.isRecording || recordingState.duration > 0) && (
-        <div className={`flex w-full items-center ${!recordingState.isRecording ? 'justify-between' : 'justify-center'} gap-4`}>
+        <div className="flex w-full items-center justify-center gap-4">
           <div className="text-center" id="recording-status">
             <div
               className="text-2xl md:text-3xl font-mono font-bold text-foreground"
@@ -647,14 +647,13 @@ export function RecordingInterface({
 
           {/* Show Save/Discard after recording stops (transcript may be absent) */}
           {!recordingState.isRecording && recordingState.duration > 0 && (
-            <div className="flex items-center gap-2 ml-8">
+            <div className="flex flex-col items-center gap-2 ml-8">
               <button
                 type="button"
                 onClick={handleSaveNote}
                 className={cn(
-                  'flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-white shadow-sm hover:shadow-md active:scale-95 transition-all',
-                  'bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600',
-                  'disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-sm disabled:active:scale-100'
+                  'flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium',
+                  'btn-gradient-primary'
                 )}
                 aria-label="Save recording"
                 disabled={isSaving || !recordingState.audioBlob}
@@ -724,7 +723,7 @@ export function RecordingInterface({
       {!showMinimalUI && !isTranscribing && transcriptionAttempted && transcript?.trim().length ? (
         <div className="w-full space-y-4">
           <div className="p-4 bg-secondary border border-border rounded-lg">
-            <h3 className="font-medium text-foreground mb-2">Original Transcript:</h3>
+            <h3 className="font-medium text-foreground mb-2">Transcript:</h3>
             <textarea
               className="w-full p-3 rounded-md border border-border bg-background text-sm text-foreground resize-y min-h-[120px] focus:outline-none focus:ring-2 focus:ring-indigo-500"
               value={transcript}
@@ -776,10 +775,8 @@ export function RecordingInterface({
                 (typeof transcript === 'string' && transcript.trim().length === 0)
               }
               className={cn(
-                "w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-medium transition-all duration-200",
-                "bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600",
-                "text-white shadow-sm hover:shadow-md active:scale-95",
-                "disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-sm disabled:active:scale-100"
+                "w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-medium",
+                "btn-gradient-primary"
               )}
             >
               {isRewriting ? (
