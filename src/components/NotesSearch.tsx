@@ -109,7 +109,7 @@ export function NotesSearch({
             placeholder="Search notes..."
             value={localSearchQuery}
             onChange={handleSearchChange}
-            className="w-full pl-10 pr-10 py-3 rounded-xl border border-border bg-secondary text-foreground placeholder:text-muted-foreground shadow-sm transition-colors focus:border-transparent"
+            className="w-full pl-10 pr-10 py-3 rounded-xl border"
           />
           {localSearchQuery && (
             <button
@@ -124,7 +124,7 @@ export function NotesSearch({
         <div className="relative" ref={filterRef}>
           <button
             onClick={() => setIsFilterOpen(!isFilterOpen)}
-            className={`p-3 md:p-4 rounded-xl border border-border bg-card transition-colors shadow-sm touch-manipulation active:scale-95 ${
+            className={`p-3 md:p-4 rounded-xl border border-border bg-card transition-colors touch-manipulation active:scale-95 ${
               hasActiveFilters 
                 ? 'text-indigo-500 border-indigo-200 bg-indigo-50 dark:bg-indigo-950 dark:border-indigo-800' 
                 : 'text-muted-foreground hover:text-foreground hover:bg-accent'
@@ -135,7 +135,7 @@ export function NotesSearch({
           
           {/* Filter Dropdown */}
           {isFilterOpen && (
-            <div className="absolute right-0 top-full mt-2 w-80 max-w-none bg-card border border-border rounded-xl shadow-lg p-4 z-50">
+            <div className="absolute right-0 top-full mt-2 w-80 max-w-none bg-card border border-border rounded-xl shadow p-4 z-50">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-medium text-foreground">Filter & Sort</h3>
                 {hasActiveFilters && (

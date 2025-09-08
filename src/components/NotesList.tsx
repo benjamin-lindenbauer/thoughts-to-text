@@ -242,7 +242,7 @@ export function NotesList({
                                     }
                                 >
                                     <div
-                                        className="mb-4 p-4 rounded-xl border border-border bg-card hover:bg-accent/50 transition-colors cursor-pointer"
+                                        className="mb-4 p-4 rounded-xl border border-border bg-card hover:bg-accent transition-colors cursor-pointer"
                                         onClick={() => handleNoteClick(note.id)}
                                         onContextMenu={(e) => handleContextMenu(e, note.id)}
                                         onKeyDown={(e) => {
