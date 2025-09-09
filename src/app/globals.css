@@ -317,4 +317,15 @@
     @apply transition-all duration-200 active:scale-95;
     @apply disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-sm disabled:active:scale-100;
   }
+  
+  /* Reusable info and error boxes */
+  .info-box {
+    @apply text-sm text-amber-800 bg-amber-50 dark:text-amber-200 dark:bg-amber-900/30;
+    @apply border border-amber-200 dark:border-amber-800 rounded-md p-3;
+  }
+  
+  .error-box {
+    @apply text-sm text-red-700 bg-red-50 dark:text-red-300 dark:bg-red-950/30;
+    @apply border border-red-200 dark:border-red-800 rounded-md p-3;
+  }
 }

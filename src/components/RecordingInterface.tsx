@@ -583,8 +583,8 @@ export function RecordingInterface({
 
       {/* Info when no OpenAI API key is set */}
       {showMinimalUI && !hasApiKey && (
-        <div className="text-sm text-amber-800 bg-amber-50 dark:text-amber-200 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800 rounded-md p-3">
-          Please set your OpenAI API key in the <Link href="/settings" className="underline">settings</Link> to enable transcription and AI-powered note rewrites.
+        <div className="info-box">
+          Please set your OpenAI API key in <Link href="/settings" className="underline">Settings</Link> to enable transcription and AI-powered note rewrites.
         </div>
       )}
 
@@ -712,12 +712,12 @@ export function RecordingInterface({
       {!showMinimalUI && !isTranscribing && !transcriptionAttempted && (!isOnline || !hasApiKey) && (
         <div className="w-full space-y-2">
           {!isOnline && (
-            <div className="text-sm text-amber-800 bg-amber-50 dark:text-amber-200 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800 rounded-md p-3">
+            <div className="info-box">
               You are offline. You can save now and transcribe later.
             </div>
           )}
           {isOnline && !hasApiKey && (
-            <div className="text-sm text-amber-800 bg-amber-50 dark:text-amber-200 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800 rounded-md p-3">
+            <div className="info-box">
               OpenAI API key not configured. Please set your API key in <Link href="/settings" className="underline">Settings</Link> to enable transcription.
             </div>
           )}
@@ -822,7 +822,7 @@ export function RecordingInterface({
 
       {/* No speech detected message when transcription attempted but empty */}
       {!showMinimalUI && !isTranscribing && transcriptionAttempted && !(transcript?.trim().length) && (
-        <div className="text-sm text-red-700 bg-red-50 dark:text-red-300 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-md p-3">
+        <div className="error-box">
           No speech detected.
         </div>
       )}
