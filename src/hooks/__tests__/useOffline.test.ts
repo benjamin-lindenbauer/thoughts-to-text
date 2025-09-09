@@ -114,6 +114,7 @@ describe('useOffline', () => {
     const { result: result3 } = renderHook(() => useOffline());
     expect(result3.current.getConnectionQuality()).toBe('offline');
   });
+});
 
 describe('usePWAInstall', () => {
   beforeEach(async () => {
