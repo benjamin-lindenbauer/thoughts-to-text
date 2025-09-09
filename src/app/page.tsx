@@ -4,16 +4,15 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { AppLayout } from "@/components/AppLayout";
 import { RecordingInterface } from "@/components/RecordingInterface";
-import { AlertCircle, CheckCircle, Sparkles } from "lucide-react";
+import { Sparkles } from "lucide-react";
 import { animations } from "@/lib/animations";
 import { Note } from "@/types";
+import { useToast } from "@/hooks/useToast";
+import { ToastContainer } from "@/components/Toast";
 
 export default function Home() {
   const router = useRouter();
-  const [notification, setNotification] = useState<{
-    type: 'success' | 'error';
-    message: string;
-  } | null>(null);
+  const { toasts, removeToast, success, error: showError } = useToast();
   const [isLoaded, setIsLoaded] = useState(false);
 
   // Initialize component with animation
@@ -31,10 +30,7 @@ export default function Home() {
       hasRewrittenText: !!note.rewrittenText
     });
 
-    setNotification({
-      type: 'success',
-      message: 'Recording saved successfully! Redirecting...'
-    });
+    success('Recording saved successfully!', 'Redirecting...');
 
     // Try to prefetch the note details route so it works offline
     try {
@@ -45,21 +41,12 @@ export default function Home() {
 
     // Navigate to the newly created note
     router.push(`/notes/${noteId}`);
-
-    // Clear notification after 3 seconds
-    setTimeout(() => setNotification(null), 3000);
   }, [router]);
 
   // Handle errors
   const handleError = useCallback((error: string) => {
     console.error('Recording error:', error);
-    setNotification({
-      type: 'error',
-      message: error
-    });
-
-    // Clear notification after 5 seconds for errors
-    setTimeout(() => setNotification(null), 5000);
+    showError(error);
   }, []);
 
   return (
@@ -86,20 +73,8 @@ export default function Home() {
           />
         </div>
 
-        {/* Enhanced Notification with better animations */}
-        {notification && (
-          <div className={`fixed top-4 right-4 left-4 sm:left-auto p-4 rounded-xl shadow-xl flex items-center gap-4 max-w-sm sm:max-w-sm z-50 backdrop-blur-md ${notification.type === 'success'
-            ? 'bg-green-50/90 border border-green-200 text-green-800 dark:bg-green-900/30 dark:border-green-800 dark:text-green-200'
-            : 'bg-red-50/90 border border-red-200 text-red-800 dark:bg-red-900/30 dark:border-red-800 dark:text-red-200'
-            } ${animations.slideInFromTop}`}>
-            {notification.type === 'success' ? (
-              <CheckCircle className="w-5 h-5 flex-shrink-0 animate-pulse" />
-            ) : (
-              <AlertCircle className="w-5 h-5 flex-shrink-0 animate-bounce" />
-            )}
-            <p className="text-sm font-medium">{notification.message}</p>
-          </div>
-        )}
+        {/* Toast Notifications */}
+        <ToastContainer toasts={toasts} onRemoveToast={removeToast} />
 
         {/* Subtle background decoration */}
         <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none w-full h-full">

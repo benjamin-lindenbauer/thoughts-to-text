@@ -12,12 +12,15 @@ import { ThemeToggle } from '@/components/ThemeToggle';
 import { RewritePromptManager } from '@/components/RewritePromptManager';
 import { PWAInstallButton } from '@/components/PWAInstallPrompt';
 import { cn } from '@/lib/utils';
+import { useToast } from "@/hooks/useToast";
+import { ToastContainer } from "@/components/Toast";
 
 export function SettingsForm() {
   const { settings, ui, state } = useAppState();
   const isLoading = !state?.isSettingsLoaded;
   const settingsError = ui?.error;
 
+  const { toasts, removeToast, success, error: showError } = useToast();
   const { setTheme } = useTheme();
 
   // Validation helpers
@@ -46,6 +49,7 @@ export function SettingsForm() {
     };
     const updatedPrompts = [...settings.settings.rewritePrompts, newPrompt];
     await settings.updateSettings({ rewritePrompts: updatedPrompts });
+    success('Rewrite prompt added successfully!');
     return newPrompt.id;
   };
 
@@ -55,6 +59,7 @@ export function SettingsForm() {
       prompt.id === id ? { ...prompt, ...updates } : prompt
     );
     await settings.updateSettings({ rewritePrompts: updatedPrompts });
+    success('Rewrite prompt updated successfully!');
   };
 
   const deleteRewritePrompt = async (id: string) => {
@@ -68,6 +73,7 @@ export function SettingsForm() {
       rewritePrompts: updatedPrompts,
       defaultRewritePrompt: newDefaultPrompt
     });
+    success('Rewrite prompt deleted successfully!');
   };
 
   const setDefaultRewritePrompt = async (promptId: string) => {
@@ -80,6 +86,7 @@ export function SettingsForm() {
       rewritePrompts: updatedPrompts,
       defaultRewritePrompt: promptId,
     });
+    success('Default rewrite prompt set successfully!');
   };
 
   // Local form state
@@ -170,6 +177,8 @@ export function SettingsForm() {
 
   return (
     <div>
+      {/* Toast Notifications */}
+      <ToastContainer toasts={toasts} onRemoveToast={removeToast} />
 
       {/* Global Error Display */}
       {(settingsError || formError) && (

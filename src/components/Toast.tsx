@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { X, CheckCircle, AlertCircle, Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -105,7 +106,17 @@ interface ToastContainerProps {
 }
 
 export function ToastContainer({ toasts, onRemoveToast }: ToastContainerProps) {
-  return (
+  // Render toasts into a portal at the document body so they are not affected by
+  // ancestor stacking contexts (e.g., the fixed <main> in AppLayout).
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) return null;
+
+  return createPortal(
     <div className="fixed top-0 right-0 z-50 p-4 space-y-2 pointer-events-none">
       {toasts.map((toast) => (
         <div key={toast.id} className="pointer-events-auto">
@@ -115,6 +126,7 @@ export function ToastContainer({ toasts, onRemoveToast }: ToastContainerProps) {
           />
         </div>
       ))}
-    </div>
+    </div>,
+    document.body
   );
 }
