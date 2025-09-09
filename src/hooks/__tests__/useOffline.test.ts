@@ -115,24 +115,6 @@ describe('useOffline', () => {
     expect(result3.current.getConnectionQuality()).toBe('offline');
   });
 
-  it('should calculate offline duration', () => {
-    const { result } = renderHook(() => useOffline());
-
-    // When online, should return null
-    expect(result.current.getOfflineDuration()).toBeNull();
-
-    // When offline, should return duration
-    act(() => {
-      (navigator as any).onLine = false;
-      window.dispatchEvent(new Event('offline'));
-    });
-
-    const duration = result.current.getOfflineDuration();
-    expect(typeof duration).toBe('number');
-    expect(duration).toBeGreaterThanOrEqual(0);
-  });
-});
-
 describe('usePWAInstall', () => {
   beforeEach(async () => {
     vi.clearAllMocks();

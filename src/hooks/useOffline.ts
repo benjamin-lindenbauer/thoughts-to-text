@@ -118,13 +118,6 @@ export const useOffline = () => {
     }
   }, [state.isOnline, updateSyncQueue]);
 
-  const getOfflineDuration = useCallback((): number | null => {
-    if (state.isOnline || !state.lastOnlineAt) {
-      return null;
-    }
-    return Date.now() - state.lastOnlineAt.getTime();
-  }, [state.isOnline, state.lastOnlineAt]);
-
   const getConnectionQuality = useCallback((): 'good' | 'poor' | 'offline' => {
     if (!state.isOnline) return 'offline';
     
@@ -145,7 +138,6 @@ export const useOffline = () => {
     ...state,
     addToSyncQueue,
     processSyncQueue,
-    getOfflineDuration,
     getConnectionQuality,
     queueItems: pwaManager.queueItems,
   };

@@ -1,7 +1,7 @@
 'use client';
 
 import { useOffline } from '@/hooks/useOffline';
-import { Wifi, WifiOff, Clock, RefreshCw } from 'lucide-react';
+import { Wifi, WifiOff, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface OfflineIndicatorProps {
@@ -13,33 +13,17 @@ export function OfflineIndicator({ className, showDetails = false }: OfflineIndi
   const { 
     isOnline, 
     isOffline, 
-    syncQueueLength, 
-    getOfflineDuration, 
+    syncQueueLength,  
     getConnectionQuality,
     processSyncQueue 
   } = useOffline();
 
-  const offlineDuration = getOfflineDuration();
   const connectionQuality = getConnectionQuality();
 
   // Don't render anything during SSR or if online with no queue and no details requested
   if (typeof window === 'undefined' || (isOnline && syncQueueLength === 0 && !showDetails)) {
     return null;
   }
-
-  const formatDuration = (ms: number): string => {
-    const seconds = Math.floor(ms / 1000);
-    const minutes = Math.floor(seconds / 60);
-    const hours = Math.floor(minutes / 60);
-
-    if (hours > 0) {
-      return `${hours}h ${minutes % 60}m`;
-    } else if (minutes > 0) {
-      return `${minutes}m ${seconds % 60}s`;
-    } else {
-      return `${seconds}s`;
-    }
-  };
 
   return (
     <div className={cn(
@@ -66,12 +50,6 @@ export function OfflineIndicator({ className, showDetails = false }: OfflineIndi
         {isOffline ? (
           <div className="flex items-center gap-2">
             <span>Offline</span>
-            {offlineDuration && (
-              <div className="flex items-center gap-1 text-xs opacity-75">
-                <Clock className="h-3 w-3" />
-                <span>{formatDuration(offlineDuration)}</span>
-              </div>
-            )}
           </div>
         ) : (
           <span>
