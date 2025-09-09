@@ -24,7 +24,6 @@ interface RewritePromptManagerProps {
   onUpdatePrompt: (id: string, updates: Partial<Omit<RewritePrompt, 'id'>>) => Promise<void>;
   onDeletePrompt: (id: string) => Promise<void>;
   onSetDefault: (promptId: string) => Promise<void>;
-  defaultPromptIds: string[];
 }
 
 interface PromptFormData {
@@ -39,7 +38,6 @@ export function RewritePromptManager({
   onUpdatePrompt,
   onDeletePrompt,
   onSetDefault,
-  defaultPromptIds,
 }: RewritePromptManagerProps) {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingPrompt, setEditingPrompt] = useState<RewritePrompt | null>(null);
@@ -103,11 +101,10 @@ export function RewritePromptManager({
   };
 
   const handleDeletePrompt = async (prompt: RewritePrompt) => {
-    if (defaultPromptIds.includes(prompt.id)) {
-      setError('Cannot delete default prompts');
+    if (prompts.length === 1) {
+      setError('Cannot delete the last prompt');
       return;
     }
-
     try {
       await onDeletePrompt(prompt.id);
     } catch (err) {
@@ -305,7 +302,7 @@ export function RewritePromptManager({
                 placeholder="e.g., Make Professional"
                 value={formData.name}
                 onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                disabled={isSubmitting || (editingPrompt ? defaultPromptIds.includes(editingPrompt.id) : false)}
+                disabled={isSubmitting}
               />
             </div>
             
@@ -317,16 +314,10 @@ export function RewritePromptManager({
                 placeholder="Enter the instruction for how to rewrite the text..."
                 value={formData.prompt}
                 onChange={(e) => setFormData(prev => ({ ...prev, prompt: e.target.value }))}
-                disabled={isSubmitting || (editingPrompt ? defaultPromptIds.includes(editingPrompt.id) : false)}
+                disabled={isSubmitting}
                 rows={4}
               />
             </div>
-            
-            {editingPrompt && defaultPromptIds.includes(editingPrompt.id) && (
-              <p className="text-xs text-muted-foreground">
-                Default prompts cannot be edited.
-              </p>
-            )}
           </div>
           
           <DialogFooter>
@@ -342,8 +333,7 @@ export function RewritePromptManager({
               disabled={
                 isSubmitting || 
                 !formData.name.trim() || 
-                !formData.prompt.trim() ||
-                (editingPrompt ? defaultPromptIds.includes(editingPrompt.id) : false)
+                !formData.prompt.trim()
               }
             >
               {isSubmitting ? 'Saving...' : 'Save Changes'}

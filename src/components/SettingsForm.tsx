@@ -316,7 +316,6 @@ export function SettingsForm() {
               onUpdatePrompt={updateRewritePrompt}
               onDeletePrompt={deleteRewritePrompt}
               onSetDefault={setDefaultRewritePrompt}
-              defaultPromptIds={DEFAULT_REWRITE_PROMPTS.map(p => p.id)}
             />
           </div>
         </div>
