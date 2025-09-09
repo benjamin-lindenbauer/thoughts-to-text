@@ -101,13 +101,14 @@ export function PWAInstallPrompt({ className }: PWAInstallPromptProps) {
 export function PWAInstallButton({ className }: { className?: string }) {
   const { canInstall, isInstalled, install } = usePWAInstall();
 
-  if (!canInstall || isInstalled) {
+  if (!canInstall) {
     return null;
   }
 
   return (
     <button
       onClick={install}
+      disabled={isInstalled}
       className={cn(
         "inline-flex items-center gap-2 px-3 py-2 text-sm font-medium",
         "bg-indigo-100 hover:bg-indigo-200 dark:bg-indigo-900/30 dark:hover:bg-indigo-900/50",
@@ -116,7 +117,7 @@ export function PWAInstallButton({ className }: { className?: string }) {
       )}
     >
       <Download className="w-4 h-4" />
-      Install App
+      {isInstalled ? 'Already installed' : 'Install App'}
     </button>
   );
 }

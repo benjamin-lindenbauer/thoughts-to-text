@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Key, Globe, MessageSquare, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { useAppState } from '@/hooks/useAppState';
 import { useTheme } from '@/contexts/ThemeContext';
-import { DEFAULT_REWRITE_PROMPTS, LANGUAGE_OPTIONS } from '@/lib/utils';
+import { LANGUAGE_OPTIONS } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -14,9 +14,11 @@ import { PWAInstallButton } from '@/components/PWAInstallPrompt';
 import { cn } from '@/lib/utils';
 import { useToast } from "@/hooks/useToast";
 import { ToastContainer } from "@/components/Toast";
+import { usePWAInstall } from '@/hooks/useOffline';
 
 export function SettingsForm() {
   const { settings, ui, state } = useAppState();
+  const { canInstall } = usePWAInstall();
   const isLoading = !state?.isSettingsLoaded;
   const settingsError = ui?.error;
 
@@ -321,21 +323,23 @@ export function SettingsForm() {
         </div>
 
         {/* PWA Settings */}
-        <div className="space-y-4">
-          <div className="flex items-center gap-2">
-            <MessageSquare className="w-5 h-5 text-indigo-500" />
-            <h2 className="text-lg font-semibold text-foreground">
-              App Installation
-            </h2>
+        {canInstall && (
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <MessageSquare className="w-5 h-5 text-indigo-500" />
+              <h2 className="text-lg font-semibold text-foreground">
+                App Installation
+              </h2>
+            </div>
+            
+            <div className="space-y-3">
+              <PWAInstallButton className="w-full justify-center" />
+              <p className="text-xs text-muted-foreground">
+                Install the app for offline access and a native app experience
+              </p>
+            </div>
           </div>
-          
-          <div className="space-y-3">
-            <PWAInstallButton className="w-full justify-center" />
-            <p className="text-xs text-muted-foreground">
-              Install the app for offline access and a native app experience
-            </p>
-          </div>
-        </div>
+        )}
       </div>
     </div>
   );

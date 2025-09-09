@@ -19,8 +19,13 @@ export function AppLayout({
   className
 }: AppLayoutProps) {
   useEffect(() => {
-    // Initialize PWA manager (only in production to avoid dev caching issues)
-    if (process.env.NODE_ENV === 'production') {
+    // Initialize PWA manager in production and on localhost for dev testing
+    const isLocalhost = typeof window !== 'undefined' && (
+      window.location.hostname === 'localhost' ||
+      window.location.hostname === '127.0.0.1'
+    );
+
+    if (process.env.NODE_ENV === 'production' || isLocalhost) {
       pwaManager.registerServiceWorker();
       pwaManager.setupInstallPrompt();
     }
@@ -61,7 +66,7 @@ export function AppLayout({
       <NavigationBar />
 
       {/* PWA install prompt */}
-      {/*<PWAInstallPrompt />*/}
+      {/* <PWAInstallPrompt /> */}
     </div>
   );
 }
