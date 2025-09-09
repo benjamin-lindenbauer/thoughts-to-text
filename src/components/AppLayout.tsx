@@ -37,7 +37,7 @@ export function AppLayout({
 
       {/* Fixed Header */}
       <header className="fixed top-0 left-0 right-0 h-16 bg-background/95 backdrop-blur-sm border-b border-border z-40">
-        <div className="mx-auto max-w-3xl h-full flex items-center">
+        <div className="mx-auto max-w-3xl h-full flex items-center pl-0 md:pl-2 pr-2 md:pr-4">
           {header}
         </div>
       </header>
