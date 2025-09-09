@@ -99,9 +99,9 @@ export function NotesSearch({
   const hasActiveFilters = JSON.stringify(filters) !== JSON.stringify(DEFAULT_FILTERS);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-2">
       {/* Search and Filter Bar */}
-      <div className="flex gap-3">
+      <div className="flex gap-2">
         <div className="flex-1 relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <input
@@ -124,7 +124,7 @@ export function NotesSearch({
         <div className="relative" ref={filterRef}>
           <button
             onClick={() => setIsFilterOpen(!isFilterOpen)}
-            className={`p-3 md:p-4 rounded-xl border border-border bg-card transition-colors touch-manipulation active:scale-95 ${
+            className={`p-4 rounded-xl border border-border bg-card transition-colors touch-manipulation active:scale-95 ${
               hasActiveFilters 
                 ? 'text-indigo-500 border-indigo-200 bg-indigo-50 dark:bg-indigo-950 dark:border-indigo-800' 
                 : 'text-muted-foreground hover:text-foreground hover:bg-accent'
