@@ -581,6 +581,13 @@ export function RecordingInterface({
       {/* Live region for screen reader announcements */}
       <LiveRegion />
 
+      {/* Info when no OpenAI API key is set */}
+      {showMinimalUI && !hasApiKey && (
+        <div className="text-sm text-amber-800 bg-amber-50 dark:text-amber-200 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800 rounded-md p-3">
+          Please set your OpenAI API key in the <Link href="/settings" className="underline">settings</Link> to enable transcription and AI-powered note rewrites.
+        </div>
+      )}
+
       {/* Greeting */}
       {showMinimalUI && !recordingState.isRecording && (
         <div className="text-center my-6">
