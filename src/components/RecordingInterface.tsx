@@ -631,7 +631,7 @@ export function RecordingInterface({
           {(recordingState.isRecording || recordingState.duration > 0) && (
             <div className="text-center" id="recording-status">
               <div
-                className="text-2xl md:text-3xl font-mono font-bold text-foreground"
+                className="text-3xl md:text-4xl font-mono font-bold text-foreground"
                 aria-live="polite"
                 aria-atomic="true"
               >
