@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect } from 'react';
-import { MobileNavigation } from './MobileNavigation';
+import { NavigationBar } from './NavigationBar';
 import { OfflineIndicator } from './OfflineIndicator';
 import { PWAInstallPrompt } from './PWAInstallPrompt';
 import { pwaManager } from '@/lib/pwa';
@@ -50,7 +50,7 @@ export function AppLayout({
       </main>
       
       {/* Navigation - fixed at bottom, outside scroll area */}
-      <MobileNavigation />
+      <NavigationBar />
 
       {/* PWA install prompt */}
       <PWAInstallPrompt />

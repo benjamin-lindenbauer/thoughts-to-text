@@ -32,7 +32,7 @@ const navItems: NavItem[] = [
   },
 ];
 
-export function MobileNavigation() {
+export function NavigationBar() {
   const pathname = usePathname();
 
   return (

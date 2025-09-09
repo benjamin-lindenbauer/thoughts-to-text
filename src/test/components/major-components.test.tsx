@@ -3,7 +3,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { AppProvider } from '@/contexts/AppContext';
 import { ThemeProvider } from '@/contexts/ThemeContext';
 import NotesList from '@/components/NotesList';
-import MobileNavigation from '@/components/MobileNavigation';
+import MobileNavigation from '@/components/NavigationBar';
 import OfflineIndicator from '@/components/OfflineIndicator';
 import PWAInstallPrompt from '@/components/PWAInstallPrompt';
 import StorageQuotaWarning from '@/components/StorageQuotaWarning';
