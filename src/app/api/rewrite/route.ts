@@ -84,8 +84,12 @@ export async function POST(request: NextRequest) {
             minItems: 3,
             maxItems: 3,
           },
+          language: {
+            type: 'string',
+            description: 'The detected language of the original text, eg. "en" or "de".',
+          },
         },
-        required: ['originalText', 'rewrittenText', 'title', 'description', 'keywords'],
+        required: ['originalText', 'rewrittenText', 'title', 'description', 'keywords', 'language'],
       },
     } as const;
 
@@ -142,6 +146,7 @@ export async function POST(request: NextRequest) {
       description: String(parsed.description ?? ''),
       keywords: Array.isArray(parsed.keywords) ? parsed.keywords : [],
       title: String(parsed.title ?? ''),
+      language: String(parsed.language ?? ''),
     };
 
     return NextResponse.json(result);

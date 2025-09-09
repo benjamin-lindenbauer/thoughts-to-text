@@ -213,12 +213,13 @@ export async function rewriteText(
 export async function generateNoteMetadata(
   transcript: string,
   apiKey: string
-): Promise<{ title: string; description: string; keywords: string[] }> {
+): Promise<{ title: string; description: string; keywords: string[]; language: string }> {
   const metadataPrompt = `Based on the following transcript, perform these tasks:
 1. Rewrite/improve the text.
 2. Provide a concise title (max 50 characters).
 3. Provide a brief description (max 150 characters).
 4. Provide exactly 3 relevant keywords.
+5. Provide the detected language of the original text, eg. "en" or "de".
 
 Return JSON with exactly these fields:
 {
@@ -226,7 +227,8 @@ Return JSON with exactly these fields:
   "rewrittenText": "...",       // improved text
   "title": "...",
   "description": "...",
-  "keywords": ["...", "...", "..."]
+  "keywords": ["...", "...", "..."],
+  "language": "..."
 }`;
 
   return withRetry(async () => {
@@ -253,6 +255,7 @@ Return JSON with exactly these fields:
       title: result.title ?? 'Untitled Note',
       description: result.description ?? 'No description available',
       keywords: result.keywords ?? [],
+      language: result.language ?? 'en',
     };
   });
 }

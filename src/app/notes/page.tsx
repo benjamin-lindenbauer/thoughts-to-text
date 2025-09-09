@@ -196,12 +196,7 @@ export default function NotesPage() {
 
   const handleShareNote = async (note: Note) => {
     try {
-      const shareSuccess = await shareNote(note);
-      if (shareSuccess) {
-        success('Note shared successfully', 'Your note has been shared or copied to clipboard.');
-      } else {
-        showError('Share cancelled', 'The share operation was cancelled.');
-      }
+      await shareNote(note);
     } catch (err) {
       showError('Failed to share note', err instanceof Error ? err.message : 'An unexpected error occurred.');
     }

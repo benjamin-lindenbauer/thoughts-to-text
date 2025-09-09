@@ -463,6 +463,7 @@ export function RecordingInterface({
       let title = `Recording ${new Date().toLocaleString()}`;
       let description = '';
       let keywords: string[] = [];
+      let language = '';
       try {
         const apiKey = await retrieveApiKey();
         if (apiKey && baseText) {
@@ -470,6 +471,7 @@ export function RecordingInterface({
           title = generated.title || (baseText.slice(0, 50) + (baseText.length > 50 ? '...' : '')) || title;
           description = generated.description || (baseText.slice(0, 200) + (baseText.length > 200 ? '...' : ''));
           keywords = generated.keywords || [];
+          language = generated.language || 'auto';
         } else if (baseText) {
           // Fallback metadata without API key
           title = baseText.slice(0, 50) + (baseText.length > 50 ? '...' : '');
@@ -490,7 +492,7 @@ export function RecordingInterface({
         transcript: transcript ?? '',
         rewrittenText: rewrittenText || undefined,
         keywords,
-        language: selectedLanguage,
+        language,
         duration: durationSeconds,
         audioBlob: recordingState.audioBlob,
         photoBlob: photo || undefined,

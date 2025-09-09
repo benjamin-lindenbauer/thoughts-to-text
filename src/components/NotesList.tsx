@@ -331,7 +331,7 @@ export function NotesList({
             {contextMenu.isOpen && (
                 <div
                     ref={contextMenuRef}
-                    className="absolute w-full md:w-auto z-50 bg-card border border-border rounded-lg shadow-md py-2 min-w-[160px] left-[var(--x)] top-[var(--y)] max-sm:left-auto max-sm:right-2"
+                    className="absolute min-w-24 z-50 bg-card border border-border rounded-lg shadow-md py-2 left-[var(--x)] top-[var(--y)] max-sm:left-auto max-sm:right-2"
                     style={{
                         // Use CSS variables to allow Tailwind arbitrary values for positioning
                         ['--x' as any]: `${contextMenu.x}px`,
@@ -345,8 +345,6 @@ export function NotesList({
                         <Share2 className="w-4 h-4" />
                         Share
                     </button>
-
-                    <hr className="my-2 border-border" />
 
                     <button
                         onClick={() => handleContextMenuAction('delete', contextMenu.noteId!)}
