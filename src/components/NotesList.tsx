@@ -1,5 +1,6 @@
 'use client';
 
+import type React from 'react';
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Note } from '@/types';
 import * as dateFns from 'date-fns';
@@ -18,6 +19,12 @@ interface NotesListProps {
     // Infinite loading support
     onEndReached?: () => void;
     hasMore?: boolean;
+    // Expandable inline details support
+    isOnline?: boolean;
+    expandedNoteId?: string | null;
+    onExpandNote?: (note: Note) => void;
+    onCollapseNote?: () => void;
+    renderExpanded?: (note: Note) => React.ReactNode;
 }
 
 interface ContextMenuState {
@@ -35,7 +42,12 @@ export function NotesList({
     onViewNote,
     className,
     onEndReached,
-    hasMore = false
+    hasMore = false,
+    isOnline,
+    expandedNoteId,
+    onExpandNote,
+    onCollapseNote,
+    renderExpanded,
 }: NotesListProps) {
     const [contextMenu, setContextMenu] = useState<ContextMenuState>({
         isOpen: false,
@@ -123,14 +135,29 @@ export function NotesList({
         }
     }, [notes, onDeleteNote, onShareNote]);
 
-    // Handle note click to navigate to details
+    // Handle note click: expand inline when offline, navigate when online
     const handleNoteClick = useCallback((noteId: string) => {
         const note = notes.find(n => n.id === noteId);
-        if (note && onViewNote) {
+        if (!note) return;
+
+        // If offline and we can render inline details, expand
+        const offline = (isOnline === false) || (typeof navigator !== 'undefined' && navigator.onLine === false);
+        if (offline && renderExpanded && (onExpandNote || onCollapseNote)) {
+            if (expandedNoteId === note.id) {
+                onCollapseNote?.();
+            } else {
+                announce(`Expanding note inline: ${note.title || 'Untitled Note'}`, 'polite');
+                onExpandNote?.(note);
+            }
+            return;
+        }
+
+        // Otherwise delegate to onViewNote (navigate)
+        if (onViewNote) {
             announce(`Opening note: ${note.title || 'Untitled Note'}`, 'polite');
             onViewNote(note);
         }
-    }, [notes, onViewNote, announce]);
+    }, [notes, onViewNote, onExpandNote, onCollapseNote, renderExpanded, announce, isOnline, expandedNoteId]);
 
     // Format duration
     const formatDuration = (seconds: number): string => {
@@ -219,6 +246,8 @@ export function NotesList({
                                 }}
                                 role="listitem"
                                 tabIndex={0}
+                                data-note-id={note.id}
+                                aria-expanded={((isOnline === false) || (typeof navigator !== 'undefined' && navigator.onLine === false)) && expandedNoteId === note.id}
                                 aria-label={`Note: ${note.title || 'Untitled'}. Created ${dateFns.formatDistanceToNow(note.createdAt, { addSuffix: true })}. Duration ${formatDuration(note.duration)}.`}
                             >
                             <div className="flex justify-between items-start mb-3">
@@ -278,6 +307,13 @@ export function NotesList({
                                             </span>
                                         )}
                                     </div>
+                                </div>
+                            )}
+
+                            {/* Inline expanded content (offline) */}
+                            {expandedNoteId === note.id && renderExpanded && (
+                                <div className="mt-3" onClick={(e) => e.stopPropagation()}>
+                                    {renderExpanded(note)}
                                 </div>
                             )}
                             </div>

@@ -1,5 +1,5 @@
 // Service Worker for Thoughts to Text PWA - Optimized Version
-const CACHE_VERSION = '5';
+const CACHE_VERSION = '6';
 const CACHE_NAME = `thoughts-to-text-v${CACHE_VERSION}`;
 const STATIC_CACHE = `static-v${CACHE_VERSION}`;
 const DYNAMIC_CACHE = `dynamic-v${CACHE_VERSION}`;
@@ -18,6 +18,7 @@ const STATIC_ASSETS = [
 
 // Additional resources to prefetch
 const PREFETCH_ASSETS = [
+  '/',
   '/notes',
   '/settings'
 ];
@@ -262,6 +263,15 @@ async function handleNavigationRequest(request) {
     const cachedResponse = await caches.match(request);
     if (cachedResponse) {
       return cachedResponse;
+    }
+    
+    // For deep links to notes, try serving the notes index shell
+    const requestUrl = new URL(request.url);
+    if (requestUrl.pathname.startsWith('/notes/')) {
+      const notesShell = await caches.match('/notes');
+      if (notesShell) {
+        return notesShell;
+      }
     }
     
     // Try to serve the root page for SPA routing

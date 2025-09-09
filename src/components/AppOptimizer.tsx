@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { performanceMonitor } from '@/lib/performance';
 import { PerformanceDebugger } from './PerformanceOptimizer';
+import { useRouter } from 'next/navigation';
 
 interface AppOptimizerProps {
   children: React.ReactNode;
@@ -10,6 +11,7 @@ interface AppOptimizerProps {
 
 export function AppOptimizer({ children }: AppOptimizerProps) {
   const [isOptimized, setIsOptimized] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     // Initialize performance monitoring
@@ -45,6 +47,24 @@ export function AppOptimizer({ children }: AppOptimizerProps) {
       performanceMonitor.cleanup();
     };
   }, []);
+
+  // Prefetch dynamic note route assets for offline navigation
+  useEffect(() => {
+    const prefetchNotesRouteAssets = () => {
+      if (typeof navigator === 'undefined' || !navigator.onLine) return;
+      try {
+        // Prefetch the dynamic notes route chunk once (any id will load the same chunk)
+        router.prefetch('/notes/preload');
+        // Also prefetch the notes index page
+        router.prefetch('/notes');
+      } catch (_e) {
+        // Ignore prefetch errors
+      }
+    };
+    prefetchNotesRouteAssets();
+    window.addEventListener('online', prefetchNotesRouteAssets);
+    return () => window.removeEventListener('online', prefetchNotesRouteAssets);
+  }, [router]);
 
   return (
     <>

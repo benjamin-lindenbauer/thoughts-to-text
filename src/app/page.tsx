@@ -36,6 +36,13 @@ export default function Home() {
       message: 'Recording saved successfully! Redirecting...'
     });
 
+    // Try to prefetch the note details route so it works offline
+    try {
+      router.prefetch(`/notes/${noteId}`);
+    } catch (_e) {
+      // ignore
+    }
+
     // Navigate to the newly created note
     router.push(`/notes/${noteId}`);
 
