@@ -331,7 +331,7 @@ export function NotesList({
             {contextMenu.isOpen && (
                 <div
                     ref={contextMenuRef}
-                    className="absolute w-full md:w-auto z-50 bg-card border border-border rounded-lg shadow-lg py-2 min-w-[160px] left-[var(--x)] top-[var(--y)] max-sm:left-auto max-sm:right-2"
+                    className="absolute w-full md:w-auto z-50 bg-card border border-border rounded-lg shadow-md py-2 min-w-[160px] left-[var(--x)] top-[var(--y)] max-sm:left-auto max-sm:right-2"
                     style={{
                         // Use CSS variables to allow Tailwind arbitrary values for positioning
                         ['--x' as any]: `${contextMenu.x}px`,

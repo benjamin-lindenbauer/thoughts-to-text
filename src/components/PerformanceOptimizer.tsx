@@ -150,7 +150,7 @@ export function PerformanceDebugger() {
     <>
       <button
         onClick={() => setIsVisible(!isVisible)}
-        className="fixed bottom-4 left-4 z-50 bg-blue-500 text-white p-2 rounded-full shadow-lg hover:bg-blue-600 transition-colors"
+        className="fixed bottom-4 left-4 z-50 bg-blue-500 text-white p-2 rounded-full shadow-md hover:bg-blue-600 transition-colors"
         title="Toggle Performance Debugger"
       >
         📊

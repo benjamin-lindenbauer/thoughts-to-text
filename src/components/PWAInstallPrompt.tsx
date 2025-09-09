@@ -52,7 +52,7 @@ export function PWAInstallPrompt({ className }: PWAInstallPromptProps) {
   return (
     <div className={cn(
       "fixed bottom-4 left-4 right-4 z-50 mx-auto max-w-sm",
-      "bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700",
+      "bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-200 dark:border-gray-700",
       "p-4 animate-in slide-in-from-bottom-2 duration-300",
       className
     )}>

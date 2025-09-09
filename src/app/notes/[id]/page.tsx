@@ -566,7 +566,7 @@ export default function NoteDetailsPage() {
               <CardHeader>
                 <h3 className="flex items-center gap-2">
                   <Sparkles className="h-5 w-5" />
-                  Enhanced Text
+                  Rewritten Text
                 </h3>
               </CardHeader>
               <CardContent>

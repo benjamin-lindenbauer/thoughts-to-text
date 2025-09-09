@@ -245,7 +245,7 @@
   }
   
   .btn-animated:hover {
-    @apply scale-105 shadow-lg;
+    @apply scale-105 shadow-md;
   }
   
   .btn-animated:active {
@@ -258,7 +258,7 @@
   }
   
   .card-interactive:hover {
-    @apply translate-y-[-2px] shadow-lg;
+    @apply translate-y-[-2px] shadow-md;
   }
   
   /* Gradient text */
@@ -316,6 +316,16 @@
     @apply text-white shadow-sm hover:shadow-md;
     @apply transition-all duration-200 active:scale-95;
     @apply disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-sm disabled:active:scale-100;
+  }
+
+  /* Reusable panel background gradient (indigo -> purple), light and dark */
+  .bg-panel-gradient {
+    @apply bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-950/20 dark:to-purple-950/20;
+  }
+  
+  /* Reusable panel border (indigo), light and dark */
+  .border-panel {
+    @apply border border-indigo-200 dark:border-indigo-800;
   }
   
   /* Reusable info and error boxes */

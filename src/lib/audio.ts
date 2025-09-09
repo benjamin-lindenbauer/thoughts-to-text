@@ -122,7 +122,16 @@ export class AudioRecorder {
     }
 
     if (this.mediaRecorder.state === 'recording' || this.mediaRecorder.state === 'paused') {
+      // Stop the MediaRecorder first to finalize the blob
       this.mediaRecorder.stop();
+
+      // Also stop the input tracks so the tab's recording indicator turns off immediately
+      if (this.stream) {
+        try {
+          this.stream.getTracks().forEach(track => track.stop());
+        } catch {}
+        this.stream = null;
+      }
     }
   }
 

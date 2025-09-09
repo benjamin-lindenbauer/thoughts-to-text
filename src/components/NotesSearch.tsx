@@ -135,7 +135,7 @@ export function NotesSearch({
           
           {/* Filter Dropdown */}
           {isFilterOpen && (
-            <div className="absolute right-0 top-full mt-2 w-[calc(100vw-1rem)] md:w-80 max-w-none bg-card border border-border rounded-xl shadow p-4 z-50">
+            <div className="absolute right-0 top-full mt-2 w-[calc(100vw-1rem)] md:w-80 max-w-none bg-card border border-border rounded-xl shadow-md p-4 z-50">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-medium text-foreground">Filter & Sort</h3>
                 {hasActiveFilters && (
@@ -254,7 +254,7 @@ export function NotesSearch({
                       onChange={(e) => handleFilterChange({ hasRewrittenText: e.target.checked })}
                       className="w-4 h-4 text-indigo-500 border-border rounded"
                     />
-                    <span className="text-sm text-foreground">Has enhanced text</span>
+                    <span className="text-sm text-foreground">Has rewritten text</span>
                   </label>
                 </div>
               </div>

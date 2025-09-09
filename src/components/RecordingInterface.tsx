@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { Mic, MicOff, Camera, Square, Wand2, RefreshCw, X, Save, Trash2 } from 'lucide-react';
+import { Mic, MicOff, Camera, Square, Wand2, RefreshCw, X, Save, Trash2, Upload, FileText } from 'lucide-react';
 import { useRecording } from '@/hooks/useRecording';
 import { useAppState } from '@/hooks/useAppState';
 import { useHapticFeedback } from '@/hooks/useHapticFeedback';
@@ -573,8 +573,8 @@ export function RecordingInterface({
   return (
     <div
       className={cn(
-        "flex flex-col gap-6 w-full items-center text-center p-2 md:p-4",
-        showMinimalUI ? "justify-center" : "justify-start overflow-y-auto",
+        "flex flex-col gap-6 w-full items-center p-2 md:p-4",
+        showMinimalUI ? "justify-center text-center" : "justify-start overflow-y-auto",
         className
       )}
     >
@@ -597,7 +597,7 @@ export function RecordingInterface({
         </div>
       )}
 
-      <div className="flex flex-col relative items-center justify-center rounded-2xl bg-card border border-border/60 shadow-sm p-12 gap-12 min-w-80">
+      <div className="flex flex-col relative items-center justify-center rounded-2xl bg-card border border-border/60 p-12 gap-12 min-w-80">
         <div className="flex flex-row items-center justify-center gap-8">
           {/* Recording button */}
           {showMinimalUI && (
@@ -612,7 +612,7 @@ export function RecordingInterface({
               aria-pressed={recordingState.isRecording}
               aria-describedby="recording-status"
               className={cn(
-                "relative w-28 h-28 md:w-32 md:h-32 lg:w-36 lg:h-36 rounded-full transition-all duration-300 shadow-lg hover:shadow-xl active:scale-95 touch-manipulation",
+                "relative w-28 h-28 md:w-32 md:h-32 lg:w-36 lg:h-36 rounded-full transition-all duration-300 active:scale-95 touch-manipulation",
                 recordingState.isRecording
                   ? "bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700"
                   : "bg-gradient-to-br from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600",
@@ -657,7 +657,7 @@ export function RecordingInterface({
                 type="button"
                 onClick={handleSaveNote}
                 className={cn(
-                  'flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium',
+                  'flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium w-28',
                   'btn-gradient-primary'
                 )}
                 aria-label="Save recording"
@@ -677,7 +677,7 @@ export function RecordingInterface({
               </button>
               <button
                 onClick={handleDiscard}
-                className="px-4 py-2 rounded-lg text-sm font-medium bg-secondary border border-border hover:bg-accent transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-4 py-2 rounded-lg text-sm font-medium bg-secondary border border-border hover:bg-accent transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed w-28"
                 aria-label="Discard recording and transcript"
                 disabled={isSaving}
               >
@@ -726,9 +726,12 @@ export function RecordingInterface({
 
       {/* Transcript area (only after a transcription attempt and non-empty transcript) */}
       {!showMinimalUI && !isTranscribing && transcriptionAttempted && transcript?.trim().length ? (
-        <div className="w-full space-y-4">
-          <div className="p-4 bg-secondary border border-border rounded-lg">
-            <h3 className="font-medium text-foreground mb-2">Transcript:</h3>
+        <div className="flex flex-col w-full space-y-4">
+          <div className="flex flex-col p-4 gap-2 bg-panel-gradient border-panel rounded-lg">
+            <h3 className="flex flex-row items-center gap-2">
+              <FileText className="w-4 h-4" />
+              Transcript
+            </h3>
             <textarea
               className="w-full p-3 rounded-md border border-border bg-background text-sm text-foreground resize-y min-h-[120px] focus:outline-none focus:ring-2 focus:ring-indigo-500"
               value={transcript}
@@ -738,16 +741,14 @@ export function RecordingInterface({
           </div>
 
           {/* Rewrite prompt selection and button */}
-          <div className="space-y-3">
-            <div>
-              <label className="block text-sm font-medium text-foreground mb-2">
-                Rewrite Style:
-              </label>
+          <div className="flex flex-col gap-2">
+            <h3>Rewrite Transcript</h3>
+            <div className="flex flex-col md:flex-row gap-2">
               <select
                 value={selectedPrompt}
                 onChange={(e) => setSelectedPrompt(e.target.value)}
                 disabled={isRewriting}
-                className="w-full p-2 rounded-lg border border-border bg-secondary text-foreground text-sm transition-colors hover:bg-accent focus:border-transparent disabled:opacity-50"
+                className="w-full md:w-1/3 p-2 rounded-lg border border-border bg-secondary text-foreground text-sm transition-colors hover:bg-accent focus:border-transparent disabled:opacity-50"
               >
                 {rewritePrompts.map((prompt) => (
                   <option key={prompt.id} value={prompt.id}>
@@ -755,66 +756,62 @@ export function RecordingInterface({
                   </option>
                 ))}
               </select>
+
+              {/* Language selection */}
+              <select
+                value={selectedLanguage}
+                disabled
+                onChange={(e) => setSelectedLanguage(e.target.value)}
+                className="w-full md:w-1/3 p-2 rounded-lg border border-border bg-secondary text-foreground text-sm transition-colors hover:bg-accent focus:border-transparent disabled:opacity-50"
+              >
+                {LANGUAGE_OPTIONS.map((lang) => (
+                  <option key={lang.code} value={lang.code}>
+                    {lang.flag} {lang.name} {lang.nativeName ? `(${lang.nativeName})` : ''}
+                  </option>
+                ))}
+              </select>
+
+              <button
+                type="button"
+                onClick={handleRewrite}
+                disabled={
+                  isRewriting ||
+                  transcript === null ||
+                  (typeof transcript === 'string' && transcript.trim().length === 0)
+                }
+                className={cn(
+                  "w-full md:w-1/3 flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-medium",
+                  "btn-gradient-primary"
+                )}
+              >
+                {isRewriting ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                    <span>Rewriting...</span>
+                  </>
+                ) : (
+                  <>
+                    <Wand2 className="w-4 h-4" />
+                    <span>Rewrite Text</span>
+                  </>
+                )}
+              </button>
             </div>
-
-            {/* Language selection */}
-            <select
-              value={selectedLanguage}
-              disabled
-              onChange={(e) => setSelectedLanguage(e.target.value)}
-              className="w-full p-2 rounded-lg border border-border bg-secondary text-foreground text-sm transition-colors hover:bg-accent focus:border-transparent disabled:opacity-50"
-            >
-              {LANGUAGE_OPTIONS.map((lang) => (
-                <option key={lang.code} value={lang.code}>
-                  {lang.flag} {lang.name} {lang.nativeName ? `(${lang.nativeName})` : ''}
-                </option>
-              ))}
-            </select>
-
-            <button
-              type="button"
-              onClick={handleRewrite}
-              disabled={
-                isRewriting ||
-                transcript === null ||
-                (typeof transcript === 'string' && transcript.trim().length === 0)
-              }
-              className={cn(
-                "w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-medium",
-                "btn-gradient-primary"
-              )}
-            >
-              {isRewriting ? (
-                <>
-                  <RefreshCw className="w-4 h-4 animate-spin" />
-                  <span>Rewriting...</span>
-                </>
-              ) : (
-                <>
-                  <Wand2 className="w-4 h-4" />
-                  <span>Rewrite Text</span>
-                </>
-              )}
-            </button>
           </div>
 
           {/* Rewritten text display (only after recording stops) */}
           {rewrittenText && (
-            <div className="p-4 bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-950/20 dark:to-purple-950/20 border border-indigo-200 dark:border-indigo-800 rounded-lg">
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="font-medium text-foreground flex items-center gap-2">
-                  <Wand2 className="w-4 h-4 text-indigo-500" />
-                  Enhanced Text:
-                </h3>
-                <button
-                  onClick={() => setRewrittenText(null)}
-                  className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-                  title="Clear rewritten text"
-                >
-                  Clear
-                </button>
-              </div>
-              <p className="text-sm text-foreground">{rewrittenText}</p>
+            <div className="flex flex-col gap-2 p-4 bg-panel-gradient border-panel rounded-lg">
+              <h3 className="flex flex-row items-center gap-2">
+                <Wand2 className="w-4 h-4" />
+                Rewritten Text
+              </h3>
+              <textarea
+                className="w-full p-3 rounded-md border-panel bg-background text-sm text-foreground resize-y min-h-[120px] focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                value={rewrittenText}
+                onChange={(e) => setRewrittenText(e.target.value)}
+                aria-label="Edit rewritten text"
+              />
             </div>
           )}
         </div>
@@ -831,12 +828,10 @@ export function RecordingInterface({
       {!showMinimalUI && transcriptionAttempted && transcript && (
         <div className="flex flex-row gap-4 w-full">
           <div className="flex flex-col gap-2">
-            <p className="text-sm md:text-base text-muted-foreground">
-              Add an image to your recording
-            </p>
+            <h3>Add an image</h3>
 
             {/* Photo controls */}
-            <div className="flex gap-4">
+            <div className="flex gap-2">
               <button
                 onClick={() => {
                   haptic.buttonPress();
@@ -866,6 +861,7 @@ export function RecordingInterface({
                 aria-label="Upload photo from device"
                 className="flex items-center gap-2 px-4 py-2 bg-secondary border border-border rounded-lg hover:bg-accent transition-colors"
               >
+                <Upload className="w-4 h-4" />
                 <span className="text-sm">Upload Photo</span>
               </button>
 
@@ -892,7 +888,7 @@ export function RecordingInterface({
                     muted
                   />
                   {isCameraLoading && (
-                    <div className="absolute inset-0 w-full h-full rounded-lg shadow-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+                    <div className="absolute inset-0 w-full h-full rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
                       <div className="text-center">
                         <div className="animate-spin w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full mx-auto mb-2"></div>
                         <p className="text-sm text-muted-foreground">Starting camera...</p>
@@ -918,7 +914,7 @@ export function RecordingInterface({
                 <img
                   src={photoPreview}
                   alt="Captured"
-                  className="w-full rounded-lg shadow-lg"
+                  className="w-full rounded-lg"
                 />
               ) : null}
 

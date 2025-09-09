@@ -473,13 +473,13 @@ export const animations = {
 export const animationPresets = {
   button: {
     idle: 'transition-all duration-200 ease-in-out',
-    hover: 'hover:scale-105 hover:shadow-lg',
+    hover: 'hover:scale-105 hover:shadow-md',
     active: 'active:scale-95',
     disabled: 'opacity-50 cursor-not-allowed',
   },
   card: {
     idle: 'transition-all duration-300 ease-in-out',
-    hover: 'hover:shadow-xl hover:-translate-y-1',
+    hover: 'hover:shadow-md hover:-translate-y-1',
     active: 'active:scale-98',
   },
   modal: {

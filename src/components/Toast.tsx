@@ -67,7 +67,7 @@ export function Toast({ id, type, title, description, duration = 5000, onClose }
   return (
     <div
       className={cn(
-        'w-full max-w-sm rounded-lg border p-4 shadow-lg transition-all duration-200',
+        'w-full max-w-sm rounded-lg border p-4 shadow-md transition-all duration-200',
         getBackgroundColor(),
         isVisible && !isLeaving ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'
       )}
