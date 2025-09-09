@@ -56,22 +56,20 @@ export default function Home() {
   }, []);
 
   return (
-    <AppLayout
-      header={
-        <div className={`w-full h-full flex flex-col items-center justify-center text-center ${isLoaded ? animations.fadeIn : 'opacity-0'}`}>
-          <div className="flex items-center justify-center gap-2 w-full">
-            <Sparkles className="w-5 h-5 text-indigo-500" />
-            <h1 className="text-xl md:text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent leading-tight">
-              Thoughts to Text
-            </h1>
-            <Sparkles className="w-5 h-5 text-purple-500" />
-          </div>
-          <p className="text-sm md:text-base text-muted-foreground">
-            From raw thoughts to polished text in seconds.
-          </p>
+    <AppLayout>
+      <div className={`w-full h-full flex flex-col items-center text-center py-2 ${isLoaded ? animations.fadeIn : 'opacity-0'}`}>
+        <div className="flex items-center justify-center gap-2 w-full">
+          <Sparkles className="w-5 h-5 text-indigo-500" />
+          <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent leading-tight">
+            Thoughts to Text
+          </h1>
+          <Sparkles className="w-5 h-5 text-purple-500" />
         </div>
-      }
-    >
+        <p className="text-sm md:text-base text-muted-foreground">
+          From raw thoughts to polished text in seconds.
+        </p>
+      </div>
+
       <div className="flex flex-col items-center justify-center w-full">
         {/* Recording Interface with enhanced card container */}
         <div className={`w-full ${isLoaded ? animations.scaleIn : 'opacity-0 scale-95'} transition-all duration-500 delay-200`}>

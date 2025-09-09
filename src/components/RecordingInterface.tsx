@@ -573,7 +573,7 @@ export function RecordingInterface({
   return (
     <div
       className={cn(
-        "flex flex-col gap-6 w-full items-center text-center p-4 md:p-8",
+        "flex flex-col gap-6 w-full items-center text-center p-2 md:p-4",
         showMinimalUI ? "justify-center" : "justify-start overflow-y-auto",
         className
       )}
@@ -583,7 +583,7 @@ export function RecordingInterface({
 
       {/* Greeting */}
       {showMinimalUI && !recordingState.isRecording && (
-        <div className="text-center mt-16 mb-24">
+        <div className="text-center mt-[8vh] mb-[6vh]">
           <p className="text-sm md:text-base text-muted-foreground">
             What's on your mind today?
           </p>
