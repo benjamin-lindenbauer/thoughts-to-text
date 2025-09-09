@@ -53,8 +53,8 @@ export function NavigationBar() {
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  'flex flex-col items-center justify-center gap-1 px-4 py-3 rounded-xl transition-all duration-200',
-                  'min-w-[64px] min-h-[64px] touch-manipulation relative',
+                  'flex flex-col items-center justify-center gap-1 p-2 rounded-xl transition-all duration-200',
+                  'size-16 touch-manipulation relative',
                   'active:scale-95 active:bg-accent/50',
                   isActive
                     ? 'text-indigo-500 bg-gradient-to-r from-indigo-100 to-purple-100 shadow-sm'

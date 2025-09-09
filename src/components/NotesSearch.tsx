@@ -101,7 +101,7 @@ export function NotesSearch({
   return (
     <div className="space-y-2">
       {/* Search and Filter Bar */}
-      <div className="flex gap-2">
+      <div className="relative flex gap-2">
         <div className="flex-1 relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <input
@@ -121,7 +121,7 @@ export function NotesSearch({
           )}
         </div>
         
-        <div className="relative" ref={filterRef}>
+        <div ref={filterRef}>
           <button
             onClick={() => setIsFilterOpen(!isFilterOpen)}
             className={`p-4 rounded-xl border border-border bg-card transition-colors touch-manipulation active:scale-95 ${
@@ -135,7 +135,7 @@ export function NotesSearch({
           
           {/* Filter Dropdown */}
           {isFilterOpen && (
-            <div className="absolute right-0 top-full mt-2 w-80 max-w-none bg-card border border-border rounded-xl shadow p-4 z-50">
+            <div className="absolute right-0 top-full mt-2 w-[calc(100vw-1rem)] md:w-80 max-w-none bg-card border border-border rounded-xl shadow p-4 z-50">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-medium text-foreground">Filter & Sort</h3>
                 {hasActiveFilters && (

@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Note } from '@/types';
 import * as dateFns from 'date-fns';
-import { MoreVertical, Edit, Trash2, Share2, Clock, Calendar, Tag, Wand2 } from 'lucide-react';
+import { MoreVertical, Trash2, Share2, Clock, Calendar, Tag, Wand2 } from 'lucide-react';
 import { useFocusManagement } from '@/hooks/useKeyboardNavigation';
 import { useAriaLiveRegion } from '@/hooks/useAccessibility';
 import { LazyComponent } from '@/components/LazyComponent';
@@ -12,8 +12,6 @@ interface NotesListProps {
     notes: Note[];
     loading: boolean;
     onDeleteNote: (note: Note) => Promise<void>;
-    onGenerateMetadata: (note: Note) => Promise<void>;
-    onEditNote?: (note: Note) => void;
     onShareNote?: (note: Note) => void;
     onViewNote?: (note: Note) => void;
     className?: string;
@@ -33,8 +31,6 @@ export function NotesList({
     notes,
     loading,
     onDeleteNote,
-    onGenerateMetadata,
-    onEditNote,
     onShareNote,
     onViewNote,
     className,
@@ -47,9 +43,6 @@ export function NotesList({
         y: 0,
         noteId: null,
     });
-    const [expandedNoteId, setExpandedNoteId] = useState<string | null>(null);
-    const [generatingMetadata, setGeneratingMetadata] = useState<Set<string>>(new Set());
-
     const containerRef = useRef<HTMLDivElement>(null);
     const contextMenuRef = useRef<HTMLDivElement>(null);
     const sentinelRef = useRef<HTMLDivElement>(null);
@@ -121,29 +114,14 @@ export function NotesList({
         setContextMenu(prev => ({ ...prev, isOpen: false }));
 
         switch (action) {
-            case 'edit':
-                onEditNote?.(note);
-                break;
             case 'delete':
                 await onDeleteNote(note);
                 break;
             case 'share':
                 onShareNote?.(note);
                 break;
-            case 'generate':
-                setGeneratingMetadata(prev => new Set(prev).add(noteId));
-                try {
-                    await onGenerateMetadata(note);
-                } finally {
-                    setGeneratingMetadata(prev => {
-                        const newSet = new Set(prev);
-                        newSet.delete(noteId);
-                        return newSet;
-                    });
-                }
-                break;
         }
-    }, [notes, onDeleteNote, onGenerateMetadata, onEditNote, onShareNote]);
+    }, [notes, onDeleteNote, onShareNote]);
 
     // Handle note click to navigate to details
     const handleNoteClick = useCallback((noteId: string) => {
@@ -151,18 +129,8 @@ export function NotesList({
         if (note && onViewNote) {
             announce(`Opening note: ${note.title || 'Untitled Note'}`, 'polite');
             onViewNote(note);
-        } else {
-            // Fallback to expand/collapse if no navigation handler
-            const isExpanding = expandedNoteId !== noteId;
-            setExpandedNoteId(prev => prev === noteId ? null : noteId);
-            announce(
-              isExpanding 
-                ? `Expanded note: ${note?.title || 'Untitled Note'}` 
-                : 'Collapsed note',
-              'polite'
-            );
         }
-    }, [notes, onViewNote, expandedNoteId, announce]);
+    }, [notes, onViewNote, announce]);
 
     // Format duration
     const formatDuration = (seconds: number): string => {
@@ -226,118 +194,96 @@ export function NotesList({
                 className={className}
             >
                 {notes.map((note) => {
-                            const isExpanded = expandedNoteId === note.id;
-
-                            return (
-                                <LazyComponent
-                                    key={note.id}
-                                    fallback={
-                                        <div 
-                                            className="mb-4 p-4 rounded-xl border border-border bg-card animate-pulse"
-                                        >
-                                            <div className="h-5 bg-muted rounded w-3/4 mb-2"></div>
-                                            <div className="h-4 bg-muted rounded w-full mb-2"></div>
-                                            <div className="h-4 bg-muted rounded w-2/3"></div>
-                                        </div>
-                                    }
+                    return (
+                        <LazyComponent
+                            key={note.id}
+                            fallback={
+                                <div 
+                                    className="mb-4 p-4 rounded-xl border border-border bg-card animate-pulse"
                                 >
-                                    <div
-                                        className="mb-4 p-4 rounded-xl border border-border bg-card hover:bg-accent transition-colors cursor-pointer"
-                                        onClick={() => handleNoteClick(note.id)}
-                                        onContextMenu={(e) => handleContextMenu(e, note.id)}
-                                        onKeyDown={(e) => {
-                                            if (e.key === 'Enter' || e.key === ' ') {
-                                                e.preventDefault();
-                                                handleNoteClick(note.id);
-                                            }
+                                    <div className="h-5 bg-muted rounded w-3/4 mb-2"></div>
+                                    <div className="h-4 bg-muted rounded w-full mb-2"></div>
+                                    <div className="h-4 bg-muted rounded w-2/3"></div>
+                                </div>
+                            }
+                        >
+                            <div
+                                className="mb-4 p-4 rounded-xl border border-border bg-card hover:bg-accent transition-colors cursor-pointer"
+                                onClick={() => handleNoteClick(note.id)}
+                                onContextMenu={(e) => handleContextMenu(e, note.id)}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter' || e.key === ' ') {
+                                        e.preventDefault();
+                                        handleNoteClick(note.id);
+                                    }
+                                }}
+                                role="listitem"
+                                tabIndex={0}
+                                aria-label={`Note: ${note.title || 'Untitled'}. Created ${dateFns.formatDistanceToNow(note.createdAt, { addSuffix: true })}. Duration ${formatDuration(note.duration)}.`}
+                            >
+                            <div className="flex justify-between items-start mb-3">
+                                <div className="flex-1 min-w-0">
+                                    <h3 className="font-medium text-foreground truncate">
+                                        {note.title || 'Untitled Note'}
+                                    </h3>
+                                    <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
+                                        <span className="flex items-center gap-1">
+                                            <Calendar className="w-3 h-3" />
+                                            {dateFns.formatDistanceToNow(note.createdAt, { addSuffix: true })}
+                                        </span>
+                                        <span className="flex items-center gap-1">
+                                            <Clock className="w-3 h-3" />
+                                            {formatDuration(note.duration)}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <div className="hidden lg:flex items-center gap-2 ml-2">
+                                    {/* Context menu button */}
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleContextMenu(e, note.id);
                                         }}
-                                        role="listitem"
-                                        tabIndex={0}
-                                        aria-label={`Note: ${note.title || 'Untitled'}. Created ${dateFns.formatDistanceToNow(note.createdAt, { addSuffix: true })}. Duration ${formatDuration(note.duration)}.`}
-                                        aria-expanded={isExpanded}
+                                        aria-label={`More options for ${note.title || 'note'}`}
+                                        aria-haspopup="menu"
+                                        className="p-2 rounded-lg hover:bg-accent transition-colors"
                                     >
-                                    <div className="flex justify-between items-start mb-3">
-                                        <div className="flex-1 min-w-0">
-                                            <h3 className="font-medium text-foreground truncate">
-                                                {note.title || 'Untitled Note'}
-                                            </h3>
-                                            <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
-                                                <span className="flex items-center gap-1">
-                                                    <Calendar className="w-3 h-3" />
-                                                    {dateFns.formatDistanceToNow(note.createdAt, { addSuffix: true })}
-                                                </span>
-                                                <span className="flex items-center gap-1">
-                                                    <Clock className="w-3 h-3" />
-                                                    {formatDuration(note.duration)}
-                                                </span>
-                                            </div>
-                                        </div>
+                                        <MoreVertical className="w-4 h-4 text-muted-foreground hover:text-foreground" />
+                                    </button>
+                                </div>
+                            </div>
 
-                                        <div className="flex items-center gap-2 ml-2">
-                                            {/* Context menu button */}
-                                            <button
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    handleContextMenu(e, note.id);
-                                                }}
-                                                aria-label={`More options for ${note.title || 'note'}`}
-                                                aria-haspopup="menu"
-                                                className="p-2 rounded-lg hover:bg-accent transition-colors"
+                            {/* Note description */}
+                            <p className="text-sm text-muted-foreground mb-2">
+                                {note.description || truncateText(note.transcript, 100)}
+                            </p>
+
+                            {/* Keywords */}
+                            {note.keywords.length > 0 && (
+                                <div className="flex items-center gap-2 mb-2">
+                                    <Tag className="w-3 h-3 text-muted-foreground" />
+                                    <div className="flex flex-wrap gap-1">
+                                        {note.keywords.slice(0, 3).map((keyword, index) => (
+                                            <span
+                                                key={index}
+                                                className="px-2 py-1 text-xs bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded-full"
                                             >
-                                                <MoreVertical className="w-4 h-4 text-muted-foreground hover:text-foreground" />
-                                            </button>
-                                        </div>
+                                                {keyword}
+                                            </span>
+                                        ))}
+                                        {note.keywords.length > 3 && (
+                                            <span className="text-xs text-muted-foreground">
+                                                +{note.keywords.length - 3} more
+                                            </span>
+                                        )}
                                     </div>
-
-                                    {/* Note description */}
-                                    <p className="text-sm text-muted-foreground mb-2">
-                                        {note.description || truncateText(note.transcript, 100)}
-                                    </p>
-
-                                    {/* Keywords */}
-                                    {note.keywords.length > 0 && (
-                                        <div className="flex items-center gap-2 mb-2">
-                                            <Tag className="w-3 h-3 text-muted-foreground" />
-                                            <div className="flex flex-wrap gap-1">
-                                                {note.keywords.slice(0, 3).map((keyword, index) => (
-                                                    <span
-                                                        key={index}
-                                                        className="px-2 py-1 text-xs bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded-full"
-                                                    >
-                                                        {keyword}
-                                                    </span>
-                                                ))}
-                                                {note.keywords.length > 3 && (
-                                                    <span className="text-xs text-muted-foreground">
-                                                        +{note.keywords.length - 3} more
-                                                    </span>
-                                                )}
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {/* Expanded content */}
-                                    {isExpanded && (
-                                        <div className="mt-3 pt-3 border-t border-border">
-                                            <div className="space-y-3">
-                                                <div>
-                                                    <h4 className="text-sm font-medium text-foreground mb-1">Transcript</h4>
-                                                    <p className="text-sm text-muted-foreground">{note.transcript}</p>
-                                                </div>
-
-                                                {note.rewrittenText && (
-                                                    <div>
-                                                        <h4 className="text-sm font-medium text-foreground mb-1">Enhanced Text</h4>
-                                                        <p className="text-sm text-muted-foreground">{note.rewrittenText}</p>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
-                                    )}
-                                    </div>
-                                </LazyComponent>
-                            );
-                        })}
+                                </div>
+                            )}
+                            </div>
+                        </LazyComponent>
+                    );
+                })}
 
                 {/* Infinite load sentinel */}
                 {hasMore && (
@@ -349,28 +295,13 @@ export function NotesList({
             {contextMenu.isOpen && (
                 <div
                     ref={contextMenuRef}
-                    className="absolute z-50 bg-card border border-border rounded-lg shadow-lg py-2 min-w-[160px]"
+                    className="absolute w-full md:w-auto z-50 bg-card border border-border rounded-lg shadow-lg py-2 min-w-[160px] left-[var(--x)] top-[var(--y)] max-sm:left-auto max-sm:right-2"
                     style={{
-                        left: contextMenu.x,
-                        top: contextMenu.y,
+                        // Use CSS variables to allow Tailwind arbitrary values for positioning
+                        ['--x' as any]: `${contextMenu.x}px`,
+                        ['--y' as any]: `${contextMenu.y}px`,
                     }}
                 >
-                    <button
-                        onClick={() => handleContextMenuAction('edit', contextMenu.noteId!)}
-                        className="w-full px-4 py-2 text-left text-sm hover:bg-accent transition-colors flex items-center gap-2"
-                    >
-                        <Edit className="w-4 h-4" />
-                        Edit
-                    </button>
-
-                    <button
-                        onClick={() => handleContextMenuAction('generate', contextMenu.noteId!)}
-                        className="w-full px-4 py-2 text-left text-sm hover:bg-accent transition-colors flex items-center gap-2"
-                    >
-                        <Wand2 className="w-4 h-4" />
-                        Generate Title & Description
-                    </button>
-
                     <button
                         onClick={() => handleContextMenuAction('share', contextMenu.noteId!)}
                         className="w-full px-4 py-2 text-left text-sm hover:bg-accent transition-colors flex items-center gap-2"

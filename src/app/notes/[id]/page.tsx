@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { AppLayout } from "@/components/AppLayout";
 import { AudioPlayer } from "@/components/AudioPlayer";
@@ -13,12 +13,12 @@ import { Badge } from "@/components/ui/badge";
 import { useOffline } from '@/hooks/useOffline';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, Edit3, Save, X, Share, Trash2, Calendar, Clock, Mic, FileText, Sparkles, Camera } from 'lucide-react';
-import { Note } from '@/types';
+import { APIError, Note } from '@/types';
 import { retrieveNote, updateNote, deleteNote, retrieveApiKey } from '@/lib/storage';
 import { useWebShare } from '@/hooks/useWebShare';
 import { useToast } from '@/hooks/useToast';
 import { ToastContainer } from '@/components/Toast';
-import { transcribeAudio } from '@/lib/api';
+import { transcribeAudio, generateNoteMetadata } from '@/lib/api';
 
 export default function NoteDetailsPage() {
   const params = useParams();
@@ -33,6 +33,7 @@ export default function NoteDetailsPage() {
   const [editedNote, setEditedNote] = useState<Partial<Note>>({});
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [generatingMetadata, setGeneratingMetadata] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [transcribing, setTranscribing] = useState(false);
 
@@ -120,6 +121,49 @@ export default function NoteDetailsPage() {
       setDeleting(false);
     }
   };
+
+  // Generate metadata for a note
+  const generateMetadata = useCallback(async () => {
+    if (!note) return;
+    try {
+      const apiKey = await retrieveApiKey();
+      if (!apiKey) {
+        setError('OpenAI API key not configured. Please set it in settings.');
+        return;
+      }
+
+      const metadata = await generateNoteMetadata(note.transcript, apiKey);
+      
+      const updatedNote: Note = {
+        ...note,
+        title: metadata.title,
+        description: metadata.description,
+        keywords: metadata.keywords,
+        updatedAt: new Date(),
+      };
+
+      await updateNote(updatedNote);
+    } catch (err) {
+      if (err && typeof err === 'object' && 'type' in err) {
+        const apiError = err as APIError;
+        switch (apiError.type) {
+          case 'auth':
+            setError('Invalid API key. Please check your OpenAI API key in settings.');
+            break;
+          case 'quota':
+            setError('Rate limit exceeded. Please try again later.');
+            break;
+          case 'network':
+            setError('Network error. Please check your internet connection.');
+            break;
+          default:
+            setError('Failed to generate metadata. Please try again.');
+        }
+      } else {
+        setError(err instanceof Error ? err.message : 'Failed to generate metadata');
+      }
+    }
+  }, []);
 
   const openDeleteDialog = () => {
     setShowDeleteDialog(true);

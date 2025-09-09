@@ -583,7 +583,7 @@ export function RecordingInterface({
 
       {/* Greeting */}
       {showMinimalUI && !recordingState.isRecording && (
-        <div className="text-center mt-[8vh] mb-[6vh]">
+        <div className="text-center my-6">
           <p className="text-sm md:text-base text-muted-foreground">
             What's on your mind today?
           </p>

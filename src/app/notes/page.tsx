@@ -13,15 +13,8 @@ import { ToastContainer } from "@/components/Toast";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { DeleteConfirmationDialog } from "@/components/DeleteConfirmationDialog";
-import { Note, APIError } from "@/types";
-import { 
-  getAllNotes, 
-  searchNotes as searchNotesStorage, 
-  deleteNote as deleteNoteStorage, 
-  updateNote,
-  retrieveApiKey 
-} from '@/lib/storage';
-import { generateNoteMetadata } from '@/lib/api';
+import { Note } from "@/types";
+import { getAllNotes, deleteNote as deleteNoteStorage } from '@/lib/storage';
 
 const DEFAULT_FILTERS: SearchFilters = {
   sortBy: 'date',
@@ -61,49 +54,6 @@ function useNotes() {
     }
   }, [refreshNotes]);
 
-  // Generate metadata for a note
-  const generateMetadata = useCallback(async (note: Note) => {
-    try {
-      const apiKey = await retrieveApiKey();
-      if (!apiKey) {
-        setError('OpenAI API key not configured. Please set it in settings.');
-        return;
-      }
-
-      const metadata = await generateNoteMetadata(note.transcript, apiKey);
-      
-      const updatedNote: Note = {
-        ...note,
-        title: metadata.title,
-        description: metadata.description,
-        keywords: metadata.keywords,
-        updatedAt: new Date(),
-      };
-
-      await updateNote(updatedNote);
-      await refreshNotes();
-    } catch (err) {
-      if (err && typeof err === 'object' && 'type' in err) {
-        const apiError = err as APIError;
-        switch (apiError.type) {
-          case 'auth':
-            setError('Invalid API key. Please check your OpenAI API key in settings.');
-            break;
-          case 'quota':
-            setError('Rate limit exceeded. Please try again later.');
-            break;
-          case 'network':
-            setError('Network error. Please check your internet connection.');
-            break;
-          default:
-            setError('Failed to generate metadata. Please try again.');
-        }
-      } else {
-        setError(err instanceof Error ? err.message : 'Failed to generate metadata');
-      }
-    }
-  }, [refreshNotes]);
-
   // Clear error
   const clearError = useCallback(() => {
     setError(null);
@@ -119,7 +69,6 @@ function useNotes() {
     loading,
     error,
     deleteNote: handleDeleteNote,
-    generateMetadata,
     clearError,
   };
 }
@@ -137,7 +86,6 @@ export default function NotesPage() {
     loading,
     error,
     deleteNote,
-    generateMetadata,
     clearError,
   } = useNotes();
   
@@ -172,11 +120,6 @@ export default function NotesPage() {
 
   const handleViewNote = (note: Note) => {
     // Navigate to note details page
-    router.push(`/notes/${note.id}`);
-  };
-
-  const handleEditNote = (note: Note) => {
-    // Navigate to note details page for editing
     router.push(`/notes/${note.id}`);
   };
 
@@ -275,8 +218,6 @@ export default function NotesPage() {
             notes={notesToRender}
             loading={loading}
             onDeleteNote={handleDeleteNote}
-            onGenerateMetadata={generateMetadata}
-            onEditNote={handleEditNote}
             onShareNote={handleShareNote}
             onViewNote={handleViewNote}
             className="flex-1 min-h-0 overflow-y-auto"
