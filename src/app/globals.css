@@ -122,9 +122,11 @@
   }
   
   html, body {
-    overflow-x: hidden;
+    overflow: hidden; /* Disable outer scrollbars; AppLayout manages scrolling */
     width: 100%;
     max-width: 100vw;
+    height: 100%;
+    overscroll-behavior: none; /* Prevent bounce/overscroll on root */
   }
   
   /* Prevent any element from causing horizontal overflow */

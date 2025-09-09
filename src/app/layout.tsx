@@ -72,7 +72,7 @@ export default function RootLayout({
       </head>
       <body
         suppressHydrationWarning
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased h-screen min-h-0 overflow-hidden`}
       >
         <Script id="pwa-init" strategy="afterInteractive">
 {`

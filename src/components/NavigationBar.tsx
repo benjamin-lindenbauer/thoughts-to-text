@@ -36,14 +36,14 @@ export function NavigationBar() {
   const pathname = usePathname();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-t border-border safe-area-bottom">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 h-20 bg-background/95 backdrop-blur-sm border-t border-border safe-area-bottom">
       {/* Offline indicator bar */}
       <div className="absolute top-0 left-4 right-4 -translate-y-1/2">
         <OfflineIndicatorCompact className="mx-auto" />
       </div>
 
-      <div className="mx-auto max-w-3xl">
-        <div className="flex items-center justify-around px-4 py-2">
+      <div className="mx-auto max-w-3xl h-full">
+        <div className="flex items-center justify-around px-4 h-full">
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = pathname === item.href;

@@ -56,32 +56,29 @@ export default function Home() {
   }, []);
 
   return (
-    <AppLayout>
-      {/* Fixed Header with gradient background */}
-      <div className="fixed top-0 left-0 right-0 z-30 bg-gradient-to-b from-background via-background/95 to-background/80 backdrop-blur-md">
-        <div className={`text-center py-6 px-6 ${isLoaded ? animations.fadeIn : 'opacity-0'}`}>
-          <div className="flex items-center justify-center gap-2 mb-2">
-            <Sparkles className="w-6 h-6 text-indigo-500" />
-            <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent leading-tight pb-1">
+    <AppLayout
+      header={
+        <div className={`w-full h-full flex flex-col items-center justify-center text-center ${isLoaded ? animations.fadeIn : 'opacity-0'}`}>
+          <div className="flex items-center justify-center gap-2 w-full">
+            <Sparkles className="w-5 h-5 text-indigo-500" />
+            <h1 className="text-xl md:text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent leading-tight">
               Thoughts to Text
             </h1>
-            <Sparkles className="w-6 h-6 text-purple-500" />
+            <Sparkles className="w-5 h-5 text-purple-500" />
           </div>
           <p className="text-sm md:text-base text-muted-foreground">
             From raw thoughts to polished text in seconds.
           </p>
         </div>
-      </div>
-
-      <div className="flex flex-col items-center justify-center p-2 md:p-4 pt-36 md:pt-36 w-full max-w-full">
+      }
+    >
+      <div className="flex flex-col items-center justify-center w-full">
         {/* Recording Interface with enhanced card container */}
         <div className={`w-full ${isLoaded ? animations.scaleIn : 'opacity-0 scale-95'} transition-all duration-500 delay-200`}>
-          <div className="max-w-2xl mx-auto rounded-2xl bg-card border border-border/60 shadow-sm p-4 md:p-6">
-            <RecordingInterface
-              onSave={handleSave}
-              onError={handleError}
-            />
-          </div>
+          <RecordingInterface
+            onSave={handleSave}
+            onError={handleError}
+          />
         </div>
 
         {/* Enhanced Notification with better animations */}
@@ -104,8 +101,6 @@ export default function Home() {
           <div className="absolute top-1/4 left-1/4 w-48 h-48 bg-indigo-500/5 rounded-full blur-3xl animate-pulse transform -translate-x-1/2 -translate-y-1/2"></div>
           <div className="absolute bottom-1/4 right-1/4 w-48 h-48 bg-purple-500/5 rounded-full blur-3xl animate-pulse delay-1000 transform translate-x-1/2 translate-y-1/2"></div>
         </div>
-        {/* Spacer to ensure content can scroll above bottom navigation */}
-        <div className="h-20" aria-hidden="true" />
       </div>
     </AppLayout>
   );

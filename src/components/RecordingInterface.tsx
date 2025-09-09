@@ -45,6 +45,7 @@ export function RecordingInterface({
   const [transcriptionAttempted, setTranscriptionAttempted] = useState(false);
   const [apiKey, setApiKey] = useState<string | null>(null);
   const [selectedLanguage, setSelectedLanguage] = useState('auto');
+  const [showMinimalUI, setShowMinimalUI] = useState(true);
 
   // Use app state hooks
   const { notes, settings } = useAppState();
@@ -135,11 +136,6 @@ export function RecordingInterface({
     maxDuration: 10 * 60 * 1000 // 10 minutes max
   });
 
-  // UI mode: show only the core recording controls centered vertically
-  // when the app first loads (no recording yet) or while actively recording.
-  // After recording stops (duration > 0 and not recording), show the full UI from the top.
-  const showMinimalUI = recordingState.isRecording || recordingState.duration === 0;
-
   // Handle recording button click
   const handleRecordingToggle = useCallback(async () => {
     clearError();
@@ -148,6 +144,7 @@ export function RecordingInterface({
     if (recordingState.isRecording) {
       stopRecording();
       haptic.recordingStop();
+      setShowMinimalUI(false);
       announce('Recording stopped', 'polite');
     } else {
       // Clear previous transcript and rewritten text when starting new recording
@@ -430,6 +427,7 @@ export function RecordingInterface({
     setSelectedPrompt('default');
     setPhoto(null);
     setPhotoPreview(null);
+    setShowMinimalUI(true);
 
     // Close camera if active
     if (isCameraActive || isCameraLoading) {
@@ -575,8 +573,8 @@ export function RecordingInterface({
   return (
     <div
       className={cn(
-        "flex flex-col gap-6 w-full",
-        showMinimalUI ? "items-center justify-center min-h-[calc(100vh-22rem)]" : "items-center justify-start overflow-y-auto",
+        "flex flex-col gap-6 w-full items-center text-center p-4 md:p-8",
+        showMinimalUI ? "justify-center" : "justify-start overflow-y-auto",
         className
       )}
     >
@@ -584,66 +582,66 @@ export function RecordingInterface({
       <LiveRegion />
 
       {/* Greeting */}
-      {showMinimalUI && (
-        <div className="text-center mb-16">
+      {showMinimalUI && !recordingState.isRecording && (
+        <div className="text-center mt-16 mb-24">
           <p className="text-sm md:text-base text-muted-foreground">
             What's on your mind today?
           </p>
         </div>
       )}
 
-      {/* Recording button */}
-      {showMinimalUI && (
-        <div className="relative">
-          <button
-            onClick={handleRecordingToggle}
-            disabled={isTranscribing}
-            aria-label={
-              recordingState.isRecording
-                ? `Stop recording. Current duration: ${formattedDuration}`
-                : 'Start recording'
-            }
-            aria-pressed={recordingState.isRecording}
-            aria-describedby="recording-status"
-            className={cn(
-              "relative w-28 h-28 md:w-32 md:h-32 lg:w-36 lg:h-36 rounded-full transition-all duration-300 shadow-lg hover:shadow-xl active:scale-95 touch-manipulation",
-              recordingState.isRecording
-                ? "bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700"
-                : "bg-gradient-to-br from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600",
-              isTranscribing && "opacity-50 cursor-not-allowed"
-            )}
-          >
-            <div className="absolute inset-2 md:inset-3 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
-              {recordingState.isRecording ? (
-                <Square className="w-10 h-10 md:w-12 md:h-12 lg:w-14 lg:h-14 text-white drop-shadow-sm" />
-              ) : (
-                <Mic className="w-10 h-10 md:w-12 md:h-12 lg:w-14 lg:h-14 text-white drop-shadow-sm" />
+      <div className="flex flex-col relative items-center justify-center rounded-2xl bg-card border border-border/60 shadow-sm p-12 gap-12">
+        <div className="flex flex-row items-center justify-center gap-8">
+          {/* Recording button */}
+          {showMinimalUI && (
+            <button
+              onClick={handleRecordingToggle}
+              disabled={isTranscribing}
+              aria-label={
+                recordingState.isRecording
+                  ? `Stop recording. Current duration: ${formattedDuration}`
+                  : 'Start recording'
+              }
+              aria-pressed={recordingState.isRecording}
+              aria-describedby="recording-status"
+              className={cn(
+                "relative w-28 h-28 md:w-32 md:h-32 lg:w-36 lg:h-36 rounded-full transition-all duration-300 shadow-lg hover:shadow-xl active:scale-95 touch-manipulation",
+                recordingState.isRecording
+                  ? "bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700"
+                  : "bg-gradient-to-br from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600",
+                isTranscribing && "opacity-50 cursor-not-allowed"
               )}
-            </div>
-
-            {/* Pulse animation ring when recording */}
-            {recordingState.isRecording && (
-              <div className="absolute inset-0 rounded-full bg-gradient-to-br from-red-500 to-red-600 animate-pulse opacity-30"></div>
-            )}
-          </button>
-        </div>
-      )}
-
-      {/* Duration display + actions */}
-      {(recordingState.isRecording || recordingState.duration > 0) && (
-        <div className="flex w-full items-center justify-center gap-4">
-          <div className="text-center" id="recording-status">
-            <div
-              className="text-2xl md:text-3xl font-mono font-bold text-foreground"
-              aria-live="polite"
-              aria-atomic="true"
             >
-              {formattedDuration}
+              <div className="absolute inset-2 md:inset-3 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                {recordingState.isRecording ? (
+                  <Square className="w-10 h-10 md:w-12 md:h-12 lg:w-14 lg:h-14 text-white drop-shadow-sm" />
+                ) : (
+                  <Mic className="w-10 h-10 md:w-12 md:h-12 lg:w-14 lg:h-14 text-white drop-shadow-sm" />
+                )}
+              </div>
+
+              {/* Pulse animation ring when recording */}
+              {recordingState.isRecording && (
+                <div className="absolute inset-0 rounded-full bg-gradient-to-br from-red-500 to-red-600 animate-pulse opacity-30"></div>
+              )}
+            </button>
+          )}
+
+          {/* Duration display + actions */}
+          {(recordingState.isRecording || recordingState.duration > 0) && (
+            <div className="text-center" id="recording-status">
+              <div
+                className="text-2xl md:text-3xl font-mono font-bold text-foreground"
+                aria-live="polite"
+                aria-atomic="true"
+              >
+                {formattedDuration}
+              </div>
+              <p className="text-sm text-muted-foreground mt-1">
+                {recordingState.isRecording ? 'Recording...' : 'Recording complete'}
+              </p>
             </div>
-            <p className="text-sm text-muted-foreground mt-1">
-              {recordingState.isRecording ? 'Recording...' : 'Recording complete'}
-            </p>
-          </div>
+          )}
 
           {/* Show Save/Discard after recording stops (transcript may be absent) */}
           {!recordingState.isRecording && recordingState.duration > 0 && (
@@ -682,16 +680,16 @@ export function RecordingInterface({
             </div>
           )}
         </div>
-      )}
 
-      {/* Status text */}
-      {!recordingState.isRecording && recordingState.duration === 0 && (
-        <div className="text-center">
-          <p className="text-sm md:text-base text-muted-foreground">
-            {isTranscribing ? 'Processing...' : 'Tap to start recording'}
-          </p>
-        </div>
-      )}
+        {/* Status text */}
+        {!recordingState.isRecording && recordingState.duration === 0 && (
+          <div className="text-center">
+            <p className="text-sm md:text-base text-muted-foreground">
+              {isTranscribing ? 'Processing...' : 'Tap to start recording'}
+            </p>
+          </div>
+        )}
+      </div>
 
       {/* Transcription status (only after recording stops) */}
       {!showMinimalUI && isTranscribing && (

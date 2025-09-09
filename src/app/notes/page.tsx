@@ -222,30 +222,26 @@ export default function NotesPage() {
   };
 
   return (
-    <AppLayout>
-      <div className="w-full max-w-3xl p-2 md:p-4 flex flex-col h-full min-h-0">
+    <AppLayout
+      header={
+        <div className="flex items-center gap-2 w-full">
+          <Button
+            variant="ghost"
+            onClick={() => router.push('/')}
+            className="flex items-center gap-2"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back
+          </Button>
+          <h1 className="text-lg md:text-xl font-bold text-foreground">
+            Your Notes
+          </h1>
+        </div>
+      }
+    >
+      <div className="flex flex-col w-full">
         {/* Toast Notifications */}
         <ToastContainer toasts={toasts} onRemoveToast={removeToast} />
-
-        {/* Header */}
-        <div className="mb-6 md:mb-8">
-          <div className="flex flex-row gap-2">
-            <Button
-              variant="ghost"
-              onClick={() => router.push('/')}
-              className="flex items-center gap-2"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Back
-            </Button>
-            <h1 className="text-xl md:text-2xl font-bold text-foreground mb-2">
-              Your Notes
-            </h1>
-          </div>
-          <p className="text-sm md:text-base text-muted-foreground">
-            Browse and manage your recorded thoughts
-          </p>
-        </div>
 
         {/* Error Display */}
         {error && (

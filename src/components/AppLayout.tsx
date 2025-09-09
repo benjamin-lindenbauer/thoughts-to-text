@@ -9,11 +9,13 @@ import { cn } from '@/lib/utils';
 
 interface AppLayoutProps {
   children: React.ReactNode;
+  header?: React.ReactNode;
   className?: string;
 }
 
 export function AppLayout({ 
   children, 
+  header,
   className
 }: AppLayoutProps) {
   useEffect(() => {
@@ -25,7 +27,7 @@ export function AppLayout({
   }, []);
 
   return (
-    <div className="h-screen min-h-0 w-full flex flex-col bg-background transition-colors duration-200">
+    <div className="relative h-screen min-h-0 w-full bg-background transition-colors duration-200 overflow-hidden">
       {/* Offline indicator - positioned at top */}
       <div className="fixed top-4 right-4 z-40 flex justify-center pointer-events-none">
         <div className="pointer-events-auto">
@@ -33,23 +35,26 @@ export function AppLayout({
         </div>
       </div>
 
-      {/* Main content area - scrollable */}
-      <main 
+      {/* Fixed Header */}
+      <header className="fixed top-0 left-0 right-0 h-16 bg-background/95 backdrop-blur-sm border-b border-border z-40">
+        <div className="mx-auto max-w-3xl h-full flex items-center">
+          {header}
+        </div>
+      </header>
+
+      {/* Scrollable Content Area between header and bottom nav */}
+      <main
         className={cn(
-          'flex-1 overflow-y-auto overflow-x-hidden safe-area-top w-full min-h-0',
-          // Standard padding
-          'px-2 md:px-4',
-          // Bottom spacing handled by explicit spacer element to avoid overlap
-          'pb-20 safe-area-bottom',
+          'fixed left-0 right-0 top-16 bottom-20 overflow-y-auto overflow-x-hidden',
           className
         )}
       >
-        <div className="mx-auto max-w-3xl w-full h-full min-h-0">
+        <div className="w-full max-w-3xl min-h-full mx-auto p-2 md:p-4">
           {children}
         </div>
       </main>
-      
-      {/* Navigation - fixed at bottom, outside scroll area */}
+
+      {/* Fixed bottom navigation */}
       <NavigationBar />
 
       {/* PWA install prompt */}

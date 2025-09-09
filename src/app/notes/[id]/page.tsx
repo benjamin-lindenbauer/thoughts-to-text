@@ -236,87 +236,87 @@ export default function NoteDetailsPage() {
   }
 
   return (
-    <AppLayout>
-      <div className="flex flex-col max-w-3xl mx-auto h-full min-h-0">
-        {/* Header */}
-        <div className="z-10 py-2 md:py-4">
-          <div className="flex items-center justify-between">
+    <AppLayout
+      header={
+        <div className="flex items-center justify-between w-full">
+          <Button
+            variant="ghost"
+            onClick={() => router.push('/notes')}
+            className="flex items-center gap-2"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back
+          </Button>
+
+          <div className="flex items-center gap-2">
             <Button
-              variant="ghost"
-              onClick={() => router.push('/notes')}
+              variant="outline"
+              size="sm"
+              onClick={handleShareNote}
               className="flex items-center gap-2"
             >
-              <ArrowLeft className="h-4 w-4" />
-              Back
+              <Share className="h-4 w-4" />
+              Share
             </Button>
 
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleShareNote}
-                className="flex items-center gap-2"
-              >
-                <Share className="h-4 w-4" />
-                Share
-              </Button>
-
-              {isEditing ? (
-                <>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={cancelEditing}
-                    disabled={saving}
-                    className="flex items-center gap-2"
-                  >
-                    <X className="h-4 w-4" />
-                    Cancel
-                  </Button>
-                  <Button
-                    size="sm"
-                    onClick={saveNote}
-                    disabled={saving}
-                    className="flex items-center gap-2"
-                  >
-                    {saving ? (
-                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                    ) : (
-                      <Save className="h-4 w-4" />
-                    )}
-                    Save
-                  </Button>
-                </>
-              ) : (
-                <>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={startEditing}
-                    className="flex items-center gap-2"
-                  >
-                    <Edit3 className="h-4 w-4" />
-                    Edit
-                  </Button>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={openDeleteDialog}
-                    disabled={deleting}
-                    className="flex items-center gap-2"
-                  >
-                    {deleting ? (
-                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                    ) : (
-                      <Trash2 className="h-4 w-4" />
-                    )}
-                    Delete
-                  </Button>
-                </>
-              )}
-            </div>
+            {isEditing ? (
+              <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={cancelEditing}
+                  disabled={saving}
+                  className="flex items-center gap-2"
+                >
+                  <X className="h-4 w-4" />
+                  Cancel
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={saveNote}
+                  disabled={saving}
+                  className="flex items-center gap-2"
+                >
+                  {saving ? (
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                  ) : (
+                    <Save className="h-4 w-4" />
+                  )}
+                  Save
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={startEditing}
+                  className="flex items-center gap-2"
+                >
+                  <Edit3 className="h-4 w-4" />
+                  Edit
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={openDeleteDialog}
+                  disabled={deleting}
+                  className="flex items-center gap-2"
+                >
+                  {deleting ? (
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                  ) : (
+                    <Trash2 className="h-4 w-4" />
+                  )}
+                  Delete
+                </Button>
+              </>
+            )}
           </div>
         </div>
+      }
+    >
+      <div className="flex flex-col w-full">
 
         {/* Error Display */}
         {error && (
@@ -333,7 +333,7 @@ export default function NoteDetailsPage() {
           </div>
         )}
 
-        <div className="flex-1 min-h-0 overflow-y-auto space-y-6 my-2">
+        <div className="flex-1 min-h-0 space-y-6 my-2">
           {/* Title and Metadata */}
           <Card>
             <CardHeader>
