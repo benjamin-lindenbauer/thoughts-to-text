@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Plus, Edit2, Trash2, Check, X } from 'lucide-react';
+import { Plus, Edit2, Trash2, Check, X, CircleCheckBig } from 'lucide-react';
 import { RewritePrompt } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -157,12 +157,11 @@ export function RewritePromptManager({
         {prompts.map((prompt) => (
           <div
             key={prompt.id}
-            onClick={() => handleSetDefault(prompt.id)}
             className={cn(
               'p-4 rounded-xl border transition-all duration-200',
               prompt.id === defaultPromptId
                 ? 'border-indigo-500 bg-indigo-500/10 shadow-sm'
-                : 'border-border bg-card hover:bg-accent/50 cursor-pointer'
+                : 'border-border bg-card hover:bg-accent/50'
             )}
           >
             <div className="flex items-start justify-between gap-3">
@@ -192,6 +191,18 @@ export function RewritePromptManager({
                 >
                   <Edit2 className="h-4 w-4" />
                 </Button>
+
+                {prompt.id !== defaultPromptId && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleSetDefault(prompt.id)}
+                    className="h-8 w-8 p-0 hover:bg-accent"
+                    title="Set as default"
+                  >
+                    <CircleCheckBig className="h-4 w-4" />
+                  </Button>
+                )}
                 
                 {prompt.id !== defaultPromptId && (
                   <Button
