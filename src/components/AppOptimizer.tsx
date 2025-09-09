@@ -58,7 +58,8 @@ export function AppOptimizer({ children }: AppOptimizerProps) {
 async function preloadCriticalResources() {
   const criticalResources = [
     '/manifest.json',
-    '/logo.png'
+    '/icon_192.png',
+    '/icon_512.png'
   ];
 
   const preloadPromises = criticalResources.map(resource => {

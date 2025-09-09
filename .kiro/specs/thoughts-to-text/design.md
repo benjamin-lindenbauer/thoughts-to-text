@@ -263,7 +263,7 @@ const handleAPIError = (error: APIError) => {
   "theme_color": "#6366f1",
   "icons": [
     {
-      "src": "/logo.png",
+      "src": "/icon_192.png",
       "sizes": "192x192",
       "type": "image/png"
     }

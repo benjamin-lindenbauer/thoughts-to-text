@@ -11,7 +11,8 @@ const IMAGE_CACHE = `images-v${CACHE_VERSION}`;
 // which can cause hydration mismatches if the page changes.
 const STATIC_ASSETS = [
   '/manifest.json',
-  '/logo.png',
+  '/icon_192.png',
+  '/icon_512.png',
   '/offline.html'
 ];
 

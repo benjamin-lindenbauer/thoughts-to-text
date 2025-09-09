@@ -590,7 +590,7 @@ export function RecordingInterface({
         </div>
       )}
 
-      <div className="flex flex-col relative items-center justify-center rounded-2xl bg-card border border-border/60 shadow-sm p-12 gap-12">
+      <div className="flex flex-col relative items-center justify-center rounded-2xl bg-card border border-border/60 shadow-sm p-12 gap-12 min-w-80">
         <div className="flex flex-row items-center justify-center gap-8">
           {/* Recording button */}
           {showMinimalUI && (

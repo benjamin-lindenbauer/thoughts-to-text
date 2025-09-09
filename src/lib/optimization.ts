@@ -232,7 +232,8 @@ export function optimizeServiceWorker() {
     const criticalResources = [
       '/',
       '/manifest.json',
-      '/logo.png'
+      '/icon_192.png',
+      '/icon_512.png'
     ];
     
     await cache.addAll(criticalResources);
