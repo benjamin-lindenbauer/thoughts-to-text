@@ -61,7 +61,7 @@ export function AppLayout({
       <NavigationBar />
 
       {/* PWA install prompt */}
-      <PWAInstallPrompt />
+      {/*<PWAInstallPrompt />*/}
     </div>
   );
 }
