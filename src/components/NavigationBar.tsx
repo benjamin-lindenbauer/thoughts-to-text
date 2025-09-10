@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import { BookOpenText, Mic, Settings } from 'lucide-react';
 import { OfflineIndicatorCompact } from './OfflineIndicator';
 import { cn } from '@/lib/utils';
+import { NAV_ROUTE_ORDER, NavRoute } from '@/lib/nav-order';
 
 interface NavItem {
   href: string;
@@ -14,23 +15,17 @@ interface NavItem {
   className?: string;
 }
 
-const navItems: NavItem[] = [
-  {
-    href: '/notes',
-    icon: BookOpenText,
-    label: 'Notes',
-  },
-  {
-    href: '/',
-    icon: Mic,
-    label: 'Record',
-  },
-  {
-    href: '/settings',
-    icon: Settings,
-    label: 'Settings',
-  },
-];
+const navConfig: Record<NavRoute, { icon: React.ComponentType<{ className?: string }>; label: string }> = {
+  '/notes': { icon: BookOpenText, label: 'Notes' },
+  '/': { icon: Mic, label: 'Record' },
+  '/settings': { icon: Settings, label: 'Settings' },
+};
+
+const navItems: NavItem[] = NAV_ROUTE_ORDER.map((href) => ({
+  href,
+  icon: navConfig[href as NavRoute].icon,
+  label: navConfig[href as NavRoute].label,
+}));
 
 export function NavigationBar() {
   const pathname = usePathname();
@@ -46,7 +41,9 @@ export function NavigationBar() {
         <div className="flex items-center justify-around px-4 h-full">
           {navItems.map((item) => {
             const Icon = item.icon;
-            const isActive = pathname === item.href;
+            const isActive =
+              pathname === item.href ||
+              (item.href !== '/' && !!pathname && pathname.startsWith(item.href + '/'));
             
             return (
               <Link
