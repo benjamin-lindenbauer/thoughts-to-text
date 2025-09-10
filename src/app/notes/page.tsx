@@ -14,15 +14,41 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, X, FileText, Mic, Wand2 } from "lucide-react";
 import { DeleteConfirmationDialog } from "@/components/DeleteConfirmationDialog";
 import { Note } from "@/types";
-import { getAllNotes, deleteNote as deleteNoteStorage } from '@/lib/storage';
+import { getAllNotes, deleteNote as deleteNoteStorage, retrieveNote } from '@/lib/storage';
 import { useOffline } from '@/hooks/useOffline';
 import { AudioPlayer } from "@/components/AudioPlayer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { OfflineIndicator } from '@/components/OfflineIndicator';
 
-// Inline expanded card component to safely handle blob URLs and layout
+// Inline expanded card component: show base note immediately, lazy-load blobs
 function InlineExpandedNoteCard({ note: n, onClose }: { note: Note; isOnline: boolean; onClose: () => void }) {
-  const photoUrl = useMemo(() => (n.photoBlob ? URL.createObjectURL(n.photoBlob) : null), [n.photoBlob]);
+  if (!n) return null;
+
+  // Initialize from base note immediately; update after retrieveNote resolves
+  const [audioBlob, setAudioBlob] = useState<Blob | undefined>(n.audioBlob);
+  const [photoBlob, setPhotoBlob] = useState<Blob | undefined>(n.photoBlob);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const full = await retrieveNote(n.id);
+        if (!cancelled) {
+          setAudioBlob(full?.audioBlob);
+          setPhotoBlob(full?.photoBlob || undefined);
+        }
+      } catch {
+        if (!cancelled) {
+          setAudioBlob(undefined);
+          setPhotoBlob(undefined);
+        }
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [n.id]);
+
+  // Safely create/revoke photo URL
+  const photoUrl = useMemo(() => (photoBlob ? URL.createObjectURL(photoBlob) : null), [photoBlob]);
   useEffect(() => {
     return () => {
       if (photoUrl) URL.revokeObjectURL(photoUrl);
@@ -43,19 +69,21 @@ function InlineExpandedNoteCard({ note: n, onClose }: { note: Note; isOnline: bo
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div>
-          <h3 className="flex items-center gap-2 font-medium text-sm">
-            <Mic className="h-4 w-4" />Recording
-          </h3>
-          <div className="mt-2">
-            <AudioPlayer
-              audioBlob={n.audioBlob}
-              showVolumeControl={true}
-              showTimeDisplay={true}
-              initialDurationSeconds={Number.isFinite(n.duration) && n.duration > 0 ? n.duration : 0}
-            />
+        {audioBlob && (
+          <div>
+            <h3 className="flex items-center gap-2 font-medium text-sm">
+              <Mic className="h-4 w-4" />Recording
+            </h3>
+            <div className="mt-2">
+              <AudioPlayer
+                audioBlob={audioBlob}
+                showVolumeControl={true}
+                showTimeDisplay={true}
+                initialDurationSeconds={Number.isFinite(n.duration) && n.duration > 0 ? n.duration : 0}
+              />
+            </div>
           </div>
-        </div>
+        )}
         <div>
           <h3 className="flex items-center gap-2 font-medium text-sm">
             <FileText className="h-4 w-4" /> Transcript
