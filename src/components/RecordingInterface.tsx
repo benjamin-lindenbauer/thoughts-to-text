@@ -89,26 +89,6 @@ export function RecordingInterface({
     };
   }, []);
 
-  // Load API key once on mount and cache presence for guidance messages/UI
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const k = await retrieveApiKey();
-        if (!cancelled) {
-          setApiKey(k || null);
-          setHasApiKey(!!k);
-        }
-      } catch {
-        if (!cancelled) {
-          setApiKey(null);
-          setHasApiKey(false);
-        }
-      }
-    })();
-    return () => { cancelled = true; };
-  }, []);
-
   // Helper to retrieve API key using cached state when available
   const getApiKey = React.useCallback(async (): Promise<string | null> => {
     if (apiKey) return apiKey;
@@ -123,7 +103,12 @@ export function RecordingInterface({
     }
   }, [apiKey]);
 
-  // Note: We intentionally avoid any auto-save behavior here. Saving occurs only on explicit Save.
+  // Keep local API key flags in sync with settings updates (e.g., after clearing in Settings)
+  useEffect(() => {
+    const key = settings?.settings?.openaiApiKey ?? '';
+    setApiKey(key || null);
+    setHasApiKey(!!key);
+  }, [settings?.settings?.openaiApiKey]);
 
   const {
     recordingState,
@@ -857,7 +842,7 @@ export function RecordingInterface({
       )}
 
       {/* Photo controls */}
-      {!showMinimalUI && (
+      {!showMinimalUI && !isTranscribing && transcriptionAttempted && transcript?.trim() && (
         <div className="flex flex-col gap-2 w-full">
           <h3>Add an image</h3>
           {/* Photo controls */}

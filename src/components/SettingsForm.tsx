@@ -12,6 +12,7 @@ import { ThemeToggle } from '@/components/ThemeToggle';
 import { RewritePromptManager } from '@/components/RewritePromptManager';
 import { PWAInstallButton } from '@/components/PWAInstallPrompt';
 import { cn } from '@/lib/utils';
+import { clearApiKey as clearStoredApiKey } from '@/lib/storage';
 import { useToast } from "@/hooks/useToast";
 import { ToastContainer } from "@/components/Toast";
 import { usePWAInstall } from '@/hooks/useOffline';
@@ -138,6 +139,25 @@ export function SettingsForm() {
     }
   };
 
+  // Clear API key
+  const handleClearApiKey = async () => {
+    try {
+      setIsSaving(true);
+      setFormError(null);
+      // Remove encrypted key from storage and reflect change in settings state
+      await clearStoredApiKey();
+      await settings.updateSettings({ openaiApiKey: '' });
+      setApiKeyInput('');
+      setApiKeyStatus('idle');
+      setSaveStatus('API key cleared');
+      setTimeout(() => setSaveStatus(null), 3000);
+    } catch (err) {
+      setFormError(err instanceof Error ? err.message : 'Failed to clear API key');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   // Handle language change
   const handleLanguageChange = async (language: string) => {
     try {
@@ -245,10 +265,20 @@ export function SettingsForm() {
                 />
                 <Button
                   onClick={handleSaveApiKey}
-                  disabled={isSaving || apiKeyInput === settings?.settings?.openaiApiKey}
+                  disabled={isSaving || !apiKeyInput.trim() || apiKeyInput === settings?.settings?.openaiApiKey}
                   size="sm"
                 >
                   {isSaving ? 'Saving...' : 'Save'}
+                </Button>
+                <Button
+                  onClick={handleClearApiKey}
+                  variant="outline"
+                  disabled={isSaving || !settings?.settings?.openaiApiKey}
+                  size="sm"
+                  aria-label="Clear API key"
+                  title="Clear the stored API key"
+                >
+                  Clear
                 </Button>
               </div>
               
