@@ -48,6 +48,20 @@ export function RecordingInterface({
   const [selectedLanguage, setSelectedLanguage] = useState('auto');
   const [showMinimalUI, setShowMinimalUI] = useState(true);
 
+  // Recording time limits and helpers
+  const MAX_RECORDING_TIME_SECONDS = 10 * 60; // 10 minutes
+  const MAX_RECORDING_TIME_MS = MAX_RECORDING_TIME_SECONDS * 1000;
+
+  const formatTime = (totalSeconds: number) => {
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return hours > 0
+      ? `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`
+      : `${pad(minutes)}:${pad(seconds)}`;
+  };
+
   // Use app state hooks
   const { notes, settings } = useAppState();
 
@@ -136,6 +150,13 @@ export function RecordingInterface({
     mimeType: 'audio/webm;codecs=opus',
     maxDuration: 10 * 60 * 1000 // 10 minutes max
   });
+
+  // Extra safety: ensure we hard-stop at the max time in case the hook's timer is delayed
+  useEffect(() => {
+    if (recordingState.isRecording && (recordingState.duration || 0) >= MAX_RECORDING_TIME_MS) {
+      stopRecording();
+    }
+  }, [recordingState.isRecording, recordingState.duration]);
 
   // Handle recording button click
   const handleRecordingToggle = useCallback(async () => {
@@ -599,46 +620,48 @@ export function RecordingInterface({
         </div>
       )}
 
-      <div className="flex flex-col relative items-center justify-center rounded-2xl bg-card border border-border/60 p-12 gap-12 min-w-80">
+      <div className="flex flex-col relative items-center justify-center rounded-2xl bg-panel-gradient border border-border/60 p-12 gap-12 min-w-80">
         <div className="flex flex-row items-center justify-center gap-8">
           {/* Recording button */}
           {showMinimalUI && (
-            <button
-              onClick={handleRecordingToggle}
-              disabled={isTranscribing}
-              aria-label={
-                recordingState.isRecording
-                  ? `Stop recording. Current duration: ${formattedDuration}`
-                  : 'Start recording'
-              }
-              aria-pressed={recordingState.isRecording}
-              aria-describedby="recording-status"
-              className={cn(
-                "relative w-28 h-28 md:w-32 md:h-32 lg:w-36 lg:h-36 rounded-full transition-all duration-300 active:scale-95 touch-manipulation",
-                recordingState.isRecording
-                  ? "bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700"
-                  : "bg-gradient-to-br from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600",
-                isTranscribing && "opacity-50 cursor-not-allowed"
-              )}
-            >
-              <div className="absolute inset-2 md:inset-3 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
-                {recordingState.isRecording ? (
-                  <Square className="w-10 h-10 md:w-12 md:h-12 lg:w-14 lg:h-14 text-white drop-shadow-sm" />
-                ) : (
-                  <Mic className="w-10 h-10 md:w-12 md:h-12 lg:w-14 lg:h-14 text-white drop-shadow-sm" />
+            <div className="flex flex-col items-center gap-3">
+              <button
+                onClick={handleRecordingToggle}
+                disabled={isTranscribing}
+                aria-label={
+                  recordingState.isRecording
+                    ? `Stop recording. Current duration: ${formattedDuration}`
+                    : 'Start recording'
+                }
+                aria-pressed={recordingState.isRecording}
+                aria-describedby="recording-status"
+                className={cn(
+                  "relative w-28 h-28 md:w-32 md:h-32 lg:w-36 lg:h-36 rounded-full transition-all duration-300 active:scale-95 touch-manipulation",
+                  recordingState.isRecording
+                    ? "bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700"
+                    : "bg-gradient-to-br from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600",
+                  isTranscribing && "opacity-50 cursor-not-allowed"
                 )}
-              </div>
+              >
+                <div className="absolute inset-2 md:inset-3 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                  {recordingState.isRecording ? (
+                    <Square className="w-10 h-10 md:w-12 md:h-12 lg:w-14 lg:h-14 text-white drop-shadow-sm" />
+                  ) : (
+                    <Mic className="w-10 h-10 md:w-12 md:h-12 lg:w-14 lg:h-14 text-white drop-shadow-sm" />
+                  )}
+                </div>
 
-              {/* Pulse animation ring when recording */}
-              {recordingState.isRecording && (
-                <div className="absolute inset-0 rounded-full bg-gradient-to-br from-red-500 to-red-600 animate-pulse opacity-30"></div>
-              )}
-            </button>
+                {/* Pulse animation ring when recording */}
+                {recordingState.isRecording && (
+                  <div className="absolute inset-0 rounded-full bg-gradient-to-br from-red-500 to-red-600 animate-pulse opacity-30"></div>
+                )}
+              </button>
+            </div>
           )}
 
           {/* Duration display + actions */}
           {(recordingState.isRecording || recordingState.duration > 0) && (
-            <div className="text-center" id="recording-status">
+            <div className="flex flex-col items-center gap-2" id="recording-status">
               <div
                 className="text-3xl md:text-4xl font-mono font-bold text-foreground"
                 aria-live="polite"
@@ -646,15 +669,26 @@ export function RecordingInterface({
               >
                 {formattedDuration}
               </div>
-              <p className="text-sm text-muted-foreground mt-1">
+              <p className="text-sm text-muted-foreground">
                 {recordingState.isRecording ? 'Recording...' : 'Recording complete'}
               </p>
+              {/* Progress bar under the recording button while recording */}
+              {recordingState.isRecording && (
+                <div className="w-full max-w-xs space-y-4">
+                  <div className="h-2 w-full bg-background rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-purple-500 transition-[width] duration-200"
+                      style={{ width: `${Math.min(100, ((recordingState.duration || 0) / MAX_RECORDING_TIME_MS) * 100)}%` }}
+                    />
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
           {/* Show Save/Discard after recording stops (transcript may be absent) */}
           {!recordingState.isRecording && recordingState.duration > 0 && (
-            <div className="flex flex-col items-center gap-2 ml-8">
+            <div className="flex flex-col items-center gap-4 ml-8">
               <button
                 type="button"
                 onClick={handleSaveNote}
@@ -679,7 +713,7 @@ export function RecordingInterface({
               </button>
               <button
                 onClick={handleDiscard}
-                className="px-4 py-2 rounded-lg text-sm font-medium bg-secondary border border-border hover:bg-accent transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed w-28"
+                className="px-4 py-2 rounded-lg text-sm font-medium bg-background border border-border hover:bg-accent transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed w-28"
                 aria-label="Discard recording and transcript"
                 disabled={isSaving}
               >

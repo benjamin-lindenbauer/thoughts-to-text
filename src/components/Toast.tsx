@@ -59,15 +59,15 @@ export function Toast({ id, type, title, description, duration = 5000, transpare
       case 'success':
         return transparent
           ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
-          : 'bg-green-500 dark:bg-green-600 border-green-600 dark:border-green-500';
+          : 'bg-green-400 dark:bg-green-600 border-green-400 dark:border-green-500';
       case 'error':
         return transparent
           ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'
-          : 'bg-red-500 dark:bg-red-600 border-red-600 dark:border-red-500';
+          : 'bg-red-400 dark:bg-red-600 border-red-400 dark:border-red-500';
       case 'info':
         return transparent
           ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800'
-          : 'bg-blue-500 dark:bg-blue-600 border-blue-600 dark:border-blue-500';
+          : 'bg-blue-400 dark:bg-blue-600 border-blue-400 dark:border-blue-500';
     }
   };
 
