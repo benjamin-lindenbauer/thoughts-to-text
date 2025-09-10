@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
 
     // Get request body
     const body = await request.json();
-    const { text, prompt } = body;
+    const { text, prompt, language } = body;
 
     if (!text) {
       return NextResponse.json(
@@ -49,12 +49,16 @@ export async function POST(request: NextRequest) {
     }
 
     // Build the Responses API request (plain text output)
+    const languageDirective = language
+      ? `Rewrite the text in ${String(language)}.`
+      : 'Rewrite the text in the same language as the original text. Detect the language automatically and preserve it.';
+
     const baseRequest: any = {
       model: 'gpt-5',
       reasoning: { effort: "low" },
       instructions:
         'You are an expert writer. Follow the instructions carefully and return only the rewritten text.',
-      input: `${prompt}\n\nOriginal text:\n${text}`
+      input: `${languageDirective}\n\n${prompt}\n\nOriginal text:\n${text}`
     };
 
     const response = await openai.responses.create(baseRequest);
@@ -75,7 +79,8 @@ export async function POST(request: NextRequest) {
     const result = {
       originalText: String(text),
       rewrittenText: String(outputText).trim(),
-      prompt: String(prompt)
+      prompt: String(prompt),
+      requestedLanguage: language ? String(language) : undefined
     };
 
     return NextResponse.json(result);
