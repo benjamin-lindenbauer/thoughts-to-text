@@ -350,7 +350,7 @@ export default function NotesPage() {
         )}
 
         {/* Search and Filter - sticky at top of scroll container */}
-        <div className="sticky top-0 z-20 py-4 bg-background/95 supports-[backdrop-filter]:bg-background/60 backdrop-blur border-b border-border">
+        <div className="sticky top-0 z-20 py-4 bg-background/95 supports-[backdrop-filter]:bg-background/60 backdrop-blur">
           <NotesSearch
             onSearch={handleSearch}
             onFilter={handleFilter}
