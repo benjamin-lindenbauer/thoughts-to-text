@@ -76,25 +76,12 @@ export function AppOptimizer({ children }: AppOptimizerProps) {
 
 // Preload critical resources
 async function preloadCriticalResources() {
-  const criticalResources = [
-    '/manifest.json',
-    '/icon_192.png',
-    '/icon_512.png'
-  ];
-
-  const preloadPromises = criticalResources.map(resource => {
-    return new Promise((resolve) => {
-      const link = document.createElement('link');
-      link.rel = 'preload';
-      link.href = resource;
-      link.onload = () => resolve(resource);
-      link.onerror = () => resolve(resource); // Don't fail on errors
-      document.head.appendChild(link);
-    });
-  });
-
-  await Promise.all(preloadPromises);
-  performanceMonitor.recordMetric('critical-resources-preloaded', preloadPromises.length, 'custom');
+  // No manual preloads needed here. The service worker precaches the
+  // PWA manifest and icons, and Next.js manages font preloads.
+  // Manually preloading these (especially icons) can trigger
+  // "preloaded but not used" warnings shortly after load.
+  // Intentionally a no-op.
+  performanceMonitor.recordMetric('critical-resources-preloaded', 0, 'custom');
 }
 
 // Initialize service worker with optimizations
