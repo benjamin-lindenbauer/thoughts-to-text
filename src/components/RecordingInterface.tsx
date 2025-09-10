@@ -721,7 +721,7 @@ export function RecordingInterface({
 
       {/* Guidance when we cannot transcribe now (offline or missing API key) */}
       {!showMinimalUI && !isTranscribing && !transcriptionAttempted && (!isOnline || !hasApiKey) && (
-        <div className="w-full space-y-2">
+        <div className="space-y-2">
           {!isOnline && (
             <div className="info-box">
               You are offline. You can save now and transcribe later.
