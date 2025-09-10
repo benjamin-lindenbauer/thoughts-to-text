@@ -59,6 +59,8 @@ export function NotesList({
     const contextMenuRef = useRef<HTMLDivElement>(null);
     const sentinelRef = useRef<HTMLDivElement>(null);
     const loadingMoreRef = useRef(false);
+    const [isTouch, setIsTouch] = useState(false);
+    const [mobileSelectedId, setMobileSelectedId] = useState<string | null>(null);
 
     // Accessibility hooks
     const { announce, LiveRegion } = useAriaLiveRegion();
@@ -90,17 +92,35 @@ export function NotesList({
         return () => io.disconnect();
     }, [onEndReached, hasMore]);
 
-    // Close context menu when clicking outside
+    // Detect touch-capable (mobile) devices
     useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
+        if (typeof window === 'undefined') return;
+        try {
+            const mq = window.matchMedia('(hover: none), (pointer: coarse)');
+            const hasTouch = mq.matches || ('ontouchstart' in window);
+            setIsTouch(hasTouch);
+        } catch {
+            // Fallback
+            setIsTouch('ontouchstart' in (window as any));
+        }
+    }, []);
+
+    // Close context menu when clicking/tapping outside
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent | TouchEvent) => {
             if (contextMenuRef.current && !contextMenuRef.current.contains(event.target as Node)) {
                 setContextMenu(prev => ({ ...prev, isOpen: false }));
+                setMobileSelectedId(null);
             }
         };
 
         if (contextMenu.isOpen) {
             document.addEventListener('mousedown', handleClickOutside);
-            return () => document.removeEventListener('mousedown', handleClickOutside);
+            document.addEventListener('touchstart', handleClickOutside);
+            return () => {
+                document.removeEventListener('mousedown', handleClickOutside);
+                document.removeEventListener('touchstart', handleClickOutside);
+            };
         }
     }, [contextMenu.isOpen]);
 
@@ -116,7 +136,11 @@ export function NotesList({
             y: e.clientY - rect.top,
             noteId,
         });
-    }, []);
+        // On mobile (long-press), visually mark the pressed card as selected
+        if (isTouch) {
+            setMobileSelectedId(noteId);
+        }
+    }, [isTouch]);
 
     // Handle context menu actions
     const handleContextMenuAction = useCallback(async (action: string, noteId: string) => {
@@ -124,6 +148,7 @@ export function NotesList({
         if (!note) return;
 
         setContextMenu(prev => ({ ...prev, isOpen: false }));
+        setMobileSelectedId(null);
 
         switch (action) {
             case 'delete':
@@ -235,7 +260,7 @@ export function NotesList({
                             }
                         >
                             <div
-                                className="mb-4 p-4 rounded-xl border border-border bg-card hover:bg-accent transition-colors cursor-pointer"
+                                className={`mb-4 p-4 rounded-xl border border-border bg-card hover:bg-accent transition-colors cursor-pointer ${isTouch ? 'select-none' : 'select-text'} ${isTouch && mobileSelectedId === note.id ? 'ring-2 ring-primary ring-offset-2 ring-offset-background' : ''}`}
                                 onClick={() => handleNoteClick(note.id)}
                                 onContextMenu={(e) => handleContextMenu(e, note.id)}
                                 onKeyDown={(e) => {
