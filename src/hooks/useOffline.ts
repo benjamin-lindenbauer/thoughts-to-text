@@ -187,7 +187,7 @@ export const usePWAInstall = () => {
   const install = useCallback(async (): Promise<boolean> => {
     const result = await pwaManager.showInstallPrompt();
     if (result) {
-      setCanInstall(false);
+      setIsInstalled(true);
     }
     return result;
   }, []);
