@@ -73,7 +73,9 @@ export function NotesList({
     // Intersection observer for infinite loading
     useEffect(() => {
         if (!onEndReached || !hasMore) return;
-        const root = containerRef.current;
+        // Use the app-level scroll container managed by AppLayout
+        const appScrollContainer = document.querySelector('main[data-app-scroll="true"]') as HTMLElement | null;
+        const root = appScrollContainer ?? containerRef.current ?? undefined;
         const target = sentinelRef.current;
         if (!root || !target) return;
 

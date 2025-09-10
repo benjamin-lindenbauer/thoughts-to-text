@@ -32,7 +32,7 @@ export function AppLayout({
   }, []);
 
   return (
-    <div className="relative h-screen min-h-0 w-full bg-background transition-colors duration-200">
+    <div className="relative h-[100dvh] min-h-[100dvh] w-full bg-background transition-colors duration-200">
       {/* Offline indicator - positioned at top */}
       <div className="fixed top-4 right-4 z-40 flex justify-center pointer-events-none">
         <div className="pointer-events-auto">
@@ -51,6 +51,7 @@ export function AppLayout({
 
       {/* Scrollable Content Area between header and bottom nav */}
       <main
+        data-app-scroll="true"
         className={cn(
           'fixed left-0 right-0 bottom-20 overflow-y-auto overflow-x-hidden',
           header ? 'top-14' : 'top-0',

@@ -21,7 +21,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { OfflineIndicator } from '@/components/OfflineIndicator';
 
 // Inline expanded card component to safely handle blob URLs and layout
-function InlineExpandedNoteCard({ note: n, isOnline, onClose }: { note: Note; isOnline: boolean; onClose: () => void }) {
+function InlineExpandedNoteCard({ note: n, onClose }: { note: Note; isOnline: boolean; onClose: () => void }) {
   const photoUrl = useMemo(() => (n.photoBlob ? URL.createObjectURL(n.photoBlob) : null), [n.photoBlob]);
   useEffect(() => {
     return () => {
@@ -259,9 +259,13 @@ export default function NotesPage() {
       setVisibleCount((prev) => (index + 1 > prev ? index + 1 : prev));
       // Scroll into view after the list renders
       setTimeout(() => {
-        const el = document.querySelector(`[data-note-id="${inlineNoteId}"]`);
-        if (el && 'scrollIntoView' in el) {
-          (el as HTMLElement).scrollIntoView({ behavior: 'smooth', block: 'start' });
+        const el = document.querySelector(`[data-note-id="${inlineNoteId}"]`) as HTMLElement | null;
+        const container = document.querySelector('main[data-app-scroll="true"]') as HTMLElement | null;
+        if (el && container) {
+          const elRect = el.getBoundingClientRect();
+          const containerRect = container.getBoundingClientRect();
+          const offsetTop = (elRect.top - containerRect.top) + container.scrollTop;
+          container.scrollTo({ top: Math.max(0, offsetTop - 12), behavior: 'smooth' });
         }
       }, 0);
     }
@@ -343,7 +347,7 @@ export default function NotesPage() {
             renderExpanded={(n) => (
               <InlineExpandedNoteCard note={n} isOnline={isOnline} onClose={clearInlineViewer} />
             )}
-            className="flex-1 min-h-0 overflow-y-auto"
+            className="flex-1 min-h-0"
             onEndReached={hasMore ? handleEndReached : undefined}
             hasMore={hasMore}
           />

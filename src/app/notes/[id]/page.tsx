@@ -501,7 +501,7 @@ export default function NoteDetailsPage() {
               <CardHeader>
                 <h3 className="flex items-center gap-2">
                   <Camera className="h-5 w-5" />
-                  Associated Photo
+                  Photo
                 </h3>
               </CardHeader>
               <CardContent>
