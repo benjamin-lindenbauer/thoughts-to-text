@@ -172,7 +172,6 @@ export const usePWAInstall = () => {
     // Listen for app installed
     const handleAppInstalled = () => {
       setIsInstalled(true);
-      setCanInstall(false);
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);

@@ -482,7 +482,7 @@ export default function NoteDetailsPage() {
             <CardHeader>
               <h3 className="flex items-center gap-2">
                 <Mic className="h-5 w-5" />
-                Original Recording
+                Recording
               </h3>
             </CardHeader>
             <CardContent>

@@ -30,7 +30,7 @@ function InlineExpandedNoteCard({ note: n, isOnline, onClose }: { note: Note; is
   }, [photoUrl]);
 
   return (
-    <Card onClick={(e) => e.stopPropagation()}>
+    <Card onClick={(e) => e.stopPropagation()} className="bg-background">
       <CardHeader>
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 min-w-0">
@@ -45,7 +45,7 @@ function InlineExpandedNoteCard({ note: n, isOnline, onClose }: { note: Note; is
       <CardContent className="space-y-4">
         <div>
           <h3 className="flex items-center gap-2 font-medium text-sm">
-            <Mic className="h-4 w-4" /> Original Recording
+            <Mic className="h-4 w-4" />Recording
           </h3>
           <div className="mt-2">
             <AudioPlayer
