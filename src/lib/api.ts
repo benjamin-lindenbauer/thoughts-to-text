@@ -10,6 +10,23 @@ const RETRY_CONFIG = {
   backoffMultiplier: 2,
 };
 
+const metadataPrompt = `Based on the following transcript, perform these tasks:
+1. Clean, fix and correct the provided transcript while keeping structure, style and meaning as it is.
+2. Provide a concise title (max 50 characters).
+3. Provide a brief description (max 150 characters).
+4. Provide 3 relevant keywords.
+5. Provide the detected language of the original text, eg. "en" or "de".
+
+Return JSON with exactly these fields:
+{
+  "originalText": "...",        // echo of the provided transcript
+  "improvedText": "...",       // improved text
+  "title": "...",
+  "description": "...",
+  "keywords": ["...", "...", "..."],
+  "language": "..."
+}`;
+
 // Sleep utility for retry delays
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -178,19 +195,13 @@ export async function rewriteText(
       }
 
       const result = await response.json();
-
-      const mapped = {
-        rewrittenText: result.rewrittenText ?? '',
-        originalText: result.originalText ?? text,
-        prompt,
-      };
       
       errorLogger.info('api', 'Text rewrite completed', {
-        originalLength: mapped.originalText.length,
-        rewrittenLength: mapped.rewrittenText.length,
+        originalLength: result.originalText.length,
+        rewrittenLength: result.rewrittenText.length,
       });
 
-      return mapped;
+      return result;
     } catch (error) {
       const { errorLogger } = await import('./error-logging');
       
@@ -213,26 +224,9 @@ export async function rewriteText(
 export async function generateNoteMetadata(
   transcript: string,
   apiKey: string
-): Promise<{ title: string; description: string; keywords: string[]; language: string }> {
-  const metadataPrompt = `Based on the following transcript, perform these tasks:
-1. Rewrite/improve the text.
-2. Provide a concise title (max 50 characters).
-3. Provide a brief description (max 150 characters).
-4. Provide exactly 3 relevant keywords.
-5. Provide the detected language of the original text, eg. "en" or "de".
-
-Return JSON with exactly these fields:
-{
-  "originalText": "...",        // echo of the provided transcript
-  "rewrittenText": "...",       // improved text
-  "title": "...",
-  "description": "...",
-  "keywords": ["...", "...", "..."],
-  "language": "..."
-}`;
-
+): Promise<{ improvedText: string; title: string; description: string; keywords: string[]; language: string }> {
   return withRetry(async () => {
-    const response = await fetch('/api/rewrite', {
+    const response = await fetch('/api/improve', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -250,8 +244,9 @@ Return JSON with exactly these fields:
     }
 
     const result = await response.json();
-    // Server always returns structured output with fields: originalText, rewrittenText, description, keywords, title
+    // Server always returns structured output with fields: originalText, improvedText, description, keywords, title
     return {
+      improvedText: result.improvedText ?? '',
       title: result.title ?? 'Untitled Note',
       description: result.description ?? 'No description available',
       keywords: result.keywords ?? [],

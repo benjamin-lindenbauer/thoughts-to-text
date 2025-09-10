@@ -242,18 +242,18 @@ export default function NoteDetailsPage() {
 
   // Format date and time
   const formatDate = (date: Date) => {
-    return new Intl.DateTimeFormat('en-US', {
+    return new Intl.DateTimeFormat('en-GB', {
       year: 'numeric',
-      month: 'long',
+      month: 'numeric',
       day: 'numeric'
     }).format(date);
   };
 
   const formatTime = (date: Date) => {
-    return new Intl.DateTimeFormat('en-US', {
+    return new Intl.DateTimeFormat('en-GB', {
       hour: '2-digit',
       minute: '2-digit',
-      hour12: true
+      hour12: false
     }).format(date);
   };
 

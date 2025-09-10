@@ -8,7 +8,6 @@ import {
   isRetryableError 
 } from '@/lib/api';
 import { useOffline } from '@/hooks/useOffline';
-import { pwaManager } from '@/lib/pwa';
 
 interface APIState {
   isLoading: boolean;

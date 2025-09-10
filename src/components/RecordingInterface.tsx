@@ -454,20 +454,19 @@ export function RecordingInterface({
       const noteId = crypto.randomUUID();
       const durationMs = recordingState.duration || 0;
       const durationSeconds = Math.round(durationMs / 1000);
-      const baseTextRaw = (typeof rewrittenText === 'string' && rewrittenText.trim().length > 0)
-        ? rewrittenText
-        : (transcript ?? '');
-      const baseText = baseTextRaw.trim();
+      const baseText = transcript?.trim() ?? rewrittenText?.trim() ?? '';
 
       // Generate metadata if API key exists
+      let improvedText = '';
       let title = `Recording ${new Date().toLocaleString()}`;
       let description = '';
       let keywords: string[] = [];
       let language = '';
       try {
         const apiKey = await retrieveApiKey();
-        if (apiKey && baseText) {
+        if (apiKey && baseText.length > 5) {
           const generated = await generateNoteMetadata(baseText, apiKey);
+          improvedText = generated.improvedText;
           title = generated.title || (baseText.slice(0, 50) + (baseText.length > 50 ? '...' : '')) || title;
           description = generated.description || (baseText.slice(0, 200) + (baseText.length > 200 ? '...' : ''));
           keywords = generated.keywords || [];
@@ -490,7 +489,7 @@ export function RecordingInterface({
         title,
         description,
         transcript: transcript ?? '',
-        rewrittenText: rewrittenText || undefined,
+        rewrittenText: rewrittenText || improvedText || '',
         keywords,
         language,
         duration: durationSeconds,
@@ -729,7 +728,7 @@ export function RecordingInterface({
       {/* Transcript area (only after a transcription attempt and non-empty transcript) */}
       {!showMinimalUI && !isTranscribing && transcriptionAttempted && transcript?.trim().length ? (
         <div className="flex flex-col w-full space-y-4">
-          <div className="flex flex-col p-4 gap-2 bg-panel-gradient border-panel rounded-lg">
+          <div className="flex flex-col gap-2">
             <h3 className="flex flex-row items-center gap-2">
               <FileText className="w-4 h-4" />
               Transcript
@@ -803,7 +802,7 @@ export function RecordingInterface({
 
           {/* Rewritten text display (only after recording stops) */}
           {rewrittenText && (
-            <div className="flex flex-col gap-2 p-4 bg-panel-gradient border-panel rounded-lg">
+            <div className="flex flex-col gap-2">
               <h3 className="flex flex-row items-center gap-2">
                 <Wand2 className="w-4 h-4" />
                 Rewritten Text

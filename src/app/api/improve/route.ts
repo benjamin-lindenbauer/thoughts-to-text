@@ -48,18 +48,28 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Build the Responses API request (plain text output)
+    // Build the Responses API request (always gpt-5 and structured)
     const baseRequest: any = {
       model: 'gpt-5',
-      reasoning: { effort: "low" },
-      instructions:
-        'You are an expert writer. Follow the instructions carefully and return only the rewritten text.',
-      input: `${prompt}\n\nOriginal text:\n${text}`
+      instructions: `
+        You are a helpful assistant. Return only valid JSON matching the provided JSON schema. 
+        Keep the original structure, style and meaning of the text.
+        Keep the improved text, title, description and keywords in the same language as the original text.
+        `,
+      input: `${prompt}\n\nText: \n${text}`,
+      text: {
+        "format": {
+          "type": "json_object"
+        }
+      },
+      reasoning: {
+        "effort": "minimal"
+      }
     };
 
     const response = await openai.responses.create(baseRequest);
 
-    // Read plain text from Responses API
+    // Parse JSON from Responses API
     const outputText: string | undefined = (response as any)?.output_text;
     if (!outputText) {
       return NextResponse.json(
@@ -72,10 +82,28 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    let parsed: any;
+    try {
+      parsed = JSON.parse(outputText);
+    } catch (e) {
+      return NextResponse.json(
+        {
+          error: 'Failed to parse structured JSON output',
+          type: 'server',
+          retryable: true,
+        },
+        { status: 500 }
+      );
+    }
+
+    // Ensure shape and return exactly the 5 fields
     const result = {
-      originalText: String(text),
-      rewrittenText: String(outputText).trim(),
-      prompt: String(prompt)
+      originalText: String(parsed.originalText ?? text),
+      improvedText: String(parsed.improvedText ?? ''),
+      description: String(parsed.description ?? ''),
+      keywords: Array.isArray(parsed.keywords) ? parsed.keywords : [],
+      title: String(parsed.title ?? ''),
+      language: String(parsed.language ?? ''),
     };
 
     return NextResponse.json(result);

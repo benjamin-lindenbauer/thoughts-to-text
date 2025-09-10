@@ -155,6 +155,48 @@ export function throttle<T extends (...args: any[]) => any>(
   };
 }
 
+    // JSON schema for the final structured output
+    const jsonSchema = {
+      name: 'note_rewrite_output',
+      strict: true,
+      schema: {
+        type: 'object',
+        additionalProperties: false,
+        properties: {
+          originalText: {
+            type: 'string',
+            description: 'Echo of the provided original text.'
+          },
+          rewrittenText: {
+            type: 'string',
+            description: 'The rewritten/improved version of the original text. Plain text only.'
+          },
+          title: {
+            type: 'string',
+            description: 'A concise title summarizing the transcript (max 50 characters).',
+            maxLength: 50,
+          },
+          description: {
+            type: 'string',
+            description: 'A brief description of the transcript (max 150 characters).',
+            maxLength: 150,
+          },
+          keywords: {
+            type: 'array',
+            description: '3 relevant keywords.',
+            items: { type: 'string' },
+            minItems: 3,
+            maxItems: 3,
+          },
+          language: {
+            type: 'string',
+            description: 'The detected language of the original text, eg. "en" or "de".',
+          },
+        },
+        required: ['originalText', 'rewrittenText', 'title', 'description', 'keywords', 'language'],
+      },
+    } as const;
+
 // Default rewrite prompts
 export const DEFAULT_REWRITE_PROMPTS: RewritePrompt[] = [
   {
