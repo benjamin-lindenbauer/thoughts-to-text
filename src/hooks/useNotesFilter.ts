@@ -60,6 +60,9 @@ export function useNotesFilter(notes: Note[], searchQuery: string, filters: Sear
     if (filters.hasRewrittenText) {
       filtered = filtered.filter(note => note.rewrittenText && note.rewrittenText.trim().length > 0);
     }
+    if (filters.hasImage) {
+      filtered = filtered.filter(note => !!note.photoBlob);
+    }
 
     // Apply sorting
     filtered.sort((a, b) => {

@@ -119,6 +119,7 @@ const DEFAULT_FILTERS: SearchFilters = {
   dateRange: 'all',
   hasKeywords: false,
   hasRewrittenText: false,
+  hasImage: false,
 };
 
 // Inline useNotes hook implementation

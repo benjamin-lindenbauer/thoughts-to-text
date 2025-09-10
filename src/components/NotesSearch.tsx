@@ -18,6 +18,7 @@ export interface SearchFilters {
   dateRange: 'all' | 'today' | 'week' | 'month' | 'year';
   hasKeywords: boolean;
   hasRewrittenText: boolean;
+  hasImage: boolean;
   minDuration?: number;
   maxDuration?: number;
 }
@@ -28,6 +29,7 @@ const DEFAULT_FILTERS: SearchFilters = {
   dateRange: 'all',
   hasKeywords: false,
   hasRewrittenText: false,
+  hasImage: false,
 };
 
 export function NotesSearch({ 
@@ -109,7 +111,7 @@ export function NotesSearch({
             placeholder="Search notes..."
             value={localSearchQuery}
             onChange={handleSearchChange}
-            className="w-full pl-10 pr-10 py-3 rounded-xl border"
+            className="w-full pl-10 pr-10 py-3 rounded-xl border bg-background"
           />
           {localSearchQuery && (
             <button
@@ -255,6 +257,16 @@ export function NotesSearch({
                       className="w-4 h-4 text-indigo-500 border-border rounded"
                     />
                     <span className="text-sm text-foreground">Has rewritten text</span>
+                  </label>
+
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={filters.hasImage}
+                      onChange={(e) => handleFilterChange({ hasImage: e.target.checked })}
+                      className="w-4 h-4 text-indigo-500 border-border rounded"
+                    />
+                    <span className="text-sm text-foreground">Has image</span>
                   </label>
                 </div>
               </div>
