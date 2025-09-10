@@ -39,8 +39,10 @@ export default function Home() {
       // ignore
     }
 
-    // Navigate to the newly created note
-    router.push(`/notes/${noteId}`);
+    // Navigate to the newly created note after a short delay
+    setTimeout(() => {
+      router.push(`/notes/${noteId}`);
+    }, 2000);
   }, [router]);
 
   // Handle errors

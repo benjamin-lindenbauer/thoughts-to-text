@@ -116,7 +116,9 @@ export default function NoteDetailsPage() {
       setDeleting(true);
       await deleteNote(note.id);
       success('Note deleted', 'The note has been permanently deleted.');
-      router.push('/notes');
+      setTimeout(() => {
+        router.push('/notes');
+      }, 2000);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to delete note');
       setDeleting(false);
