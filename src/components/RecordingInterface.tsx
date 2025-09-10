@@ -12,6 +12,7 @@ import { cn, DEFAULT_REWRITE_PROMPTS, LANGUAGE_OPTIONS } from '@/lib/utils';
 import { rewriteText, transcribeAudio, generateNoteMetadata } from '@/lib/api';
 import { RewritePrompt, Note } from '@/types';
 import Link from 'next/link';
+import { CopyButton } from "@/components/CopyButton";
 
 interface RecordingInterfaceProps {
   onSave?: (noteId: string, note: Note) => void;
@@ -729,10 +730,13 @@ export function RecordingInterface({
       {!showMinimalUI && !isTranscribing && transcriptionAttempted && transcript?.trim().length ? (
         <div className="flex flex-col w-full space-y-4">
           <div className="flex flex-col gap-2">
-            <h3 className="flex flex-row items-center gap-2">
-              <FileText className="w-4 h-4" />
-              Transcript
-            </h3>
+            <div className="flex items-center justify-between">
+              <h3 className="flex flex-row items-center gap-2">
+                <FileText className="w-4 h-4" />
+                Transcript
+              </h3>
+              <CopyButton text={transcript || ''} title="Copy to clipboard" />
+            </div>
             <textarea
               className="w-full p-3 rounded-md border border-border bg-background text-sm text-foreground resize-y min-h-[120px] focus:outline-none focus:ring-2 focus:ring-indigo-500"
               value={transcript}
@@ -802,13 +806,16 @@ export function RecordingInterface({
 
           {/* Rewritten text display (only after recording stops) */}
           {rewrittenText && (
-            <div className="flex flex-col gap-2">
-              <h3 className="flex flex-row items-center gap-2">
-                <Wand2 className="w-4 h-4" />
-                Rewritten Text
-              </h3>
+            <div className="flex flex-col gap-2 p-4 bg-panel-gradient border-panel rounded-lg">
+              <div className="flex items-center justify-between">
+                <h3 className="flex flex-row items-center gap-2">
+                  <Wand2 className="w-4 h-4" />
+                  Rewritten Text
+                </h3>
+                <CopyButton text={rewrittenText || ''} title="Copy to clipboard" />
+              </div>
               <textarea
-                className="w-full p-3 rounded-md border-panel bg-background text-sm text-foreground resize-y min-h-[120px] focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full p-3 rounded-md border border-border bg-background text-sm text-foreground resize-y min-h-[120px] focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 value={rewrittenText}
                 onChange={(e) => setRewrittenText(e.target.value)}
                 aria-label="Edit rewritten text"

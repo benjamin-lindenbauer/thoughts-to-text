@@ -19,6 +19,7 @@ import { useWebShare } from '@/hooks/useWebShare';
 import { useToast } from '@/hooks/useToast';
 import { ToastContainer } from '@/components/Toast';
 import { transcribeAudio, generateNoteMetadata } from '@/lib/api';
+import { CopyButton } from '@/components/CopyButton';
 
 export default function NoteDetailsPage() {
   const params = useParams();
@@ -175,6 +176,8 @@ export default function NoteDetailsPage() {
   const closeDeleteDialog = () => {
     setShowDeleteDialog(false);
   };
+
+  // Copy handled by reusable CopyButton component
 
   // Transcribe audio for this note
   const handleTranscribe = async () => {
@@ -377,7 +380,7 @@ export default function NoteDetailsPage() {
 
         <div className="flex-1 min-h-0 space-y-6 my-2">
           {/* Title and Metadata */}
-          <Card>
+          <Card className='shadow-none'>
             <CardHeader>
               <div className="space-y-4">
                 {/* Title */}
@@ -480,7 +483,7 @@ export default function NoteDetailsPage() {
           </Card>
 
           {/* Audio Player */}
-          <Card>
+          <Card className='shadow-none'>
             <CardHeader>
               <h3 className="flex items-center gap-2">
                 <Mic className="h-5 w-5" />
@@ -499,7 +502,7 @@ export default function NoteDetailsPage() {
 
           {/* Photo */}
           {note.photoBlob && (
-            <Card>
+            <Card className='shadow-none'>
               <CardHeader>
                 <h3 className="flex items-center gap-2">
                   <Camera className="h-5 w-5" />
@@ -519,12 +522,15 @@ export default function NoteDetailsPage() {
           )}
 
           {/* Transcript */}
-          <Card>
+          <Card className='shadow-none'>
             <CardHeader>
-              <h3 className="flex items-center gap-2">
-                <FileText className="h-5 w-5" />
-                Transcript
-              </h3>
+              <div className="flex items-center justify-between">
+                <h3 className="flex items-center gap-2">
+                  <FileText className="h-5 w-5" />
+                  Transcript
+                </h3>
+                <CopyButton text={note.transcript || ''} title="Copy to clipboard" />
+              </div>
             </CardHeader>
             <CardContent>
               {typeof note.transcript === 'string' && note.transcript.trim().length > 0 ? (
@@ -559,12 +565,15 @@ export default function NoteDetailsPage() {
 
           {/* Rewritten Text */}
           {note.rewrittenText && (
-            <Card>
+            <Card className='shadow-none'>
               <CardHeader>
-                <h3 className="flex items-center gap-2">
-                  <Sparkles className="h-5 w-5" />
-                  Rewritten Text
-                </h3>
+                <div className="flex items-center justify-between">
+                  <h3 className="flex items-center gap-2">
+                    <Sparkles className="h-5 w-5" />
+                    Rewritten Text
+                  </h3>
+                  <CopyButton text={note.rewrittenText || ''} title="Copy to clipboard" />
+                </div>
               </CardHeader>
               <CardContent>
                 <div className="prose prose-sm max-w-none dark:prose-invert">
