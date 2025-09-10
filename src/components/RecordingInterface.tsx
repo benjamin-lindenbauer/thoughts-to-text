@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { Mic, MicOff, Camera, Square, Wand2, RefreshCw, X, Save, Trash2, Upload, FileText } from 'lucide-react';
+import { Mic, MicOff, Camera, Square, Wand2, RefreshCw, X, Save, Trash2, Upload, FileText, Image } from 'lucide-react';
 import { useRecording } from '@/hooks/useRecording';
 import { useAppState } from '@/hooks/useAppState';
 import { useHapticFeedback } from '@/hooks/useHapticFeedback';
@@ -51,16 +51,6 @@ export function RecordingInterface({
   // Recording time limits and helpers
   const MAX_RECORDING_TIME_SECONDS = 10 * 60; // 10 minutes
   const MAX_RECORDING_TIME_MS = MAX_RECORDING_TIME_SECONDS * 1000;
-
-  const formatTime = (totalSeconds: number) => {
-    const hours = Math.floor(totalSeconds / 3600);
-    const minutes = Math.floor((totalSeconds % 3600) / 60);
-    const seconds = totalSeconds % 60;
-    const pad = (n: number) => String(n).padStart(2, '0');
-    return hours > 0
-      ? `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`
-      : `${pad(minutes)}:${pad(seconds)}`;
-  };
 
   // Use app state hooks
   const { notes, settings } = useAppState();
@@ -781,7 +771,7 @@ export function RecordingInterface({
 
           {/* Rewrite prompt selection and button */}
           <div className="flex flex-col gap-2">
-            <h3>Rewrite Transcript</h3>
+            <h3>Rewrite transcript</h3>
             <div className="flex flex-col md:flex-row gap-2">
               <select
                 value={selectedPrompt}
@@ -831,7 +821,7 @@ export function RecordingInterface({
                 ) : (
                   <>
                     <Wand2 className="w-4 h-4" />
-                    <span>Rewrite Text</span>
+                    <span>Rewrite text</span>
                   </>
                 )}
               </button>
@@ -844,7 +834,7 @@ export function RecordingInterface({
               <div className="flex items-center justify-between">
                 <h3 className="flex flex-row items-center gap-2">
                   <Wand2 className="w-4 h-4" />
-                  Rewritten Text
+                  Rewritten text
                 </h3>
                 <CopyButton text={rewrittenText || ''} title="Copy to clipboard" />
               </div>
@@ -866,59 +856,64 @@ export function RecordingInterface({
         </div>
       )}
 
-      {/* Photo controls (only after recording stops and valid transcript) */}
-      {!showMinimalUI && transcriptionAttempted && transcript && (
-        <div className="flex flex-row gap-4 w-full">
-          <div className="flex flex-col gap-2">
-            <h3>Add an image</h3>
-
-            {/* Photo controls */}
-            <div className="flex gap-2">
-              <button
-                onClick={() => {
-                  haptic.buttonPress();
-                  handleCameraCapture();
-                }}
-                disabled={isCameraLoading}
-                aria-label={
-                  isCameraLoading
-                    ? 'Starting camera...'
-                    : isCameraActive
-                      ? 'Capture photo from camera'
-                      : 'Open camera to take photo'
+      {/* Photo controls */}
+      {!showMinimalUI && (
+        <div className="flex flex-col gap-2 w-full">
+          <h3>Add an image</h3>
+          {/* Photo controls */}
+          <div className="flex gap-2">
+            <button
+              onClick={() => {
+                haptic.buttonPress();
+                if (isCameraLoading) {
+                  return;
                 }
-                className="flex items-center gap-2 px-4 py-2 bg-secondary border border-border rounded-lg hover:bg-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <Camera className="w-4 h-4" />
-                <span className="text-sm">
-                  {isCameraLoading ? 'Starting...' : isCameraActive ? 'Capture' : 'Camera'}
-                </span>
-              </button>
-              
-              <button
-                onClick={() => {
-                  haptic.buttonPress();
-                  fileInputRef.current?.click();
-                }}
-                aria-label="Upload photo from device"
-                className="flex items-center gap-2 px-4 py-2 bg-secondary border border-border rounded-lg hover:bg-accent transition-colors"
-              >
-                <Upload className="w-4 h-4" />
-                <span className="text-sm">Upload Photo</span>
-              </button>
+                if (isCameraActive) {
+                  handleCloseCamera();
+                } else {
+                  handleCameraCapture();
+                }
+              }}
+              disabled={isCameraLoading}
+              aria-label={
+                isCameraLoading
+                  ? 'Camera loading...'
+                  : isCameraActive
+                    ? 'Close camera'
+                    : 'Open camera to take photo'
+              }
+              className="flex items-center gap-2 px-4 py-2 bg-background border border-border rounded-lg hover:bg-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Camera className="w-4 h-4" />
+              <span className="text-sm">{isCameraLoading ? 'Camera loading...' : isCameraActive ? 'Close camera' : 'Open camera'}</span>
+            </button>
+            
+            <button
+              onClick={() => {
+                haptic.buttonPress();
+                if (isCameraActive || isCameraLoading) {
+                  handleCloseCamera();
+                }
+                fileInputRef.current?.click();
+              }}
+              aria-label="Upload photo from device"
+              className="flex items-center gap-2 px-4 py-2 bg-b border border-border rounded-lg hover:bg-accent transition-colors"
+            >
+              <Upload className="w-4 h-4" />
+              <span className="text-sm">Upload photo</span>
+            </button>
 
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                onChange={handlePhotoUpload}
-                className="hidden"
-              />
-            </div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handlePhotoUpload}
+              className="hidden"
+            />
           </div>
 
           {/* Camera preview or photo preview (only after recording stops) */}
-          {!showMinimalUI && (isCameraActive || isCameraLoading || photoPreview) && (
+          {!showMinimalUI && (
             <div className="relative w-full">
               {(isCameraLoading || isCameraActive) ? (
                 <div className="relative rounded-lg overflow-hidden">
@@ -951,16 +946,35 @@ export function RecordingInterface({
                       <X className="w-4 h-4" />
                     </button>
                   )}
+
+                  {/* Capture photo button overlay */}
+                  {isCameraActive && !isCameraLoading && (
+                    <button
+                      onClick={() => {
+                        haptic.buttonPress();
+                        handleCameraCapture();
+                      }}
+                      aria-label="Capture photo"
+                      className="absolute top-2 left-1/2 -translate-x-1/2 p-3 md:p-4 bg-black/60 backdrop-blur-sm text-white rounded-full hover:bg-black/70 transition-colors"
+                    >
+                      <Camera className="w-5 h-5 md:w-6 md:h-6" />
+                    </button>
+                  )}
                 </div>
-              ) : photoPreview ? (
+              ) : (!isCameraActive && !isCameraLoading && photoPreview) ? (
                 <img
                   src={photoPreview}
                   alt="Captured"
                   className="w-full rounded-lg"
                 />
-              ) : null}
+              ) : (
+                <div className="w-full md:w-1/2 aspect-video rounded-lg bg-gray-100 dark:bg-gray-800 flex flex-col items-center justify-center gap-2 text-muted-foreground">
+                  <Image className="w-10 h-10" />
+                  <span className="text-sm">No image</span>
+                </div>
+              )}
 
-              {photoPreview && (
+              {photoPreview && !isCameraActive && !isCameraLoading && (
                 <button
                   onClick={() => {
                     setPhoto(null);

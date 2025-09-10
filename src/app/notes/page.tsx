@@ -117,8 +117,6 @@ const DEFAULT_FILTERS: SearchFilters = {
   sortBy: 'date',
   sortOrder: 'desc',
   dateRange: 'all',
-  hasKeywords: false,
-  hasRewrittenText: false,
   hasImage: false,
 };
 

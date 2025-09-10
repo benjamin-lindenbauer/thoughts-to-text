@@ -385,7 +385,7 @@ export function NotesList({
                             {note.keywords.length > 0 && (
                                 <div className="flex items-center gap-2 mb-2">
                                     <Tag className="w-3 h-3 text-muted-foreground" />
-                                    <div className="flex flex-wrap gap-1">
+                                    <div className="flex flex-wrap gap-1 items-center">
                                         {note.keywords.slice(0, 3).map((keyword, index) => (
                                             <span
                                                 key={index}

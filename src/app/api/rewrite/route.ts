@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
       : 'Rewrite the text in the same language as the original text. Detect the language automatically and preserve it.';
 
     const baseRequest: any = {
-      model: 'gpt-5',
+      model: 'gpt-5-mini',
       reasoning: { effort: "low" },
       instructions:
         'You are an expert writer. Follow the instructions carefully and return only the rewritten text.',

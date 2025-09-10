@@ -16,8 +16,6 @@ export interface SearchFilters {
   sortBy: 'date' | 'title' | 'duration';
   sortOrder: 'asc' | 'desc';
   dateRange: 'all' | 'today' | 'week' | 'month' | 'year';
-  hasKeywords: boolean;
-  hasRewrittenText: boolean;
   hasImage: boolean;
   minDuration?: number;
   maxDuration?: number;
@@ -27,8 +25,6 @@ const DEFAULT_FILTERS: SearchFilters = {
   sortBy: 'date',
   sortOrder: 'desc',
   dateRange: 'all',
-  hasKeywords: false,
-  hasRewrittenText: false,
   hasImage: false,
 };
 
@@ -237,26 +233,6 @@ export function NotesSearch({
                 <div className="space-y-3">
                   <label className="block text-sm font-medium text-foreground">
                     Content
-                  </label>
-                  
-                  <label className="flex items-center gap-3 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={filters.hasKeywords}
-                      onChange={(e) => handleFilterChange({ hasKeywords: e.target.checked })}
-                      className="w-4 h-4 text-indigo-500 border-border rounded"
-                    />
-                    <span className="text-sm text-foreground">Has keywords</span>
-                  </label>
-                  
-                  <label className="flex items-center gap-3 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={filters.hasRewrittenText}
-                      onChange={(e) => handleFilterChange({ hasRewrittenText: e.target.checked })}
-                      className="w-4 h-4 text-indigo-500 border-border rounded"
-                    />
-                    <span className="text-sm text-foreground">Has rewritten text</span>
                   </label>
 
                   <label className="flex items-center gap-3 cursor-pointer">
