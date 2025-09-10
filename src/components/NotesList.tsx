@@ -32,6 +32,7 @@ interface ContextMenuState {
     x: number;
     y: number;
     noteId: string | null;
+    labelledById?: string | null;
 }
 
 export function NotesList({
@@ -54,6 +55,7 @@ export function NotesList({
         x: 0,
         y: 0,
         noteId: null,
+        labelledById: null,
     });
     const containerRef = useRef<HTMLDivElement>(null);
     const contextMenuRef = useRef<HTMLDivElement>(null);
@@ -61,10 +63,12 @@ export function NotesList({
     const loadingMoreRef = useRef(false);
     const [isTouch, setIsTouch] = useState(false);
     const [mobileSelectedId, setMobileSelectedId] = useState<string | null>(null);
+    const firstMenuItemRef = useRef<HTMLButtonElement>(null);
+    const lastMenuTriggerRef = useRef<HTMLElement | null>(null);
 
     // Accessibility hooks
     const { announce, LiveRegion } = useAriaLiveRegion();
-    const { containerRef: focusContainerRef, focusNext, focusPrevious } = useFocusManagement();
+    const { containerRef: focusContainerRef } = useFocusManagement();
 
     // Intersection observer for infinite loading
     useEffect(() => {
@@ -124,17 +128,68 @@ export function NotesList({
         }
     }, [contextMenu.isOpen]);
 
+    // Close context menu on scroll or resize to avoid detached menu, and restore focus to trigger on close
+    useEffect(() => {
+        if (!contextMenu.isOpen) return;
+        const handleClose = () => {
+            setContextMenu(prev => ({ ...prev, isOpen: false }));
+            setMobileSelectedId(null);
+        };
+        window.addEventListener('scroll', handleClose, true);
+        window.addEventListener('resize', handleClose);
+        return () => {
+            window.removeEventListener('scroll', handleClose, true);
+            window.removeEventListener('resize', handleClose);
+        };
+    }, [contextMenu.isOpen]);
+
+    // Close context menu with Escape key
+    useEffect(() => {
+        if (!contextMenu.isOpen) return;
+        const onKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') {
+                setContextMenu(prev => ({ ...prev, isOpen: false }));
+                setMobileSelectedId(null);
+            }
+        };
+        document.addEventListener('keydown', onKeyDown);
+        return () => document.removeEventListener('keydown', onKeyDown);
+    }, [contextMenu.isOpen]);
+
+    // Manage focus: focus first menu item when opening; return focus to trigger when closing
+    useEffect(() => {
+        if (contextMenu.isOpen) {
+            // Small timeout to ensure elements are mounted
+            const id = setTimeout(() => {
+                firstMenuItemRef.current?.focus();
+            }, 0);
+            return () => clearTimeout(id);
+        } else {
+            // Return focus to the trigger (button or card) when menu closes
+            if (lastMenuTriggerRef.current) {
+                lastMenuTriggerRef.current.focus();
+                lastMenuTriggerRef.current = null;
+            }
+        }
+    }, [contextMenu.isOpen]);
+
     // Handle context menu
     const handleContextMenu = useCallback((e: React.MouseEvent, noteId: string) => {
         e.preventDefault();
         const rect = containerRef.current?.getBoundingClientRect();
         if (!rect) return;
 
+        // Remember the element that opened the menu to restore focus later
+        if (e.currentTarget) {
+            lastMenuTriggerRef.current = e.currentTarget as unknown as HTMLElement;
+        }
+
         setContextMenu({
             isOpen: true,
             x: e.clientX - rect.left,
             y: e.clientY - rect.top,
             noteId,
+            labelledById: (e.currentTarget as HTMLElement).id || null,
         });
         // On mobile (long-press), visually mark the pressed card as selected
         if (isTouch) {
@@ -260,8 +315,18 @@ export function NotesList({
                             }
                         >
                             <div
-                                className={`mb-4 p-4 rounded-xl border border-border bg-card hover:bg-accent transition-colors cursor-pointer ${isTouch ? 'select-none' : 'select-text'} ${isTouch && mobileSelectedId === note.id ? 'ring-2 ring-primary ring-offset-2 ring-offset-background' : ''}`}
-                                onClick={() => handleNoteClick(note.id)}
+                                id={`note-card-${note.id}`}
+                                className={`mb-4 p-4 rounded-xl border border-border transition-colors cursor-pointer ${isTouch && mobileSelectedId === note.id ? 'select-none' : 'select-text'} ${isTouch && mobileSelectedId === note.id ? 'bg-accent' : 'bg-card'} hover:bg-accent`}
+                                onClick={(e) => {
+                                    // On desktop, do not open the card if the user is selecting text
+                                    if (!isTouch && typeof window !== 'undefined') {
+                                        const sel = window.getSelection?.();
+                                        if (sel && !sel.isCollapsed && sel.toString().length > 0) {
+                                            return;
+                                        }
+                                    }
+                                    handleNoteClick(note.id);
+                                }}
                                 onContextMenu={(e) => handleContextMenu(e, note.id)}
                                 onKeyDown={(e) => {
                                     if (e.key === 'Enter' || e.key === ' ') {
@@ -295,6 +360,7 @@ export function NotesList({
                                 <div className="hidden lg:flex items-center gap-2 ml-2">
                                     {/* Context menu button */}
                                     <button
+                                        id={`note-menu-btn-${note.id}`}
                                         onClick={(e) => {
                                             e.stopPropagation();
                                             handleContextMenu(e, note.id);
@@ -356,6 +422,8 @@ export function NotesList({
             {contextMenu.isOpen && (
                 <div
                     ref={contextMenuRef}
+                    role="menu"
+                    aria-labelledby={contextMenu.labelledById || undefined}
                     className="absolute min-w-24 z-50 bg-card border border-border rounded-lg shadow-md py-2 left-[var(--x)] top-[var(--y)] max-sm:left-auto max-sm:right-2"
                     style={{
                         // Use CSS variables to allow Tailwind arbitrary values for positioning
@@ -364,6 +432,8 @@ export function NotesList({
                     }}
                 >
                     <button
+                        ref={firstMenuItemRef}
+                        role="menuitem"
                         onClick={() => handleContextMenuAction('share', contextMenu.noteId!)}
                         className="w-full px-4 py-2 text-left text-sm hover:bg-accent transition-colors flex items-center gap-2"
                     >
@@ -372,6 +442,7 @@ export function NotesList({
                     </button>
 
                     <button
+                        role="menuitem"
                         onClick={() => handleContextMenuAction('delete', contextMenu.noteId!)}
                         className="w-full px-4 py-2 text-left text-sm hover:bg-destructive/10 text-destructive transition-colors flex items-center gap-2"
                     >
