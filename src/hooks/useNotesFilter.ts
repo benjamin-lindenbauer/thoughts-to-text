@@ -54,12 +54,6 @@ export function useNotesFilter(notes: Note[], searchQuery: string, filters: Sear
     }
 
     // Apply content filters
-    if (filters.hasKeywords) {
-      filtered = filtered.filter(note => note.keywords.length > 0);
-    }
-    if (filters.hasRewrittenText) {
-      filtered = filtered.filter(note => note.rewrittenText && note.rewrittenText.trim().length > 0);
-    }
     if (filters.hasImage) {
       filtered = filtered.filter(note => !!note.photoBlob);
     }

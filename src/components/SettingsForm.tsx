@@ -245,7 +245,7 @@ export function SettingsForm() {
                 />
                 <Button
                   onClick={handleSaveApiKey}
-                  disabled={isSaving || !apiKeyInput.trim() || apiKeyInput === settings?.settings?.openaiApiKey}
+                  disabled={isSaving || apiKeyInput === settings?.settings?.openaiApiKey}
                   size="sm"
                 >
                   {isSaving ? 'Saving...' : 'Save'}
