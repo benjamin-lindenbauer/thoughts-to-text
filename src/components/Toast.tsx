@@ -13,10 +13,11 @@ export interface ToastProps {
   title: string;
   description?: string;
   duration?: number;
+  transparent?: boolean;
   onClose: (id: string) => void;
 }
 
-export function Toast({ id, type, title, description, duration = 5000, onClose }: ToastProps) {
+export function Toast({ id, type, title, description, duration = 5000, transparent = false, onClose }: ToastProps) {
   const [isVisible, setIsVisible] = useState(false);
   const [isLeaving, setIsLeaving] = useState(false);
 
@@ -45,22 +46,28 @@ export function Toast({ id, type, title, description, duration = 5000, onClose }
   const getIcon = () => {
     switch (type) {
       case 'success':
-        return <CheckCircle className="h-5 w-5 text-green-500" />;
+        return <CheckCircle className={cn('h-5 w-5', transparent ? 'text-green-500' : 'text-white')} />;
       case 'error':
-        return <AlertCircle className="h-5 w-5 text-red-500" />;
+        return <AlertCircle className={cn('h-5 w-5', transparent ? 'text-red-500' : 'text-white')} />;
       case 'info':
-        return <Info className="h-5 w-5 text-blue-500" />;
+        return <Info className={cn('h-5 w-5', transparent ? 'text-blue-500' : 'text-white')} />;
     }
   };
 
   const getBackgroundColor = () => {
     switch (type) {
       case 'success':
-        return 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800';
+        return transparent
+          ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
+          : 'bg-green-500 dark:bg-green-600 border-green-600 dark:border-green-500';
       case 'error':
-        return 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800';
+        return transparent
+          ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'
+          : 'bg-red-500 dark:bg-red-600 border-red-600 dark:border-red-500';
       case 'info':
-        return 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800';
+        return transparent
+          ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800'
+          : 'bg-blue-500 dark:bg-blue-600 border-blue-600 dark:border-blue-500';
     }
   };
 
@@ -75,16 +82,19 @@ export function Toast({ id, type, title, description, duration = 5000, onClose }
       <div className="flex items-start gap-3">
         {getIcon()}
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-foreground">{title}</p>
+          <p className={cn('text-sm font-medium', transparent ? 'text-foreground' : 'text-white')}>{title}</p>
           {description && (
-            <p className="mt-1 text-sm text-muted-foreground">{description}</p>
+            <p className={cn('mt-1 text-sm', transparent ? 'text-muted-foreground' : 'text-white/90')}>{description}</p>
           )}
         </div>
         <button
           onClick={handleClose}
-          className="flex-shrink-0 rounded-md p-1 hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+          className={cn(
+            'flex-shrink-0 rounded-md p-1 transition-colors',
+            transparent ? 'hover:bg-black/5 dark:hover:bg-white/5' : 'hover:bg-white/10'
+          )}
         >
-          <X className="h-4 w-4 text-muted-foreground" />
+          <X className={cn('h-4 w-4', transparent ? 'text-muted-foreground' : 'text-white/90')} />
         </button>
       </div>
     </div>
@@ -98,6 +108,7 @@ export interface ToastData {
   title: string;
   description?: string;
   duration?: number;
+  transparent?: boolean;
 }
 
 interface ToastContainerProps {
