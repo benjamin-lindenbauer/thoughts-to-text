@@ -41,13 +41,13 @@ export function AppLayout({
       </div>
 
       {/* Fixed Header */}
-      {header && (
+      {header ? (
         <header className="fixed top-0 left-0 right-0 h-14 bg-background/95 backdrop-blur-sm border-b border-border z-40">
           <div className="mx-auto max-w-3xl h-full flex items-center pl-0 md:pl-2 pr-2 md:pr-4">
             {header}
           </div>
         </header>
-      )}
+      ) : null}
 
       {/* Scrollable Content Area between header and bottom nav */}
       <main

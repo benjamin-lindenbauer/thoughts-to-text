@@ -336,7 +336,7 @@ export default function NotesPage() {
 
         {/* Error Display */}
         {error && (
-          <div className="mb-6">
+          <div className="mb-4">
             <APIErrorDisplay
               error={{
                 type: 'unknown',
@@ -349,8 +349,8 @@ export default function NotesPage() {
           </div>
         )}
 
-        {/* Search and Filter */}
-        <div className="mb-6">
+        {/* Search and Filter - sticky at top of scroll container */}
+        <div className="sticky top-0 z-20 py-4 bg-background/95 supports-[backdrop-filter]:bg-background/60 backdrop-blur border-b border-border">
           <NotesSearch
             onSearch={handleSearch}
             onFilter={handleFilter}
