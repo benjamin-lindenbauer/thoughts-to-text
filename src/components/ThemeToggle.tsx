@@ -42,7 +42,6 @@ export function ThemeToggle() {
     return (
       <div className="space-y-3">
         <div className="flex items-center gap-2">
-          <Monitor className="w-5 h-5 text-indigo-500" />
           <label className="text-lg font-semibold text-foreground">Appearance</label>
         </div>
         <div className="grid grid-cols-3 gap-3">
@@ -69,8 +68,7 @@ export function ThemeToggle() {
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-2">
-        <Monitor className="w-5 h-5 text-indigo-500" />
-        <label className="text-lg font-semibold text-foreground">Appearance</label>
+        <h2 className="text-lg font-semibold text-foreground">Appearance</h2>
       </div>
       <div className="grid grid-cols-3 gap-3">
         {themeOptions.map((option) => {

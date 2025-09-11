@@ -18,7 +18,7 @@ export function CopyButton({
   text,
   title = "Copy to clipboard",
   className,
-  size = "sm",
+  size = "default",
   variant = "ghost",
   iconClassName,
 }: CopyButtonProps) {
@@ -48,19 +48,26 @@ export function CopyButton({
     }
   };
 
+  const iconSizeClass = size === "sm" ? "size-3" : size === "lg" ? "size-5" : "size-4";
+  const squareSizeClass = size === "sm" ? "!size-8" : size === "lg" ? "!size-10" : "!size-9";
+
   return (
     <Button
       variant={variant}
-      size={size}
+      size={"icon"}
       onClick={handleClick}
       title={title}
       aria-label={title}
-      className={cn("h-8 w-8 p-0 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full", className)}
+      className={cn(
+        "hover:bg-gray-100 dark:hover:bg-gray-700 aspect-square rounded-lg",
+        squareSizeClass,
+        className
+      )}
     >
       {isCopied ? (
-        <Check className={cn("h-4 w-4 text-green-500", iconClassName)} />
+        <Check className={cn(iconSizeClass, "text-green-500", iconClassName)} />
       ) : (
-        <Copy className={cn("h-4 w-4 text-gray-500 dark:text-gray-400", iconClassName)} />
+        <Copy className={cn(iconSizeClass, "text-gray-500 dark:text-gray-400", iconClassName)} />
       )}
     </Button>
   );

@@ -393,8 +393,9 @@ export function RecordingInterface({
       if (!selectedPromptObj) {
         throw new Error('Selected rewrite prompt not found.');
       }
+      const language = LANGUAGE_OPTIONS.find(l => l.code === selectedLanguage)?.name;
 
-      const result = await rewriteText(transcript, selectedPromptObj.prompt, key);
+      const result = await rewriteText(transcript, selectedPromptObj.prompt, key, language);
 
       if (!result.rewrittenText) {
         throw new Error('No rewritten text was generated. Please try again.');
@@ -409,7 +410,7 @@ export function RecordingInterface({
     } finally {
       setIsRewriting(false);
     }
-  }, [transcript, selectedPrompt, rewritePrompts, onError]);
+  }, [transcript, selectedPrompt, rewritePrompts, onError, selectedLanguage]);
 
   // Save and discard handlers
   const handleDiscard = useCallback(() => {
@@ -636,7 +637,7 @@ export function RecordingInterface({
 
           {/* Duration display + actions */}
           {(recordingState.isRecording || recordingState.duration > 0) && (
-            <div className="flex flex-col items-center gap-2" id="recording-status">
+            <div className="flex flex-col items-center text-center gap-2" id="recording-status">
               <div
                 className="text-3xl md:text-4xl font-mono font-bold text-foreground"
                 aria-live="polite"
@@ -676,12 +677,12 @@ export function RecordingInterface({
               >
                 {isSaving ? (
                   <>
-                    <RefreshCw className="w-4 h-4 animate-spin" />
+                    <RefreshCw className="size-4 animate-spin" />
                     <span>Saving...</span>
                   </>
                 ) : (
                   <>
-                    <Save className="w-4 h-4" />
+                    <Save className="size-4" />
                     <span>Save</span>
                   </>
                 )}
@@ -692,7 +693,7 @@ export function RecordingInterface({
                 aria-label="Discard recording and transcript"
                 disabled={isSaving}
               >
-                <Trash2 className="w-4 h-4" />
+                <Trash2 className="size-4" />
                 Discard
               </button>
             </div>
@@ -741,13 +742,13 @@ export function RecordingInterface({
           <div className="flex flex-col gap-2">
             <div className="flex items-center justify-between">
               <h3 className="flex flex-row items-center gap-2">
-                <FileText className="w-4 h-4" />
+                <FileText className="size-4" />
                 Transcript
               </h3>
               <CopyButton text={transcript || ''} title="Copy to clipboard" />
             </div>
             <textarea
-              className="w-full p-3 rounded-md border border-border bg-background text-sm text-foreground resize-y min-h-[120px] focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full p-3 rounded-lg border border-border bg-background text-sm text-foreground resize-y min-h-[120px] focus:outline-none focus:ring-2 focus:ring-indigo-500"
               value={transcript}
               onChange={(e) => setTranscript(e.target.value)}
               aria-label="Edit transcript"
@@ -774,7 +775,7 @@ export function RecordingInterface({
               {/* Language selection */}
               <select
                 value={selectedLanguage}
-                disabled
+                disabled={isRewriting}
                 onChange={(e) => setSelectedLanguage(e.target.value)}
                 className="w-full md:w-1/3 p-2 rounded-lg border border-border bg-secondary text-foreground text-sm transition-colors hover:bg-accent focus:border-transparent disabled:opacity-50"
               >
@@ -800,12 +801,12 @@ export function RecordingInterface({
               >
                 {isRewriting ? (
                   <>
-                    <RefreshCw className="w-4 h-4 animate-spin" />
+                    <RefreshCw className="size-4 animate-spin" />
                     <span>Rewriting...</span>
                   </>
                 ) : (
                   <>
-                    <Wand2 className="w-4 h-4" />
+                    <Wand2 className="size-4" />
                     <span>Rewrite text</span>
                   </>
                 )}
@@ -818,13 +819,13 @@ export function RecordingInterface({
             <div className="flex flex-col gap-2 p-4 bg-panel-gradient border-panel rounded-lg">
               <div className="flex items-center justify-between">
                 <h3 className="flex flex-row items-center gap-2">
-                  <Wand2 className="w-4 h-4" />
+                  <Wand2 className="size-4" />
                   Rewritten text
                 </h3>
                 <CopyButton text={rewrittenText || ''} title="Copy to clipboard" />
               </div>
               <textarea
-                className="w-full p-3 rounded-md border border-border bg-background text-sm text-foreground resize-y min-h-[120px] focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full p-3 rounded-lg border border-border bg-background text-sm text-foreground resize-y min-h-[120px] focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 value={rewrittenText}
                 onChange={(e) => setRewrittenText(e.target.value)}
                 aria-label="Edit rewritten text"
@@ -869,7 +870,7 @@ export function RecordingInterface({
               }
               className="flex items-center gap-2 px-4 py-2 bg-background border border-border rounded-lg hover:bg-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <Camera className="w-4 h-4" />
+              <Camera className="size-4" />
               <span className="text-sm">{isCameraLoading ? 'Camera loading...' : isCameraActive ? 'Close camera' : 'Open camera'}</span>
             </button>
             
@@ -884,7 +885,7 @@ export function RecordingInterface({
               aria-label="Upload photo from device"
               className="flex items-center gap-2 px-4 py-2 bg-b border border-border rounded-lg hover:bg-accent transition-colors"
             >
-              <Upload className="w-4 h-4" />
+              <Upload className="size-4" />
               <span className="text-sm">Upload photo</span>
             </button>
 
@@ -928,7 +929,7 @@ export function RecordingInterface({
                       aria-label="Close camera"
                       className="absolute top-2 right-2 p-2 bg-black/50 backdrop-blur-sm text-white rounded-full hover:bg-black/70 transition-colors"
                     >
-                      <X className="w-4 h-4" />
+                      <X className="size-4" />
                     </button>
                   )}
 
@@ -942,7 +943,7 @@ export function RecordingInterface({
                       aria-label="Capture photo"
                       className="absolute top-2 left-1/2 -translate-x-1/2 p-3 md:p-4 bg-black/60 backdrop-blur-sm text-white rounded-full hover:bg-black/70 transition-colors"
                     >
-                      <Camera className="w-5 h-5 md:w-6 md:h-6" />
+                      <Camera className="size-5 md:size-6" />
                     </button>
                   )}
                 </div>
@@ -971,7 +972,7 @@ export function RecordingInterface({
                   aria-label="Remove captured photo"
                   className="absolute top-2 right-2 p-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
                 >
-                  <X className="w-4 h-4" />
+                  <X className="size-4" />
                 </button>
               )}
             </div>

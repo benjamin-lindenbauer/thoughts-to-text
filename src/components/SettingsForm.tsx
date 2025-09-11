@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Key, Globe, MessageSquare, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { MessageSquare, AlertCircle, CheckCircle2, ExternalLink } from 'lucide-react';
 import { useAppState } from '@/hooks/useAppState';
 import { useTheme } from '@/contexts/ThemeContext';
 import { LANGUAGE_OPTIONS } from '@/lib/utils';
@@ -188,7 +188,7 @@ export function SettingsForm() {
       <div className="p-4 md:p-6">
         <div className="animate-pulse space-y-6">
           <div className="h-8 bg-muted rounded w-1/3"></div>
-          <div className="space-y-4">
+          <div className="space-y-3">
             <div className="h-4 bg-muted rounded w-1/4"></div>
             <div className="h-10 bg-muted rounded"></div>
           </div>
@@ -225,33 +225,43 @@ export function SettingsForm() {
       {/* Settings Sections */}
       <div className="space-y-12 my-2 md:my-4">
         {/* Theme Settings */}
-        <div className="space-y-4">
+        <div className="space-y-3">
           <ThemeToggle />
         </div>
 
         {/* API Configuration */}
-        <div className="space-y-4">
-          <div className="flex items-center gap-2">
-            <Key className="w-5 h-5 text-indigo-500" />
+        <div className="space-y-3">
+          <div className="flex flex-col gap-2">
             <h2 className="text-lg font-semibold text-foreground">
-              API Configuration
+              <div className="flex items-center gap-2">
+                API Key
+                <div className="flex items-center gap-1">
+                  {apiKeyStatus === 'valid' && (
+                    <CheckCircle2 className="h-4 w-4 text-green-500" />
+                  )}
+                  {apiKeyStatus === 'invalid' && (
+                    <AlertCircle className="h-4 w-4 text-destructive" />
+                  )}
+                </div>
+              </div>
             </h2>
+            <div className='flex items-center gap-2'>
+              <p className="text-sm text-muted-foreground">
+                An OpenAI API key is required to transcribe and rewrite your recordings.
+              </p>
+              <a
+                href="https://platform.openai.com/settings/organization/api-keys"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 underline"
+              >
+                Create an API key
+                <ExternalLink className="h-4 w-4" />
+              </a>
+            </div>
           </div>
           
           <div className="space-y-3">
-            <div className="flex items-center gap-2">
-            <label className="block text-sm font-medium text-foreground">
-              OpenAI API Key
-            </label>
-            <div className="flex items-center gap-1">
-              {apiKeyStatus === 'valid' && (
-                <CheckCircle2 className="h-4 w-4 text-green-500" />
-              )}
-              {apiKeyStatus === 'invalid' && (
-                <AlertCircle className="h-4 w-4 text-destructive" />
-              )}
-            </div>
-            </div>            
             <div className="space-y-2">
               <div className="flex flex-row items-center gap-2">
                 <Input
@@ -292,9 +302,9 @@ export function SettingsForm() {
         </div>
 
         {/* Language Settings */}
-        <div className="space-y-4">
+        {/*
+        <div className="space-y-3">
           <div className="flex items-center gap-2">
-            <Globe className="w-5 h-5 text-indigo-500" />
             <h2 className="text-lg font-semibold text-foreground">
               Language Settings
             </h2>
@@ -326,35 +336,31 @@ export function SettingsForm() {
             </p>
           </div>
         </div>
+        */}
 
         {/* Rewrite Prompts */}
-        <div className="space-y-4">
-          <div className="flex items-center gap-2">
-            <MessageSquare className="w-5 h-5 text-indigo-500" />
+        <div className="space-y-3">
+          <div className="flex flex-col gap-2">
             <h2 className="text-lg font-semibold text-foreground">
               Rewrite Prompts
             </h2>
-          </div>
-          
-          <div className="space-y-3">
             <p className="text-sm text-muted-foreground">
-              Manage prompts used to enhance your transcriptions with AI
+              Manage prompts used to rewrite your transcriptions with AI
             </p>
-            
-            <RewritePromptManager
-              prompts={settings?.settings?.rewritePrompts || []}
-              defaultPromptId={settings?.settings?.defaultRewritePrompt || 'default'}
-              onAddPrompt={addRewritePrompt}
-              onUpdatePrompt={updateRewritePrompt}
-              onDeletePrompt={deleteRewritePrompt}
-              onSetDefault={setDefaultRewritePrompt}
-            />
           </div>
+          <RewritePromptManager
+            prompts={settings?.settings?.rewritePrompts || []}
+            defaultPromptId={settings?.settings?.defaultRewritePrompt || 'default'}
+            onAddPrompt={addRewritePrompt}
+            onUpdatePrompt={updateRewritePrompt}
+            onDeletePrompt={deleteRewritePrompt}
+            onSetDefault={setDefaultRewritePrompt}
+          />
         </div>
 
         {/* PWA Settings */}
         {canInstall && (
-          <div className="space-y-4">
+          <div className="space-y-3">
             <div className="flex items-center gap-2">
               <MessageSquare className="w-5 h-5 text-indigo-500" />
               <h2 className="text-lg font-semibold text-foreground">

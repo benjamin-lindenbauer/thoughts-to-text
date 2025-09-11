@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
     // Build the Responses API request (plain text output)
     const languageDirective = language
       ? `Rewrite the text in ${String(language)}.`
-      : 'Rewrite the text in the same language as the original text. Detect the language automatically and preserve it.';
+      : 'Rewrite the text in the same language as the original text.';
 
     const baseRequest: any = {
       model: 'gpt-5-mini',

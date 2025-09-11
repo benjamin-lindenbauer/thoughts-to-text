@@ -167,7 +167,8 @@ export async function transcribeAudio(
 export async function rewriteText(
   text: string,
   prompt: string,
-  apiKey: string
+  apiKey: string,
+  language?: string
 ): Promise<{ rewrittenText: string; originalText: string; prompt: string }> {
   return withRetry(async () => {
     try {
@@ -185,7 +186,7 @@ export async function rewriteText(
           'Content-Type': 'application/json',
           'x-openai-api-key': apiKey,
         },
-        body: JSON.stringify({ text, prompt }),
+        body: JSON.stringify({ text, prompt, language }),
       });
 
       if (!response.ok) {
