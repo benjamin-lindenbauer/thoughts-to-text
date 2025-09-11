@@ -56,7 +56,7 @@ export default function Home() {
       <div className={`w-full h-full flex flex-col items-center text-center py-2 mb-8 ${isLoaded ? animations.fadeIn : 'opacity-0'}`}>
         <div className="flex items-center justify-center gap-2 w-full">
           <Sparkles className="w-5 h-5 text-indigo-500" />
-          <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent leading-12">
+          <h1 className="text-3xl md:text-4xl font-bold gradient-text leading-12">
             Thoughts to Text
           </h1>
           <Sparkles className="w-5 h-5 text-purple-500" />
