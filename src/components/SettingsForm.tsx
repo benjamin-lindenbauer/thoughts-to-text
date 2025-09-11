@@ -236,15 +236,16 @@ export function SettingsForm() {
               <p className="text-sm text-muted-foreground">
                 An OpenAI API key is required to transcribe and rewrite your recordings.
               </p>
-              <a
-                href="https://platform.openai.com/settings/organization/api-keys"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-2 min-w-28 border border-border rounded-md p-2 text-sm"
-              >
-                Create an API key
-                <ExternalLink className="h-4 w-4 flex-shrink-0" />
-              </a>
+              <Button asChild variant="outline" size="sm" className="flex items-center gap-2">
+                <a
+                  href="https://platform.openai.com/settings/organization/api-keys"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Create an API key
+                  <ExternalLink className="h-4 w-4 flex-shrink-0" />
+                </a>
+              </Button>
             </div>
           </div>
           

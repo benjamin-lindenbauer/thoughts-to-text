@@ -83,7 +83,7 @@ export function ThemeToggle() {
                 'flex flex-col items-center gap-3 p-4 rounded-xl border transition-all duration-200',
                 'touch-manipulation active:scale-95',
                 isSelected
-                  ? 'border-indigo-500 bg-indigo-500/10 text-indigo-500 shadow-sm'
+                  ? 'border-indigo-500 bg-indigo-500/10 text-indigo-500'
                   : 'border-border bg-card text-muted-foreground hover:text-foreground hover:bg-accent hover:border-accent-foreground/20'
               )}
             >

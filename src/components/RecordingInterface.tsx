@@ -469,7 +469,7 @@ export function RecordingInterface({
           title = generated.title || (baseText.slice(0, 50) + (baseText.length > 50 ? '...' : '')) || title;
           description = generated.description || (baseText.slice(0, 200) + (baseText.length > 200 ? '...' : ''));
           keywords = generated.keywords || [];
-          language = generated.language || 'auto';
+          language = generated.language;
         } else if (baseText) {
           // Fallback metadata without API key
           title = baseText.slice(0, 50) + (baseText.length > 50 ? '...' : '');

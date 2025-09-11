@@ -4,7 +4,8 @@ import type React from 'react';
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Note } from '@/types';
 import * as dateFns from 'date-fns';
-import { MoreVertical, Trash2, Share2, Clock, Calendar, Tag, Wand2 } from 'lucide-react';
+import { MoreVertical, Trash2, Share2, Clock, Calendar } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import { useFocusManagement } from '@/hooks/useKeyboardNavigation';
 import { useAriaLiveRegion } from '@/hooks/useAccessibility';
 import { LazyComponent } from '@/components/LazyComponent';
@@ -383,16 +384,12 @@ export function NotesList({
 
                             {/* Keywords */}
                             {note.keywords.length > 0 && (
-                                <div className="flex items-center gap-2 mb-2">
-                                    <Tag className="w-3 h-3 text-muted-foreground" />
+                                <div className="flex items-center gap-2">
                                     <div className="flex flex-wrap gap-1 items-center">
                                         {note.keywords.slice(0, 3).map((keyword, index) => (
-                                            <span
-                                                key={index}
-                                                className="px-2 py-1 text-xs bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded-full"
-                                            >
+                                            <Badge key={index} variant="keyword">
                                                 {keyword}
-                                            </span>
+                                            </Badge>
                                         ))}
                                         {note.keywords.length > 3 && (
                                             <span className="text-xs text-muted-foreground">

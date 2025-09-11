@@ -157,7 +157,7 @@ export function RewritePromptManager({
             className={cn(
               'p-4 rounded-xl border transition-all duration-200',
               prompt.id === defaultPromptId
-                ? 'border-indigo-500 bg-indigo-500/10 shadow-sm'
+                ? 'border-indigo-500 bg-indigo-500/10'
                 : 'border-border bg-card hover:bg-accent/50'
             )}
           >

@@ -196,8 +196,10 @@ export default function NoteDetailsPage() {
 
   // Generate metadata for a note
   const generateMetadata = useCallback(async () => {
-    if (!note) return;
+    if (!note?.transcript) return;
     try {
+      setGeneratingMetadata(true);
+      setError(null);
       const apiKey = await retrieveApiKey();
       if (!apiKey) {
         setError('OpenAI API key not configured. Please set it in settings.');
@@ -215,6 +217,7 @@ export default function NoteDetailsPage() {
       };
 
       await updateNote(updatedNote);
+      setNote(updatedNote);
     } catch (err) {
       if (err && typeof err === 'object' && 'type' in err) {
         const apiError = err as APIError;
@@ -234,6 +237,8 @@ export default function NoteDetailsPage() {
       } else {
         setError(err instanceof Error ? err.message : 'Failed to generate metadata');
       }
+    } finally {
+      setGeneratingMetadata(false);
     }
   }, []);
 
@@ -454,7 +459,7 @@ export default function NoteDetailsPage() {
 
         <div className="flex flex-col flex-1 min-h-0 gap-4 py-4">
           {/* Title and Metadata */}
-          <Card className='shadow-none'>
+          <Card>
             <CardHeader>
               <div className="space-y-4">
                 {/* Title */}
@@ -503,9 +508,30 @@ export default function NoteDetailsPage() {
                     rows={3}
                   />
                 ) : (
-                  <p className="text-muted-foreground">
-                    {note.description || 'No description available'}
-                  </p>
+                  note.description ? (
+                    <p className="text-muted-foreground">
+                      {note.description}
+                    </p>
+                  ) : (
+                    <div className="flex flex-col gap-2">
+                      <p className="text-sm text-muted-foreground">No description available.</p>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={generateMetadata}
+                        disabled={generatingMetadata || !note?.transcript}
+                        className="flex items-center gap-2 w-full md:w-1/3"
+                        title={note?.transcript ? 'Generate title, description, and keywords' : 'No transcript available'}
+                      >
+                        {generatingMetadata ? (
+                          <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-indigo-500" />
+                        ) : (
+                          <Sparkles className="h-4 w-4" />
+                        )}
+                        {generatingMetadata ? 'Generating metadata…' : 'Generate metadata'}
+                      </Button>
+                    </div>
+                  )
                 )}
               </div>
 
@@ -543,7 +569,7 @@ export default function NoteDetailsPage() {
                   <div className="flex flex-wrap gap-2">
                     {note.keywords.length > 0 ? (
                       note.keywords.map((keyword, index) => (
-                        <Badge key={index} variant="secondary">
+                        <Badge key={index} variant="keyword">
                           {keyword}
                         </Badge>
                       ))
@@ -557,7 +583,7 @@ export default function NoteDetailsPage() {
           </Card>
 
           {/* Audio Player */}
-          <Card className='shadow-none'>
+          <Card>
             <CardHeader>
               <h3 className="flex items-center gap-2">
                 <Mic className="h-5 w-5" />
@@ -575,7 +601,7 @@ export default function NoteDetailsPage() {
           </Card>
 
           {/* Transcript */}
-          <Card className='shadow-none'>
+          <Card>
             <CardHeader>
               <div className="flex items-center justify-between">
                 <h3 className="flex items-center gap-2">
@@ -618,7 +644,7 @@ export default function NoteDetailsPage() {
 
           {/* Rewritten Text */}
           {typeof note.transcript === 'string' && note.transcript.trim().length > 0 && (
-            <Card className='shadow-none'>
+            <Card>
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <h3 className="flex items-center gap-2">
@@ -656,7 +682,7 @@ export default function NoteDetailsPage() {
 
           {/* Photo */}
           {note.photoBlob && (
-            <Card className='shadow-none'>
+            <Card>
               <CardHeader>
                 <h3 className="flex items-center gap-2">
                   <Camera className="h-5 w-5" />
@@ -674,11 +700,6 @@ export default function NoteDetailsPage() {
               </CardContent>
             </Card>
           )}
-
-          {/* Last Updated */}
-          <div className="text-center text-sm text-muted-foreground">
-            Last updated: {formatDate(note.updatedAt)} at {formatTime(note.updatedAt)}
-          </div>
         </div>
 
         {/* Delete Confirmation Dialog */}
