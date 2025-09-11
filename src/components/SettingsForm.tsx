@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { MessageSquare, AlertCircle, CheckCircle2, ExternalLink } from 'lucide-react';
+import { MessageSquare, AlertCircle, CheckCircle2, ExternalLink, Coffee } from 'lucide-react';
 import { useAppState } from '@/hooks/useAppState';
 import { useTheme } from '@/contexts/ThemeContext';
 import { LANGUAGE_OPTIONS } from '@/lib/utils';
@@ -219,7 +219,7 @@ export function SettingsForm() {
         {/* API Configuration */}
         <div className="space-y-3">
           <div className="flex flex-col gap-2">
-            <h2 className="text-lg font-semibold text-foreground">
+            <h2 className="flex flex-row items-center gap-2 justify-between text-lg font-semibold text-foreground">
               <div className="flex items-center gap-2">
                 API Key
                 <div className="flex items-center gap-1">
@@ -231,21 +231,22 @@ export function SettingsForm() {
                   )}
                 </div>
               </div>
-            </h2>
-            <div className='flex items-center gap-2'>
-              <p className="text-sm text-muted-foreground">
-                An OpenAI API key is required to transcribe and rewrite your recordings.
-              </p>
               <Button asChild variant="outline" size="sm" className="flex items-center gap-2">
                 <a
                   href="https://platform.openai.com/settings/organization/api-keys"
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  Create an API key
+                  OpenAI API keys
                   <ExternalLink className="h-4 w-4 flex-shrink-0" />
                 </a>
               </Button>
+            </h2>
+            <div className='flex items-center gap-2'>
+              <p className="text-sm text-muted-foreground">
+                An OpenAI API key is required to transcribe and rewrite your recordings.
+              </p>
+
             </div>
           </div>
           
@@ -364,6 +365,22 @@ export function SettingsForm() {
             </div>
           </div>
         )}
+        
+        {/* Support Banner */}
+        <div className="pt-2">
+          <a
+            href="https://buymeacoffee.com/qrewa8p8qz"
+            target="_blank"
+            rel="noopener noreferrer"
+            className={cn(
+              'btn-gradient-primary',
+              'w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg text-sm font-medium'
+            )}
+          >
+            <span>If you like the app, buy me a coffee</span>
+            <Coffee className="w-4 h-4" />
+          </a>
+        </div>
       </div>
     </div>
   );
