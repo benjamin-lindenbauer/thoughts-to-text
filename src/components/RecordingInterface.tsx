@@ -13,6 +13,7 @@ import { rewriteText, transcribeAudio, generateNoteMetadata } from '@/lib/api';
 import { RewritePrompt, Note } from '@/types';
 import Link from 'next/link';
 import { CopyButton } from "@/components/CopyButton";
+import { RewriteControls } from "@/components/RewriteControls";
 
 interface RecordingInterfaceProps {
   onSave?: (noteId: string, note: Note) => void;
@@ -508,10 +509,9 @@ export function RecordingInterface({
       // Navigation is handled by the parent via onSave
 
     } catch (error) {
+      setIsSaving(false);
       console.error('Failed to save note:', error);
       onError?.('Failed to save note. Please try again.');
-    } finally {
-      setIsSaving(false);
     }
   }, [recordingState.audioBlob, recordingState.duration, transcript, rewrittenText, selectedLanguage, photo, notes, haptic, announce, onError]);
 
@@ -758,60 +758,16 @@ export function RecordingInterface({
           {/* Rewrite prompt selection and button */}
           <div className="flex flex-col gap-2">
             <h3>Rewrite transcript</h3>
-            <div className="flex flex-col md:flex-row gap-2">
-              <select
-                value={selectedPrompt}
-                onChange={(e) => setSelectedPrompt(e.target.value)}
-                disabled={isRewriting}
-                className="w-full md:w-1/3 p-2 rounded-lg border border-border bg-secondary text-foreground text-sm transition-colors hover:bg-accent focus:border-transparent disabled:opacity-50"
-              >
-                {rewritePrompts.map((prompt) => (
-                  <option key={prompt.id} value={prompt.id}>
-                    {prompt.name}
-                  </option>
-                ))}
-              </select>
-
-              {/* Language selection */}
-              <select
-                value={selectedLanguage}
-                disabled={isRewriting}
-                onChange={(e) => setSelectedLanguage(e.target.value)}
-                className="w-full md:w-1/3 p-2 rounded-lg border border-border bg-secondary text-foreground text-sm transition-colors hover:bg-accent focus:border-transparent disabled:opacity-50"
-              >
-                {LANGUAGE_OPTIONS.map((lang) => (
-                  <option key={lang.code} value={lang.code}>
-                    {lang.flag} {lang.name} {lang.nativeName ? `(${lang.nativeName})` : ''}
-                  </option>
-                ))}
-              </select>
-
-              <button
-                type="button"
-                onClick={handleRewrite}
-                disabled={
-                  isRewriting ||
-                  transcript === null ||
-                  (typeof transcript === 'string' && transcript.trim().length === 0)
-                }
-                className={cn(
-                  "w-full md:w-1/3 flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-medium",
-                  "btn-gradient-primary"
-                )}
-              >
-                {isRewriting ? (
-                  <>
-                    <RefreshCw className="size-4 animate-spin" />
-                    <span>Rewriting...</span>
-                  </>
-                ) : (
-                  <>
-                    <Wand2 className="size-4" />
-                    <span>Rewrite text</span>
-                  </>
-                )}
-              </button>
-            </div>
+            <RewriteControls
+              rewritePrompts={rewritePrompts}
+              selectedPrompt={selectedPrompt}
+              onChangePrompt={setSelectedPrompt}
+              selectedLanguage={selectedLanguage}
+              onChangeLanguage={setSelectedLanguage}
+              isRewriting={isRewriting}
+              transcript={transcript}
+              onRewrite={handleRewrite}
+            />
           </div>
 
           {/* Rewritten text display (only after recording stops) */}
@@ -836,7 +792,7 @@ export function RecordingInterface({
       ) : null}
 
       {/* No speech detected message when transcription attempted but empty */}
-      {!showMinimalUI && !isTranscribing && transcriptionAttempted && !(transcript?.trim().length) && (
+      {!showMinimalUI && !isTranscribing && transcriptionAttempted && !transcript?.trim().length && (
         <div className="error-box">
           No speech detected.
         </div>

@@ -37,7 +37,7 @@ export function NavigationBar() {
         <OfflineIndicatorCompact className="mx-auto" />
       </div>
 
-      <div className="mx-auto max-w-3xl h-full">
+      <div className="mx-auto max-w-4xl h-full">
         <div className="flex items-center justify-around px-4 h-full">
           {navItems.map((item) => {
             const Icon = item.icon;

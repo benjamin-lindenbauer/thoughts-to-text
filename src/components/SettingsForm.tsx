@@ -170,19 +170,6 @@ export function SettingsForm() {
     }
   };
 
-  // Handle theme change (sync with theme context)
-  const handleThemeChange = async (newTheme: 'light' | 'dark' | 'auto') => {
-    try {
-      setFormError(null);
-      await updateTheme(newTheme);
-      setTheme(newTheme); // Update theme context immediately
-      setSaveStatus('Theme preference updated');
-      setTimeout(() => setSaveStatus(null), 3000);
-    } catch (err) {
-      setFormError(err instanceof Error ? err.message : 'Failed to update theme');
-    }
-  };
-
   if (isLoading) {
     return (
       <div className="p-4 md:p-6">
@@ -223,7 +210,7 @@ export function SettingsForm() {
       )}
 
       {/* Settings Sections */}
-      <div className="space-y-12 my-2 md:my-4">
+      <div className="space-y-12">
         {/* Theme Settings */}
         <div className="space-y-3">
           <ThemeToggle />

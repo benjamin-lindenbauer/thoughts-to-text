@@ -33,7 +33,7 @@ export default function SettingsPage() {
     >
       <div className="flex flex-col w-full">
         {/* Settings Form */}
-        <div className="flex-1 min-h-0">
+        <div className="flex-1 min-h-0 py-4 md:py-8">
           <SettingsForm />
         </div>
       </div>

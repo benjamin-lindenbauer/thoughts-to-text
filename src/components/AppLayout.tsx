@@ -52,7 +52,7 @@ export function AppLayout({
       {/* Fixed Header */}
       {header ? (
         <header className="fixed top-0 left-0 right-0 h-14 bg-background/95 backdrop-blur-sm border-b border-border z-40">
-          <div className="mx-auto max-w-3xl h-full flex items-center pl-0 md:pl-2 pr-2 md:pr-4">
+          <div className="mx-auto max-w-4xl h-full flex items-center pl-0 md:pl-2 pr-2 md:pr-4">
             {header}
           </div>
         </header>
@@ -68,7 +68,7 @@ export function AppLayout({
           className
         )}
       >
-        <div className="w-full max-w-3xl min-h-full mx-auto p-2 md:p-4">
+        <div className="w-full max-w-4xl min-h-full mx-auto px-2 md:px-4">
           {children}
         </div>
       </main>

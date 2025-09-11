@@ -13,13 +13,16 @@ import { Badge } from "@/components/ui/badge";
 import { useOffline } from '@/hooks/useOffline';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, Edit3, Save, X, Share, Trash2, Calendar, Clock, Mic, FileText, Sparkles, Camera } from 'lucide-react';
-import { APIError, Note } from '@/types';
+import { APIError, Note, RewritePrompt } from '@/types';
 import { retrieveNote, updateNote, deleteNote, retrieveApiKey } from '@/lib/storage';
 import { useWebShare } from '@/hooks/useWebShare';
 import { useToast } from '@/hooks/useToast';
 import { ToastContainer } from '@/components/Toast';
-import { transcribeAudio, generateNoteMetadata } from '@/lib/api';
+import { transcribeAudio, generateNoteMetadata, rewriteText } from '@/lib/api';
 import { CopyButton } from '@/components/CopyButton';
+import { RewriteControls } from '@/components/RewriteControls';
+import { DEFAULT_REWRITE_PROMPTS, LANGUAGE_OPTIONS } from '@/lib/utils';
+import { useAppState } from '@/hooks/useAppState';
 
 export default function NoteDetailsPage() {
   const params = useParams();
@@ -37,8 +40,27 @@ export default function NoteDetailsPage() {
   const [generatingMetadata, setGeneratingMetadata] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [transcribing, setTranscribing] = useState(false);
+  const [isRewriting, setIsRewriting] = useState(false);
+  const [selectedPrompt, setSelectedPrompt] = useState<string>('default');
+  const [selectedLanguage, setSelectedLanguage] = useState('auto');
 
   const noteId = params.id as string;
+
+  // Access settings for rewrite prompts/defaults
+  const { settings } = useAppState();
+
+  // Use prompts from settings, fall back to defaults
+  const rewritePrompts: RewritePrompt[] =
+    (settings?.settings?.rewritePrompts && settings.settings.rewritePrompts.length > 0)
+      ? settings.settings.rewritePrompts
+      : DEFAULT_REWRITE_PROMPTS;
+
+  // Keep selectedPrompt in sync with settings' default when available
+  useEffect(() => {
+    const defaultId = settings?.settings?.defaultRewritePrompt || 'default';
+    const hasDefault = rewritePrompts.some(p => p.id === defaultId);
+    setSelectedPrompt(hasDefault ? defaultId : (rewritePrompts[0]?.id || 'default'));
+  }, [settings?.settings?.defaultRewritePrompt, settings?.settings?.rewritePrompts, rewritePrompts]);
 
   // Load note data
   useEffect(() => {
@@ -82,6 +104,52 @@ export default function NoteDetailsPage() {
     setIsEditing(false);
     setEditedNote({});
   };
+
+  // Handle text rewriting (persist result to the note)
+  const handleRewrite = useCallback(async () => {
+    if (!note?.transcript || !note.transcript.trim()) return;
+
+    setIsRewriting(true);
+
+    try {
+      const apiKey = await retrieveApiKey();
+      if (!apiKey) {
+        setError('OpenAI API key not configured. Please set it in settings.');
+        return;
+      }
+
+      const selectedPromptObj = rewritePrompts.find(p => p.id === selectedPrompt);
+      if (!selectedPromptObj) {
+        setError('Selected rewrite prompt not found.');
+        return;
+      }
+      const languageName = LANGUAGE_OPTIONS.find(l => l.code === selectedLanguage)?.name;
+
+      const result = await rewriteText(note.transcript, selectedPromptObj.prompt, apiKey, languageName);
+
+      if (!result.rewrittenText) {
+        setError('No rewritten text was generated. Please try again.');
+        return;
+      }
+
+      const updatedNote: Note = {
+        ...note,
+        rewrittenText: result.rewrittenText,
+        updatedAt: new Date(),
+      };
+
+      await updateNote(updatedNote);
+      setNote(updatedNote);
+      success('Text rewritten', 'Your transcript has been rewritten.');
+
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Rewriting failed';
+      setError(message);
+      showError('Rewriting failed', message);
+    } finally {
+      setIsRewriting(false);
+    }
+  }, [note, selectedPrompt, selectedLanguage, rewritePrompts]);
 
   // Save edited note
   const saveNote = async () => {
@@ -192,6 +260,12 @@ export default function NoteDetailsPage() {
       }
 
       const result = await transcribeAudio(note.audioBlob, apiKey, note.language || 'auto');
+
+      if (!result.transcript?.trim().length) {
+        showError('No speech detected', 'No speech detected in the audio file.');
+        return;
+      }
+      
       const updatedNote: Note = {
         ...note,
         transcript: result.transcript || '',
@@ -378,7 +452,7 @@ export default function NoteDetailsPage() {
           </div>
         )}
 
-        <div className="flex-1 min-h-0 space-y-6 my-2">
+        <div className="flex flex-col flex-1 min-h-0 gap-4 py-4">
           {/* Title and Metadata */}
           <Card className='shadow-none'>
             <CardHeader>
@@ -500,27 +574,6 @@ export default function NoteDetailsPage() {
             </CardContent>
           </Card>
 
-          {/* Photo */}
-          {note.photoBlob && (
-            <Card className='shadow-none'>
-              <CardHeader>
-                <h3 className="flex items-center gap-2">
-                  <Camera className="h-5 w-5" />
-                  Photo
-                </h3>
-              </CardHeader>
-              <CardContent>
-                <div className="rounded-lg overflow-hidden">
-                  <img
-                    src={URL.createObjectURL(note.photoBlob)}
-                    alt="Associated with note"
-                    className="w-full h-auto max-h-96 object-contain bg-gray-50 dark:bg-gray-800"
-                  />
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
           {/* Transcript */}
           <Card className='shadow-none'>
             <CardHeader>
@@ -540,7 +593,7 @@ export default function NoteDetailsPage() {
                   </p>
                 </div>
               ) : (
-                <div className="flex flex-row items-center gap-3">
+                <div className="flex flex-col gap-4">
                   <p className="text-sm text-muted-foreground">No transcript available.</p>
                   {isOnline && (
                     <Button
@@ -548,7 +601,7 @@ export default function NoteDetailsPage() {
                       size="sm"
                       onClick={handleTranscribe}
                       disabled={transcribing}
-                      className="flex items-center gap-2"
+                      className="flex items-center gap-2 w-full md:w-1/3"
                     >
                       {transcribing ? (
                         <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-indigo-500" />
@@ -564,7 +617,7 @@ export default function NoteDetailsPage() {
           </Card>
 
           {/* Rewritten Text */}
-          {note.rewrittenText && (
+          {typeof note.transcript === 'string' && note.transcript.trim().length > 0 && (
             <Card className='shadow-none'>
               <CardHeader>
                 <div className="flex items-center justify-between">
@@ -572,14 +625,51 @@ export default function NoteDetailsPage() {
                     <Sparkles className="h-5 w-5" />
                     Rewritten Text
                   </h3>
-                  <CopyButton text={note.rewrittenText || ''} title="Copy to clipboard" />
+                  {note.rewrittenText && (
+                    <CopyButton text={note.rewrittenText || ''} title="Copy to clipboard" />
+                  )}
                 </div>
               </CardHeader>
+              <CardContent className="space-y-4">
+                {note.rewrittenText ? (
+                  <div className="prose prose-sm max-w-none dark:prose-invert">
+                    <p className="whitespace-pre-wrap text-foreground leading-relaxed">
+                      {note.rewrittenText}
+                    </p>
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground mb-2">No rewritten text yet.</p>
+                )}
+                <RewriteControls
+                  rewritePrompts={rewritePrompts}
+                  selectedPrompt={selectedPrompt}
+                  onChangePrompt={setSelectedPrompt}
+                  selectedLanguage={selectedLanguage}
+                  onChangeLanguage={setSelectedLanguage}
+                  isRewriting={isRewriting}
+                  transcript={note.transcript}
+                  onRewrite={handleRewrite}
+                />
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Photo */}
+          {note.photoBlob && (
+            <Card className='shadow-none'>
+              <CardHeader>
+                <h3 className="flex items-center gap-2">
+                  <Camera className="h-5 w-5" />
+                  Photo
+                </h3>
+              </CardHeader>
               <CardContent>
-                <div className="prose prose-sm max-w-none dark:prose-invert">
-                  <p className="whitespace-pre-wrap text-foreground leading-relaxed">
-                    {note.rewrittenText}
-                  </p>
+                <div className="rounded-lg overflow-hidden">
+                  <img
+                    src={URL.createObjectURL(note.photoBlob)}
+                    alt="Associated with note"
+                    className="w-full h-auto max-h-[70vh] object-contain bg-gray-50 dark:bg-gray-800"
+                  />
                 </div>
               </CardContent>
             </Card>

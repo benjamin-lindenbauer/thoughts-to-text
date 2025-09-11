@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
 
-const defaultPrompt = 'Provide an accurate transcription of the audio file. If there is no audio, return ""';
+const defaultPrompt = 'Provide an accurate transcription of the audio file. If no speech is detected, return ""';
 
 export async function POST(request: NextRequest) {
   try {
