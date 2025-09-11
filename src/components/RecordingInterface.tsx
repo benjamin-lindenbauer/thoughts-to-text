@@ -47,7 +47,7 @@ export function RecordingInterface({
   const [transcriptionAttempted, setTranscriptionAttempted] = useState(false);
   const [apiKey, setApiKey] = useState<string | null>(null);
   const [selectedLanguage, setSelectedLanguage] = useState('auto');
-  const [showMinimalUI, setShowMinimalUI] = useState(true);
+  const [showRecordingUI, setShowRecordingUI] = useState(true);
 
   // Recording time limits and helpers
   const MAX_RECORDING_TIME_SECONDS = 10 * 60; // 10 minutes
@@ -142,7 +142,6 @@ export function RecordingInterface({
     if (recordingState.isRecording) {
       stopRecording();
       haptic.recordingStop();
-      setShowMinimalUI(false);
       announce('Recording stopped', 'polite');
     } else {
       // Clear previous transcript and rewritten text when starting new recording
@@ -368,6 +367,9 @@ export function RecordingInterface({
       }
       const result = await transcribeAudio(audioBlob, key);
 
+      if (result.transcript?.trim().length) {
+        setShowRecordingUI(false);
+      }
       setTranscript(result.transcript);
 
     } catch (error) {
@@ -426,7 +428,7 @@ export function RecordingInterface({
     setSelectedPrompt('default');
     setPhoto(null);
     setPhotoPreview(null);
-    setShowMinimalUI(true);
+    setShowRecordingUI(true);
 
     // Close camera if active
     if (isCameraActive || isCameraLoading) {
@@ -573,7 +575,7 @@ export function RecordingInterface({
     <div
       className={cn(
         "flex flex-col gap-6 w-full items-center p-2 md:p-4",
-        showMinimalUI ? "justify-center text-center" : "justify-start overflow-y-auto",
+        showRecordingUI ? "justify-center text-center h-[58dvh]" : "justify-start overflow-y-auto",
         className
       )}
     >
@@ -581,14 +583,14 @@ export function RecordingInterface({
       <LiveRegion />
 
       {/* Info when no OpenAI API key is set */}
-      {showMinimalUI && !hasApiKey && (
+      {showRecordingUI && !hasApiKey && (
         <div className="info-box">
           Please set your OpenAI API key in <Link href="/settings" className="underline">Settings</Link> to enable transcription and AI-powered note rewrites.
         </div>
       )}
 
       {/* Greeting */}
-      {showMinimalUI && !recordingState.isRecording && (
+      {showRecordingUI && !recordingState.isRecording && !isTranscribing && !transcriptionAttempted && (
         <div className="text-center mt-20 md:mt-6 mb-4">
           <p className="text-sm md:text-base text-muted-foreground">
             What's on your mind today?
@@ -599,7 +601,7 @@ export function RecordingInterface({
       <div className="flex flex-col relative items-center justify-center rounded-2xl bg-panel-gradient border border-border/60 p-12 gap-12 min-w-80">
         <div className="flex flex-row items-center justify-center gap-8">
           {/* Recording button */}
-          {showMinimalUI && (
+          {showRecordingUI && !isTranscribing && !transcriptionAttempted && (
             <div className="flex flex-col items-center gap-3">
               <button
                 onClick={handleRecordingToggle}
@@ -711,7 +713,7 @@ export function RecordingInterface({
       </div>
 
       {/* Transcription status (only after recording stops) */}
-      {!showMinimalUI && isTranscribing && (
+      {isTranscribing && (
         <div className="text-center">
           <div className="animate-spin w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full mx-auto mb-2"></div>
           <p className="text-sm text-muted-foreground">
@@ -720,8 +722,15 @@ export function RecordingInterface({
         </div>
       )}
 
+      {/* No speech detected message when transcription attempted but empty */}
+      {!isTranscribing && transcriptionAttempted && !transcript?.trim().length && (
+        <div className="error-box">
+          No speech detected.
+        </div>
+      )}
+
       {/* Guidance when we cannot transcribe now (offline or missing API key) */}
-      {!showMinimalUI && !isTranscribing && !transcriptionAttempted && (!isOnline || !hasApiKey) && (
+      {!showRecordingUI && !isTranscribing && !transcriptionAttempted && (!isOnline || !hasApiKey) && (
         <div className="space-y-2">
           {!isOnline && (
             <div className="info-box">
@@ -737,7 +746,7 @@ export function RecordingInterface({
       )}
 
       {/* Transcript area (only after a transcription attempt and non-empty transcript) */}
-      {!showMinimalUI && !isTranscribing && transcriptionAttempted && transcript?.trim().length ? (
+      {!showRecordingUI && !isTranscribing && transcriptionAttempted && transcript?.trim().length ? (
         <div className="flex flex-col w-full space-y-4">
           <div className="flex flex-col gap-2">
             <div className="flex items-center justify-between">
@@ -791,15 +800,8 @@ export function RecordingInterface({
         </div>
       ) : null}
 
-      {/* No speech detected message when transcription attempted but empty */}
-      {!showMinimalUI && !isTranscribing && transcriptionAttempted && !transcript?.trim().length && (
-        <div className="error-box">
-          No speech detected.
-        </div>
-      )}
-
       {/* Photo controls */}
-      {!showMinimalUI && !isTranscribing && transcriptionAttempted && transcript?.trim() && (
+      {!showRecordingUI && !isTranscribing && transcriptionAttempted && transcript?.trim() && (
         <div className="flex flex-col gap-2 w-full">
           <h3>Add an image</h3>
           {/* Photo controls */}
@@ -855,7 +857,7 @@ export function RecordingInterface({
           </div>
 
           {/* Camera preview or photo preview (only after recording stops) */}
-          {!showMinimalUI && (
+          {!showRecordingUI && (
             <div className="relative w-full">
               {(isCameraLoading || isCameraActive) ? (
                 <div className="relative rounded-lg overflow-hidden">
