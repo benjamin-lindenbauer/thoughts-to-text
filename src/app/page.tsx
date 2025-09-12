@@ -53,7 +53,7 @@ export default function Home() {
 
   return (
     <AppLayout>
-      <div className={`sticky top-0 z-30 w-full flex flex-col items-center text-center py-2 mb-6 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60 ${isLoaded ? animations.fadeIn : 'opacity-0'}`}>
+      <div className={`sticky top-0 z-30 w-full flex flex-col items-center text-center pt-2 pb-4 bg-background ${isLoaded ? animations.fadeIn : 'opacity-0'}`}>
         <div className="flex items-center justify-center gap-2 w-full">
           <Sparkles className="w-5 h-5 text-indigo-500" />
           <h1 className="text-3xl md:text-4xl font-bold gradient-text leading-12">

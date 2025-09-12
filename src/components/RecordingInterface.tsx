@@ -657,7 +657,7 @@ export function RecordingInterface({
             <p className="text-sm md:text-base text-muted-foreground">What's on your mind today?</p>
           )}
 
-          <div className="flex flex-col p-4 w-full md:w-96 gap-8 rounded-4xl bg-panel-gradient text-center items-center justify-center">
+          <div className="flex flex-col p-4 h-96 w-full md:w-96 gap-8 rounded-4xl bg-panel-gradient text-center items-center justify-center">
             {/* Recording button */}
             {(recordingState.isRecording || (recordingState.duration === 0 && !isTranscribing && !transcriptionAttempted)) && (
               <button
