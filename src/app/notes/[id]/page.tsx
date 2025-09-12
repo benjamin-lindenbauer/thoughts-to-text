@@ -611,13 +611,32 @@ export default function NoteDetailsPage() {
                 <CopyButton text={note.transcript || ''} title="Copy to clipboard" />
               </div>
             </CardHeader>
-            <CardContent>
-              {typeof note.transcript === 'string' && note.transcript.trim().length > 0 ? (
-                <div className="prose prose-sm max-w-none dark:prose-invert">
-                  <p className="whitespace-pre-wrap text-foreground leading-relaxed">
-                    {note.transcript}
-                  </p>
-                </div>
+            <CardContent className="space-y-4">
+              {isEditing ? (
+                <Textarea
+                  value={note.transcript}
+                  onChange={(e) => setNote({ ...note, transcript: e.target.value })}
+                  placeholder="Transcript"
+                  rows={6}
+                />
+              ) : typeof note.transcript === 'string' && note.transcript.trim().length > 0 ? (
+                <>
+                  <div className="prose prose-sm max-w-none dark:prose-invert">
+                    <p className="whitespace-pre-wrap text-foreground leading-relaxed">
+                      {note.transcript}
+                    </p>
+                  </div>
+                  <RewriteControls
+                    rewritePrompts={rewritePrompts}
+                    selectedPrompt={selectedPrompt}
+                    onChangePrompt={setSelectedPrompt}
+                    selectedLanguage={selectedLanguage}
+                    onChangeLanguage={setSelectedLanguage}
+                    isRewriting={isRewriting}
+                    transcript={note.transcript}
+                    onRewrite={handleRewrite}
+                  />
+                </>
               ) : (
                 <div className="flex flex-col gap-4">
                   <p className="text-sm text-muted-foreground">No transcript available.</p>
@@ -643,42 +662,37 @@ export default function NoteDetailsPage() {
           </Card>
 
           {/* Rewritten Text */}
-          {typeof note.transcript === 'string' && note.transcript.trim().length > 0 && (
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <h3 className="flex items-center gap-2">
-                    <Sparkles className="h-5 w-5" />
-                    Rewritten Text
-                  </h3>
-                  {note.rewrittenText && (
-                    <CopyButton text={note.rewrittenText || ''} title="Copy to clipboard" />
-                  )}
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {note.rewrittenText ? (
-                  <div className="prose prose-sm max-w-none dark:prose-invert">
-                    <p className="whitespace-pre-wrap text-foreground leading-relaxed">
-                      {note.rewrittenText}
-                    </p>
-                  </div>
-                ) : (
-                  <p className="text-sm text-muted-foreground mb-2">No rewritten text yet.</p>
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <h3 className="flex items-center gap-2">
+                  <Sparkles className="h-5 w-5" />
+                  Rewritten Text
+                </h3>
+                {note.rewrittenText && (
+                  <CopyButton text={note.rewrittenText || ''} title="Copy to clipboard" />
                 )}
-                <RewriteControls
-                  rewritePrompts={rewritePrompts}
-                  selectedPrompt={selectedPrompt}
-                  onChangePrompt={setSelectedPrompt}
-                  selectedLanguage={selectedLanguage}
-                  onChangeLanguage={setSelectedLanguage}
-                  isRewriting={isRewriting}
-                  transcript={note.transcript}
-                  onRewrite={handleRewrite}
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {isEditing ? (
+                <Textarea
+                  value={note.rewrittenText}
+                  onChange={(e) => setNote({ ...note, rewrittenText: e.target.value })}
+                  placeholder="Rewritten Text"
+                  rows={6}
                 />
-              </CardContent>
-            </Card>
-          )}
+              ) : note.rewrittenText ? (
+                <div className="prose prose-sm max-w-none dark:prose-invert">
+                  <p className="whitespace-pre-wrap text-foreground leading-relaxed">
+                    {note.rewrittenText}
+                  </p>
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground mb-2">No rewritten text yet.</p>
+              )}
+            </CardContent>
+          </Card>
 
           {/* Photo */}
           {note.photoBlob && (

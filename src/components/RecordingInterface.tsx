@@ -48,6 +48,7 @@ export function RecordingInterface({
   const [apiKey, setApiKey] = useState<string | null>(null);
   const [selectedLanguage, setSelectedLanguage] = useState('auto');
   const [showRecordingUI, setShowRecordingUI] = useState(true);
+  const [showRewriteSection, setShowRewriteSection] = useState(false);
 
   // Recording time limits and helpers
   const MAX_RECORDING_TIME_SECONDS = 10 * 60; // 10 minutes
@@ -469,6 +470,7 @@ export function RecordingInterface({
         throw new Error('No rewritten text was generated. Please try again.');
       }
 
+      setShowRewriteSection(true);
       setRewrittenText(result.rewrittenText);
 
     } catch (error) {
@@ -494,6 +496,7 @@ export function RecordingInterface({
     setPhoto(null);
     setPhotoPreview(null);
     setShowRecordingUI(true);
+    setShowRewriteSection(false);
 
     // Close camera if active
     if (isCameraActive || isCameraLoading) {
@@ -788,37 +791,37 @@ export function RecordingInterface({
                 onChange={(e) => setTranscript(e.target.value)}
                 aria-label="Edit transcript"
               />
+              <RewriteControls
+                rewritePrompts={rewritePrompts}
+                selectedPrompt={selectedPrompt}
+                onChangePrompt={setSelectedPrompt}
+                selectedLanguage={selectedLanguage}
+                onChangeLanguage={setSelectedLanguage}
+                isRewriting={isRewriting}
+                transcript={transcript || ''}
+                onRewrite={handleRewrite}
+              />
             </section>
           ) : null}
 
           {/* Section 3: Rewriting */}
-          <section className="flex flex-col gap-2 p-4 rounded-xl bg-panel-gradient w-full">
-            <div className="flex items-center justify-between h-9">
-              <h3 className="flex flex-row items-center gap-2">
-                <Wand2 className="size-4 flex-shrink-0" />
-                Rewrite text
-              </h3>
-              {rewrittenText?.trim().length && <CopyButton text={rewrittenText} />}
-            </div>
-            <RewriteControls
-              rewritePrompts={rewritePrompts}
-              selectedPrompt={selectedPrompt}
-              onChangePrompt={setSelectedPrompt}
-              selectedLanguage={selectedLanguage}
-              onChangeLanguage={setSelectedLanguage}
-              isRewriting={isRewriting}
-              transcript={transcript || ''}
-              onRewrite={handleRewrite}
-            />
-            {rewrittenText?.trim().length && (
+          {showRewriteSection && (
+            <section className="flex flex-col gap-2 p-4 rounded-xl bg-panel-gradient w-full">
+              <div className="flex items-center justify-between h-9">
+                <h3 className="flex flex-row items-center gap-2">
+                  <Wand2 className="size-4 flex-shrink-0" />
+                  Rewritten text
+                </h3>
+                {rewrittenText?.trim() && <CopyButton text={rewrittenText} />}
+              </div>
               <textarea
                 className="w-full p-3 rounded-lg border border-border bg-background text-sm text-foreground resize-y min-h-[120px]"
-                value={rewrittenText}
+                value={rewrittenText || ''}
                 onChange={(e) => setRewrittenText(e.target.value)}
                 aria-label="Edit rewritten text"
               />
-            )}
-          </section>
+            </section>
+          )}
 
           {/* Section 4: Image / Camera */}
           <section className="flex flex-col gap-2 p-4 rounded-xl bg-card w-full">

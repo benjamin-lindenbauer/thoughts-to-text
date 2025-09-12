@@ -79,7 +79,7 @@ export function RewriteControls({
         ) : (
           <>
             <Wand2 className="size-4" />
-            <span>Rewrite text</span>
+            <span>Rewrite</span>
           </>
         )}
       </button>
