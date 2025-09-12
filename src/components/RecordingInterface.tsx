@@ -639,7 +639,7 @@ export function RecordingInterface({
   return (
     <div
       className={cn(
-        "flex w-full p-2 md:p-4",
+        "flex flex-col w-full p-2 md:p-4",
         showRecordingUI
           ? "items-center justify-center text-center h-[64vh]"
           : "items-stretch justify-start text-left",
@@ -652,19 +652,12 @@ export function RecordingInterface({
       {showRecordingUI ? (
         // Phase 1: Recording only (centered square)
         <section className="flex flex-col w-full items-center justify-center gap-4">
-          {/* Info when no OpenAI API key is set */}
-          {!hasApiKey && (
-            <div className="info-box">
-              Please set your OpenAI API key in <Link href="/settings" className="underline">Settings</Link> to enable transcription and AI-powered note rewrites.
-            </div>
-          )}
-
           {/* Greeting */}
-          {!recordingState.isRecording && !isTranscribing && !transcriptionAttempted && (
+          {!recordingState.isRecording && !isTranscribing && !transcriptionAttempted && recordingState.duration === 0 && (
             <p className="text-sm md:text-base text-muted-foreground">What's on your mind today?</p>
           )}
 
-          <div className="flex flex-col p-4 md:p-8 h-96 w-full md:w-96 gap-8 rounded-4xl bg-panel-gradient text-center items-center justify-center">
+          <div className="flex flex-col p-4 w-full md:w-96 gap-8 rounded-4xl bg-panel-gradient text-center items-center justify-center">
             {/* Recording button */}
             {(recordingState.isRecording || (recordingState.duration === 0 && !isTranscribing && !transcriptionAttempted)) && (
               <button
@@ -678,11 +671,10 @@ export function RecordingInterface({
                 aria-pressed={recordingState.isRecording}
                 aria-describedby="recording-status"
                 className={cn(
-                  "relative w-28 h-28 md:w-32 md:h-32 lg:w-36 lg:h-36 rounded-full transition-all duration-300 active:scale-95 touch-manipulation",
+                  "relative mt-8 w-28 h-28 md:w-32 md:h-32 lg:w-36 lg:h-36 rounded-full transition-all duration-300 active:scale-95 touch-manipulation",
                   recordingState.isRecording
                     ? "bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700"
-                    : "bg-gradient-to-br from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600",
-                  isTranscribing && "opacity-50 cursor-not-allowed"
+                    : "bg-gradient-to-br from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600"
                 )}
               >
                 <div className="absolute inset-2 md:inset-3 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
@@ -707,19 +699,20 @@ export function RecordingInterface({
                 durationMs={recordingState.duration || 0}
                 maxMs={MAX_RECORDING_TIME_MS}
                 formatted={formattedDuration}
+                className={!recordingState.isRecording && recordingState.duration > 0 ? "mt-8" : ""}
               />
             )}
 
             {/* Status text */}
             {!recordingState.isRecording && recordingState.duration === 0 && (
-              <div className="text-center">
+              <div className="text-center mb-8">
                 <p className="text-sm md:text-base text-muted-foreground">{isTranscribing ? 'Processing...' : 'Tap to start recording'}</p>
               </div>
             )}
 
             {/* Transcription status (only after recording stops) */}
             {isTranscribing && (
-              <div className="text-center">
+              <div className="flex flex-col text-center mb-8 gap-1">
                 <div className="animate-spin w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full mx-auto"></div>
                 <p className="text-sm text-muted-foreground">Transcribing audio...</p>
               </div>
@@ -740,6 +733,18 @@ export function RecordingInterface({
               />
             )}
           </div>
+          
+          {/* Guidance when we cannot transcribe now (offline or missing API key) */}
+          {!isTranscribing && !transcriptionAttempted && (!isOnline || !hasApiKey) && (
+            <div className="space-y-2 mt-4">
+              {!isOnline && (
+                <div className="info-box">You are offline. You still can record now and transcribe later.</div>
+              )}
+              {isOnline && !hasApiKey && (
+                <div className="info-box">OpenAI API key not configured. Please set your API key in <Link href="/settings" className="underline">Settings</Link> to enable transcriptions and rewrites.</div>
+              )}
+            </div>
+          )}
         </section>
       ) : (
         // Phase 2: Edit (show all 4 sections full width)
@@ -765,18 +770,6 @@ export function RecordingInterface({
                   onDiscard={handleDiscard}
                   className="md:flex-col md:w-1/3"
                 />
-              )}
-
-              {/* Guidance when we cannot transcribe now (offline or missing API key) */}
-              {!isTranscribing && !transcriptionAttempted && (!isOnline || !hasApiKey) && (
-                <div className="space-y-2 w-full">
-                  {!isOnline && (
-                    <div className="info-box">You are offline. You can save now and transcribe later.</div>
-                  )}
-                  {isOnline && !hasApiKey && (
-                    <div className="info-box">OpenAI API key not configured. Please set your API key in <Link href="/settings" className="underline">Settings</Link> to enable transcription.</div>
-                  )}
-                </div>
               )}
             </div>
           </section>
