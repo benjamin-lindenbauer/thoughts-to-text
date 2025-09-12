@@ -283,7 +283,7 @@ export function SettingsForm() {
               
               <div className="flex items-center justify-between">
                 <p className="text-xs text-muted-foreground">
-                  Your API key is stored locally and never sent to our servers
+                  Your API key is stored locally and never sent to our servers.
                 </p>
               </div>
             </div>

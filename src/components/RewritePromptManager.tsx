@@ -195,7 +195,7 @@ export function RewritePromptManager({
                     size="sm"
                     onClick={() => handleSetDefault(prompt.id)}
                     className="h-8 w-8 p-0 hover:bg-accent"
-                    title="Set as default"
+                    title="Set as default prompt"
                   >
                     <CircleCheckBig className="h-4 w-4" />
                   </Button>

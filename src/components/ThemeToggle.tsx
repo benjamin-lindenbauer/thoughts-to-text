@@ -59,7 +59,7 @@ export function ThemeToggle() {
           })}
         </div>
         <p className="text-xs text-muted-foreground">
-          Auto mode follows your device&apos;s system preference
+          Auto mode follows your device&apos;s system preference.
         </p>
       </div>
     );
@@ -102,7 +102,7 @@ export function ThemeToggle() {
         })}
       </div>
       <p className="text-xs text-muted-foreground">
-        Auto mode follows your device&apos;s system preference
+        Auto mode follows your device&apos;s system preference.
       </p>
     </div>
   );
