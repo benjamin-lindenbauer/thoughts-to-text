@@ -641,7 +641,7 @@ export function RecordingInterface({
       className={cn(
         "flex flex-col w-full p-2 md:p-4",
         showRecordingUI
-          ? "items-center justify-center text-center h-[64vh]"
+          ? "items-center justify-center text-center h-[72vh]"
           : "items-stretch justify-start text-left",
         className
       )}
@@ -653,7 +653,7 @@ export function RecordingInterface({
         // Phase 1: Recording only (centered square)
         <section className="flex flex-col w-full items-center justify-center gap-4">
           {/* Greeting */}
-          {!recordingState.isRecording && !isTranscribing && !transcriptionAttempted && recordingState.duration === 0 && (
+          {!recordingState.isRecording && recordingState.duration === 0 && !isTranscribing && !transcriptionAttempted && (
             <p className="text-sm md:text-base text-muted-foreground">What's on your mind today?</p>
           )}
 
@@ -671,7 +671,7 @@ export function RecordingInterface({
                 aria-pressed={recordingState.isRecording}
                 aria-describedby="recording-status"
                 className={cn(
-                  "relative mt-8 w-28 h-28 md:w-32 md:h-32 lg:w-36 lg:h-36 rounded-full transition-all duration-300 active:scale-95 touch-manipulation",
+                  "relative mt-8 aspect-square w-28 h-28 md:w-32 md:h-32 lg:w-36 lg:h-36 rounded-full transition-all duration-300 active:scale-95 touch-manipulation",
                   recordingState.isRecording
                     ? "bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700"
                     : "bg-gradient-to-br from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600"
@@ -699,20 +699,18 @@ export function RecordingInterface({
                 durationMs={recordingState.duration || 0}
                 maxMs={MAX_RECORDING_TIME_MS}
                 formatted={formattedDuration}
-                className={!recordingState.isRecording && recordingState.duration > 0 ? "mt-8" : ""}
+                className={!recordingState.isRecording && recordingState.duration > 0 && !isTranscribing ? "mt-12" : ""}
               />
             )}
 
             {/* Status text */}
-            {!recordingState.isRecording && recordingState.duration === 0 && (
-              <div className="text-center mb-8">
-                <p className="text-sm md:text-base text-muted-foreground">{isTranscribing ? 'Processing...' : 'Tap to start recording'}</p>
-              </div>
+            {!recordingState.isRecording && recordingState.duration === 0 && !isTranscribing && !transcriptionAttempted && (
+              <p className="w-full text-center mb-8 text-sm md:text-base text-muted-foreground">Tap to start recording</p>
             )}
 
             {/* Transcription status (only after recording stops) */}
             {isTranscribing && (
-              <div className="flex flex-col text-center mb-8 gap-1">
+              <div className="flex flex-col items-center w-full text-center mb-8 gap-1">
                 <div className="animate-spin w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full mx-auto"></div>
                 <p className="text-sm text-muted-foreground">Transcribing audio...</p>
               </div>
@@ -720,7 +718,7 @@ export function RecordingInterface({
 
             {/* No speech detected message when transcription attempted but empty */}
             {!isTranscribing && transcriptionAttempted && !transcript?.trim().length && (
-              <div className="w-full error-box">No speech detected.</div>
+              <div className="w-full text-center mb-8 error-box">No speech detected.</div>
             )}
 
             {/* Show Save/Discard after recording stops (even if transcript is empty) */}
