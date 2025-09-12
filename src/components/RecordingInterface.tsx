@@ -90,18 +90,18 @@ export function RecordingInterface({
     };
   }, []);
 
-  // Reusable Save/Discard button group to avoid duplication
   const SaveDiscardButtons: React.FC<{
     canSave: boolean;
     isSaving: boolean;
     onSave: () => void;
     onDiscard: () => void;
-  }> = ({ canSave, isSaving, onSave, onDiscard }) => (
-    <div className="flex w-full md:w-1/2 flex-row md:flex-col items-center justify-center gap-2 md:gap-4">
+    className?: string;
+  }> = ({ canSave, isSaving, onSave, onDiscard, className }) => (
+    <div className={cn('flex w-full items-center justify-center gap-2 md:gap-4', className)}>
       <button
         type="button"
         onClick={onSave}
-        className={cn('flex w-full md:w-1/2 items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium', 'btn-gradient-primary')}
+        className={cn('flex w-full items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium', 'btn-gradient-primary')}
         aria-label="Save recording"
         disabled={isSaving || !canSave}
       >
@@ -119,7 +119,7 @@ export function RecordingInterface({
       </button>
       <button
         onClick={onDiscard}
-        className="flex px-4 py-2 w-full md:w-1/2 rounded-lg text-sm bg-background border border-border hover:bg-accent transition-colors items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+        className="flex w-full items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm bg-background border border-border hover:bg-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         aria-label="Discard recording and transcript"
         disabled={isSaving}
       >
@@ -129,67 +129,16 @@ export function RecordingInterface({
     </div>
   );
 
-  // Reusable Recording toggle button
-  const RecordingButton: React.FC<{
-    isRecording: boolean;
-    isTranscribing: boolean;
-    onToggle: () => void;
-    formattedDuration: string;
-    size?: 'lg' | 'md';
-  }> = ({ isRecording, isTranscribing, onToggle, formattedDuration, size = 'lg' }) => {
-    const sizeClasses = size === 'lg'
-      ? "relative w-28 md:w-32 lg:w-36 aspect-square shrink-0"
-      : "relative w-20 md:w-24 aspect-square shrink-0";
-
-    const iconSizeClasses = size === 'lg'
-      ? "w-10 h-10 md:w-12 md:h-12 lg:w-14 lg:h-14"
-      : "w-8 h-8 md:w-10 md:h-10";
-
-    const insetClasses = size === 'lg' ? "absolute inset-2 md:inset-3" : "absolute inset-2";
-
-    return (
-      <button
-        onClick={onToggle}
-        disabled={isTranscribing}
-        aria-label={
-          isRecording
-            ? `Stop recording. Current duration: ${formattedDuration}`
-            : 'Start recording'
-        }
-        aria-pressed={isRecording}
-        aria-describedby="recording-status"
-        className={cn(
-          `${sizeClasses} rounded-full transition-all duration-300 active:scale-95 touch-manipulation`,
-          isRecording
-            ? "bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700"
-            : "bg-gradient-to-br from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600",
-          isTranscribing && "opacity-50 cursor-not-allowed"
-        )}
-      >
-        <div className={cn(insetClasses, "rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center")}> 
-          {isRecording ? (
-            <Square className={cn(iconSizeClasses, "text-white drop-shadow-sm")} />
-          ) : (
-            <Mic className={cn(iconSizeClasses, "text-white drop-shadow-sm")} />
-          )}
-        </div>
-
-        {isRecording && (
-          <div className="absolute inset-0 rounded-full bg-gradient-to-br from-red-500 to-red-600 animate-pulse opacity-30"></div>
-        )}
-      </button>
-    );
-  };
-
   // Reusable Recording status (duration + state + optional progress)
   const RecordingStatus: React.FC<{
     isRecording: boolean;
     durationMs: number;
     maxMs: number;
     formatted: string;
-  }> = ({ isRecording, durationMs, maxMs, formatted }) => (
-    <div className="flex flex-col w-full md:w-1/2 items-center text-center gap-2 p-4" id="recording-status">
-      <div className="text-3xl md:text-4xl font-mono font-bold text-foreground" aria-live="polite" aria-atomic="true">
+    className?: string;
+  }> = ({ isRecording, durationMs, maxMs, formatted, className }) => (
+    <div className={cn("flex flex-col w-full items-center text-center gap-2 p-4", className)} id="recording-status">
+      <div className="text-5xl font-mono font-bold text-foreground" aria-live="polite" aria-atomic="true">
         {formatted}
       </div>
       <p className="text-sm text-muted-foreground">
@@ -265,8 +214,6 @@ export function RecordingInterface({
       setRewrittenText(null);
       transcriptionStartedRef.current = false;
       setTranscriptionAttempted(false);
-      // If we are in edit phase, switch back to recording phase immediately
-      setShowRecordingUI(true);
 
       try {
         await startRecording();
@@ -694,7 +641,7 @@ export function RecordingInterface({
       className={cn(
         "flex w-full p-2 md:p-4",
         showRecordingUI
-          ? "items-center justify-center text-center h-[58dvh]"
+          ? "items-center justify-center text-center h-[64vh]"
           : "items-stretch justify-start text-left",
         className
       )}
@@ -704,7 +651,7 @@ export function RecordingInterface({
 
       {showRecordingUI ? (
         // Phase 1: Recording only (centered square)
-        <section className="flex flex-col w-full md:w-auto items-center justify-center gap-4">
+        <section className="flex flex-col w-full items-center justify-center gap-4">
           {/* Info when no OpenAI API key is set */}
           {!hasApiKey && (
             <div className="info-box">
@@ -714,21 +661,43 @@ export function RecordingInterface({
 
           {/* Greeting */}
           {!recordingState.isRecording && !isTranscribing && !transcriptionAttempted && (
-            <div className="mb-2">
-              <p className="text-sm md:text-base text-muted-foreground">What's on your mind today?</p>
-            </div>
+            <p className="text-sm md:text-base text-muted-foreground">What's on your mind today?</p>
           )}
 
-          <div className="p-4 md:p-16 w-full md:w-auto rounded-4xl bg-panel-gradient aspect-square flex flex-col items-center justify-center gap-8">
+          <div className="flex flex-col p-4 md:p-8 h-96 w-full md:w-96 gap-8 rounded-4xl bg-panel-gradient text-center items-center justify-center">
             {/* Recording button */}
-            {!isTranscribing && !transcriptionAttempted && (
-              <RecordingButton
-                isRecording={recordingState.isRecording}
-                isTranscribing={isTranscribing}
-                onToggle={handleRecordingToggle}
-                formattedDuration={formattedDuration}
-                size="lg"
-              />
+            {(recordingState.isRecording || (recordingState.duration === 0 && !isTranscribing && !transcriptionAttempted)) && (
+              <button
+                onClick={handleRecordingToggle}
+                disabled={isTranscribing}
+                aria-label={
+                  recordingState.isRecording
+                    ? `Stop recording. Current duration: ${formattedDuration}`
+                    : 'Start recording'
+                }
+                aria-pressed={recordingState.isRecording}
+                aria-describedby="recording-status"
+                className={cn(
+                  "relative w-28 h-28 md:w-32 md:h-32 lg:w-36 lg:h-36 rounded-full transition-all duration-300 active:scale-95 touch-manipulation",
+                  recordingState.isRecording
+                    ? "bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700"
+                    : "bg-gradient-to-br from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600",
+                  isTranscribing && "opacity-50 cursor-not-allowed"
+                )}
+              >
+                <div className="absolute inset-2 md:inset-3 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                  {recordingState.isRecording ? (
+                    <Square className="w-10 h-10 md:w-12 md:h-12 lg:w-14 lg:h-14 text-white drop-shadow-sm" />
+                  ) : (
+                    <Mic className="w-10 h-10 md:w-12 md:h-12 lg:w-14 lg:h-14 text-white drop-shadow-sm" />
+                  )}
+                </div>
+
+                {/* Pulse animation ring when recording */}
+                {recordingState.isRecording && (
+                  <div className="absolute inset-0 rounded-full bg-gradient-to-br from-red-500 to-red-600 animate-pulse opacity-30"></div>
+                )}
+              </button>
             )}
 
             {/* Duration display + actions */}
@@ -751,14 +720,24 @@ export function RecordingInterface({
             {/* Transcription status (only after recording stops) */}
             {isTranscribing && (
               <div className="text-center">
-                <div className="animate-spin w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full mx-auto mb-2"></div>
+                <div className="animate-spin w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full mx-auto"></div>
                 <p className="text-sm text-muted-foreground">Transcribing audio...</p>
               </div>
             )}
 
             {/* No speech detected message when transcription attempted but empty */}
             {!isTranscribing && transcriptionAttempted && !transcript?.trim().length && (
-              <div className="error-box">No speech detected.</div>
+              <div className="w-full error-box">No speech detected.</div>
+            )}
+
+            {/* Show Save/Discard after recording stops (even if transcript is empty) */}
+            {!recordingState.isRecording && recordingState.duration > 0 && !isTranscribing && (
+              <SaveDiscardButtons
+                canSave={!!recordingState.audioBlob}
+                isSaving={isSaving}
+                onSave={handleSaveNote}
+                onDiscard={handleDiscard}
+              />
             )}
           </div>
         </section>
@@ -766,7 +745,7 @@ export function RecordingInterface({
         // Phase 2: Edit (show all 4 sections full width)
         <div className="w-full flex flex-col gap-4">
           {/* Section 1: Recording / Saving */}
-          <section className="rounded-xl bg-panel-gradient p-4 md:p-16">
+          <section className="rounded-xl bg-panel-gradient p-4 md:p-8">
             <div className="flex flex-col md:flex-row items-center gap-4 justify-around">
               {(recordingState.isRecording || recordingState.duration > 0) && (
                 <RecordingStatus
@@ -774,6 +753,7 @@ export function RecordingInterface({
                   durationMs={recordingState.duration || 0}
                   maxMs={MAX_RECORDING_TIME_MS}
                   formatted={formattedDuration}
+                  className="md:w-2/3"
                 />
               )}
 
@@ -783,6 +763,7 @@ export function RecordingInterface({
                   isSaving={isSaving}
                   onSave={handleSaveNote}
                   onDiscard={handleDiscard}
+                  className="md:flex-col md:w-1/3"
                 />
               )}
 
