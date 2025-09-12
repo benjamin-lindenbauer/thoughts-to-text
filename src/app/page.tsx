@@ -16,6 +16,7 @@ export default function Home() {
   const { toasts, removeToast, success, error: showError } = useToast();
   const [isLoaded, setIsLoaded] = useState(false);
   const [showRecordingUI, setShowRecordingUI] = useState(true);
+  const [pending, setPending] = useState(false);
 
   // Initialize component with animation
   useEffect(() => {
@@ -53,6 +54,61 @@ export default function Home() {
     showError(error);
   }, []);
 
+  // Warn user if attempting to close or reload the tab while there is unsaved work
+  useEffect(() => {
+    if (!pending) return;
+
+    const beforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+    };
+
+    window.addEventListener('beforeunload', beforeUnload);
+    return () => window.removeEventListener('beforeunload', beforeUnload);
+  }, [pending]);
+
+  // Intercept internal link clicks and back/forward navigation while pending
+  useEffect(() => {
+    if (!pending) return;
+
+    const confirmLeave = () =>
+      window.confirm('You have an unsaved recording. Leave this page and lose your changes?');
+
+    const onClickCapture = (e: MouseEvent) => {
+      if (!pending || e.defaultPrevented) return;
+      const target = e.target as Element | null;
+      const anchor = target?.closest?.('a[href]') as HTMLAnchorElement | null;
+      if (!anchor) return;
+      const href = anchor.getAttribute('href');
+      if (!href) return;
+      // Ignore hash links and non-self targets or downloads
+      if (href.startsWith('#') || anchor.hasAttribute('download')) return;
+      if (anchor.target && anchor.target !== '' && anchor.target !== '_self') return;
+      // Only guard same-origin navigation
+      const url = new URL(href, window.location.href);
+      if (url.origin !== window.location.origin) return;
+
+      if (!confirmLeave()) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    };
+
+    const onPopState = (e: PopStateEvent) => {
+      if (!pending) return;
+      if (!confirmLeave()) {
+        // Attempt to cancel by moving back forward
+        history.go(1);
+      }
+    };
+
+    document.addEventListener('click', onClickCapture, true);
+    window.addEventListener('popstate', onPopState);
+    return () => {
+      document.removeEventListener('click', onClickCapture, true);
+      window.removeEventListener('popstate', onPopState);
+    };
+  }, [pending]);
+
   return (
     <AppLayout>
       {showRecordingUI && (
@@ -78,6 +134,7 @@ export default function Home() {
             onError={handleError}
             showRecordingUI={showRecordingUI}
             setShowRecordingUI={setShowRecordingUI}
+            onPendingChange={setPending}
           />
         </div>
 

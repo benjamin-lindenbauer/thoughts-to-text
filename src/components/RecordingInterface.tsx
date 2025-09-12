@@ -21,6 +21,7 @@ interface RecordingInterfaceProps {
   showRecordingUI: boolean;
   setShowRecordingUI: (show: boolean) => void;
   className?: string;
+  onPendingChange?: (pending: boolean) => void;
 }
 
 export function RecordingInterface({
@@ -28,7 +29,8 @@ export function RecordingInterface({
   onError,
   showRecordingUI,
   setShowRecordingUI,
-  className
+  className,
+  onPendingChange
 }: RecordingInterfaceProps) {
   const { isOnline } = useOffline();
 
@@ -204,6 +206,27 @@ export function RecordingInterface({
       stopRecording();
     }
   }, [recordingState.isRecording, recordingState.duration]);
+
+  // Determine if there is unsaved work that should warn on navigation
+  const hasUnsavedWork = React.useMemo(() => {
+    if (isSaving) return false; // allow navigation while saving
+    const hasAudio = !!recordingState.audioBlob && (recordingState.duration || 0) > 0;
+    const hasText = !!transcript?.trim() || !!rewrittenText?.trim();
+    const hasImage = !!photo;
+    return recordingState.isRecording || hasAudio || hasText || hasImage;
+  }, [isSaving, recordingState.isRecording, recordingState.audioBlob, recordingState.duration, transcript, rewrittenText, photo]);
+
+  // Notify parent about pending state
+  useEffect(() => {
+    onPendingChange?.(hasUnsavedWork);
+  }, [hasUnsavedWork, onPendingChange]);
+
+  // Ensure parent pending state is cleared on unmount
+  useEffect(() => {
+    return () => {
+      onPendingChange?.(false);
+    };
+  }, [onPendingChange]);
 
   // Handle recording button click
   const handleRecordingToggle = useCallback(async () => {
