@@ -18,14 +18,26 @@ import { RewriteControls } from "@/components/RewriteControls";
 interface RecordingInterfaceProps {
   onSave?: (noteId: string, note: Note) => void;
   onError?: (error: string) => void;
+  showRecordingUI: boolean;
+  setShowRecordingUI: (show: boolean) => void;
   className?: string;
 }
 
 export function RecordingInterface({
   onSave,
   onError,
+  showRecordingUI,
+  setShowRecordingUI,
   className
 }: RecordingInterfaceProps) {
+  const { isOnline } = useOffline();
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const transcriptionStartedRef = useRef<boolean>(false);
+  const cameraLoadingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  
   const [photo, setPhoto] = useState<Blob | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [isTranscribing, setIsTranscribing] = useState(false);
@@ -35,19 +47,12 @@ export function RecordingInterface({
   const [isSaving, setIsSaving] = useState(false);
   const [selectedPrompt, setSelectedPrompt] = useState<string>('default');
   const [isMounted, setIsMounted] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const transcriptionStartedRef = useRef<boolean>(false);
-  const cameraLoadingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [isCameraActive, setIsCameraActive] = useState(false);
   const [isCameraLoading, setIsCameraLoading] = useState(false);
-  const { isOnline } = useOffline();
   const [hasApiKey, setHasApiKey] = useState(false);
   const [transcriptionAttempted, setTranscriptionAttempted] = useState(false);
   const [apiKey, setApiKey] = useState<string | null>(null);
   const [selectedLanguage, setSelectedLanguage] = useState('auto');
-  const [showRecordingUI, setShowRecordingUI] = useState(true);
   const [showRewriteSection, setShowRewriteSection] = useState(false);
 
   // Recording time limits and helpers
@@ -100,6 +105,15 @@ export function RecordingInterface({
   }> = ({ canSave, isSaving, onSave, onDiscard, className }) => (
     <div className={cn('flex w-full items-center justify-center gap-2 md:gap-4', className)}>
       <button
+        onClick={onDiscard}
+        className="flex w-full items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm bg-background border border-border hover:bg-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        aria-label="Discard recording and transcript"
+        disabled={isSaving}
+      >
+        <Trash2 className="size-4 flex-shrink-0" />
+        Discard
+      </button>
+      <button
         type="button"
         onClick={onSave}
         className={cn('flex w-full items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium', 'btn-gradient-primary')}
@@ -117,15 +131,6 @@ export function RecordingInterface({
             <span>Save</span>
           </>
         )}
-      </button>
-      <button
-        onClick={onDiscard}
-        className="flex w-full items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm bg-background border border-border hover:bg-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-        aria-label="Discard recording and transcript"
-        disabled={isSaving}
-      >
-        <Trash2 className="size-4 flex-shrink-0" />
-        Discard
       </button>
     </div>
   );
@@ -642,10 +647,10 @@ export function RecordingInterface({
   return (
     <div
       className={cn(
-        "flex flex-col w-full p-2 md:p-4",
+        "flex flex-col w-full",
         showRecordingUI
-          ? "items-center justify-center text-center h-[72vh]"
-          : "items-stretch justify-start text-left",
+          ? "items-center justify-center text-center h-[72vh] p-2 md:p-4"
+          : "items-stretch justify-start text-left px-0 py-2 md:py-4",
         className
       )}
     >

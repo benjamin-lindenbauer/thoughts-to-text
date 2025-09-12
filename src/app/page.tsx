@@ -9,11 +9,13 @@ import { animations } from "@/lib/animations";
 import { Note } from "@/types";
 import { useToast } from "@/hooks/useToast";
 import { ToastContainer } from "@/components/Toast";
+import { useAppState } from "@/hooks/useAppState";
 
 export default function Home() {
   const router = useRouter();
   const { toasts, removeToast, success, error: showError } = useToast();
   const [isLoaded, setIsLoaded] = useState(false);
+  const [showRecordingUI, setShowRecordingUI] = useState(true);
 
   // Initialize component with animation
   useEffect(() => {
@@ -53,18 +55,20 @@ export default function Home() {
 
   return (
     <AppLayout>
-      <div className={`sticky top-0 z-30 w-full flex flex-col items-center text-center pt-2 pb-4 bg-background ${isLoaded ? animations.fadeIn : 'opacity-0'}`}>
-        <div className="flex items-center justify-center gap-2 w-full">
-          <Sparkles className="w-5 h-5 text-indigo-500" />
-          <h1 className="text-3xl md:text-4xl font-bold gradient-text leading-12">
-            Thoughts to Text
-          </h1>
-          <Sparkles className="w-5 h-5 text-purple-500" />
+      {showRecordingUI && (
+        <div className={`w-full flex flex-col items-center text-center pt-2 pb-4 bg-background ${isLoaded ? animations.fadeIn : 'opacity-0'}`}>
+          <div className="flex items-center justify-center gap-2 w-full">
+            <Sparkles className="w-5 h-5 text-indigo-500" />
+            <h1 className="text-3xl md:text-4xl font-bold gradient-text leading-12">
+              Thoughts to Text
+            </h1>
+            <Sparkles className="w-5 h-5 text-purple-500" />
+          </div>
+          <p className="text-sm md:text-base text-muted-foreground">
+            From raw thoughts to polished text in seconds.
+          </p>
         </div>
-        <p className="text-sm md:text-base text-muted-foreground">
-          From raw thoughts to polished text in seconds.
-        </p>
-      </div>
+      )}
 
       <div className="flex flex-col items-center justify-center w-full">
         {/* Recording Interface with enhanced card container */}
@@ -72,6 +76,8 @@ export default function Home() {
           <RecordingInterface
             onSave={handleSave}
             onError={handleError}
+            showRecordingUI={showRecordingUI}
+            setShowRecordingUI={setShowRecordingUI}
           />
         </div>
 
