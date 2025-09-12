@@ -34,12 +34,12 @@ export function RewriteControls({
     (typeof transcript === "string" && transcript.trim().length === 0);
 
   return (
-    <div className={cn("flex flex-col md:flex-row gap-2 md:gap-4", className)}>
+    <div className={cn("flex flex-col md:flex-row gap-2", className)}>
       <select
         value={selectedPrompt}
         onChange={(e) => onChangePrompt(e.target.value)}
         disabled={isRewriting}
-        className="w-full md:w-1/3 p-2 rounded-lg border border-border bg-secondary text-foreground text-sm transition-colors hover:bg-accent focus:border-transparent disabled:opacity-50"
+        className="w-full md:w-1/3 p-2 rounded-lg border border-border bg-background text-foreground text-sm transition-colors focus:border-transparent disabled:opacity-50"
       >
         {rewritePrompts.map((prompt) => (
           <option key={prompt.id} value={prompt.id}>
@@ -53,7 +53,7 @@ export function RewriteControls({
         value={selectedLanguage}
         disabled={isRewriting}
         onChange={(e) => onChangeLanguage(e.target.value)}
-        className="w-full md:w-1/3 p-2 rounded-lg border border-border bg-secondary text-foreground text-sm transition-colors hover:bg-accent focus:border-transparent disabled:opacity-50"
+        className="w-full md:w-1/3 p-2 rounded-lg border border-border bg-background text-foreground text-sm transition-colors focus:border-transparent disabled:opacity-50"
       >
         {LANGUAGE_OPTIONS.map((lang) => (
           <option key={lang.code} value={lang.code}>

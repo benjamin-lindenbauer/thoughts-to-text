@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { Mic, MicOff, Camera, Square, Wand2, RefreshCw, X, Save, Trash2, Upload, FileText, Image } from 'lucide-react';
+import { Mic, MicOff, Camera, Square, Wand2, RefreshCw, X, Save, Trash2, Upload, FileText, Image, FileImage } from 'lucide-react';
 import { useRecording } from '@/hooks/useRecording';
 import { useAppState } from '@/hooks/useAppState';
 import { useHapticFeedback } from '@/hooks/useHapticFeedback';
@@ -90,6 +90,122 @@ export function RecordingInterface({
     };
   }, []);
 
+  // Reusable Save/Discard button group to avoid duplication
+  const SaveDiscardButtons: React.FC<{
+    canSave: boolean;
+    isSaving: boolean;
+    onSave: () => void;
+    onDiscard: () => void;
+  }> = ({ canSave, isSaving, onSave, onDiscard }) => (
+    <div className="flex w-full md:w-1/2 flex-row md:flex-col items-center justify-center gap-2 md:gap-4">
+      <button
+        type="button"
+        onClick={onSave}
+        className={cn('flex w-full md:w-1/2 items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium', 'btn-gradient-primary')}
+        aria-label="Save recording"
+        disabled={isSaving || !canSave}
+      >
+        {isSaving ? (
+          <>
+            <RefreshCw className="size-4 animate-spin flex-shrink-0" />
+            <span>Saving...</span>
+          </>
+        ) : (
+          <>
+            <Save className="size-4 flex-shrink-0" />
+            <span>Save</span>
+          </>
+        )}
+      </button>
+      <button
+        onClick={onDiscard}
+        className="flex px-4 py-2 w-full md:w-1/2 rounded-lg text-sm bg-background border border-border hover:bg-accent transition-colors items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+        aria-label="Discard recording and transcript"
+        disabled={isSaving}
+      >
+        <Trash2 className="size-4 flex-shrink-0" />
+        Discard
+      </button>
+    </div>
+  );
+
+  // Reusable Recording toggle button
+  const RecordingButton: React.FC<{
+    isRecording: boolean;
+    isTranscribing: boolean;
+    onToggle: () => void;
+    formattedDuration: string;
+    size?: 'lg' | 'md';
+  }> = ({ isRecording, isTranscribing, onToggle, formattedDuration, size = 'lg' }) => {
+    const sizeClasses = size === 'lg'
+      ? "relative w-28 md:w-32 lg:w-36 aspect-square shrink-0"
+      : "relative w-20 md:w-24 aspect-square shrink-0";
+
+    const iconSizeClasses = size === 'lg'
+      ? "w-10 h-10 md:w-12 md:h-12 lg:w-14 lg:h-14"
+      : "w-8 h-8 md:w-10 md:h-10";
+
+    const insetClasses = size === 'lg' ? "absolute inset-2 md:inset-3" : "absolute inset-2";
+
+    return (
+      <button
+        onClick={onToggle}
+        disabled={isTranscribing}
+        aria-label={
+          isRecording
+            ? `Stop recording. Current duration: ${formattedDuration}`
+            : 'Start recording'
+        }
+        aria-pressed={isRecording}
+        aria-describedby="recording-status"
+        className={cn(
+          `${sizeClasses} rounded-full transition-all duration-300 active:scale-95 touch-manipulation`,
+          isRecording
+            ? "bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700"
+            : "bg-gradient-to-br from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600",
+          isTranscribing && "opacity-50 cursor-not-allowed"
+        )}
+      >
+        <div className={cn(insetClasses, "rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center")}> 
+          {isRecording ? (
+            <Square className={cn(iconSizeClasses, "text-white drop-shadow-sm")} />
+          ) : (
+            <Mic className={cn(iconSizeClasses, "text-white drop-shadow-sm")} />
+          )}
+        </div>
+
+        {isRecording && (
+          <div className="absolute inset-0 rounded-full bg-gradient-to-br from-red-500 to-red-600 animate-pulse opacity-30"></div>
+        )}
+      </button>
+    );
+  };
+
+  // Reusable Recording status (duration + state + optional progress)
+  const RecordingStatus: React.FC<{
+    isRecording: boolean;
+    durationMs: number;
+    maxMs: number;
+    formatted: string;
+  }> = ({ isRecording, durationMs, maxMs, formatted }) => (
+    <div className="flex flex-col w-full md:w-1/2 items-center text-center gap-2 p-4" id="recording-status">
+      <div className="text-3xl md:text-4xl font-mono font-bold text-foreground" aria-live="polite" aria-atomic="true">
+        {formatted}
+      </div>
+      <p className="text-sm text-muted-foreground">
+        {isRecording ? 'Recording...' : 'Recording complete'}
+      </p>
+      <div className="w-full max-w-40">
+        <div className="h-2 w-full bg-background rounded-full overflow-hidden">
+          <div
+            className="h-full bg-purple-500 transition-[width] duration-200"
+            style={{ width: `${Math.min(100, ((durationMs || 0) / maxMs) * 100)}%` }}
+          />
+        </div>
+      </div>
+    </div>
+  );
+
   // Helper to retrieve API key using cached state when available
   const getApiKey = React.useCallback(async (): Promise<string | null> => {
     if (apiKey) return apiKey;
@@ -149,6 +265,8 @@ export function RecordingInterface({
       setRewrittenText(null);
       transcriptionStartedRef.current = false;
       setTranscriptionAttempted(false);
+      // If we are in edit phase, switch back to recording phase immediately
+      setShowRecordingUI(true);
 
       try {
         await startRecording();
@@ -574,199 +692,142 @@ export function RecordingInterface({
   return (
     <div
       className={cn(
-        "flex flex-col gap-6 w-full items-center p-2 md:p-4",
-        showRecordingUI ? "justify-center text-center h-[58dvh]" : "justify-start overflow-y-auto",
+        "flex w-full p-2 md:p-4",
+        showRecordingUI
+          ? "items-center justify-center text-center h-[58dvh]"
+          : "items-stretch justify-start text-left",
         className
       )}
     >
       {/* Live region for screen reader announcements */}
       <LiveRegion />
 
-      {/* Info when no OpenAI API key is set */}
-      {showRecordingUI && !hasApiKey && (
-        <div className="info-box">
-          Please set your OpenAI API key in <Link href="/settings" className="underline">Settings</Link> to enable transcription and AI-powered note rewrites.
-        </div>
-      )}
-
-      {/* Greeting */}
-      {showRecordingUI && !recordingState.isRecording && !isTranscribing && !transcriptionAttempted && (
-        <div className="text-center mt-20 md:mt-6 mb-4">
-          <p className="text-sm md:text-base text-muted-foreground">
-            What's on your mind today?
-          </p>
-        </div>
-      )}
-
-      <div className="flex flex-col relative items-center justify-center rounded-2xl bg-panel-gradient border border-border/60 p-12 gap-12 min-w-80">
-        <div className="flex flex-row items-center justify-center gap-8">
-          {/* Recording button */}
-          {showRecordingUI && !isTranscribing && !transcriptionAttempted && (
-            <div className="flex flex-col items-center gap-3">
-              <button
-                onClick={handleRecordingToggle}
-                disabled={isTranscribing}
-                aria-label={
-                  recordingState.isRecording
-                    ? `Stop recording. Current duration: ${formattedDuration}`
-                    : 'Start recording'
-                }
-                aria-pressed={recordingState.isRecording}
-                aria-describedby="recording-status"
-                className={cn(
-                  "relative w-28 h-28 md:w-32 md:h-32 lg:w-36 lg:h-36 rounded-full transition-all duration-300 active:scale-95 touch-manipulation",
-                  recordingState.isRecording
-                    ? "bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700"
-                    : "bg-gradient-to-br from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600",
-                  isTranscribing && "opacity-50 cursor-not-allowed"
-                )}
-              >
-                <div className="absolute inset-2 md:inset-3 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
-                  {recordingState.isRecording ? (
-                    <Square className="w-10 h-10 md:w-12 md:h-12 lg:w-14 lg:h-14 text-white drop-shadow-sm" />
-                  ) : (
-                    <Mic className="w-10 h-10 md:w-12 md:h-12 lg:w-14 lg:h-14 text-white drop-shadow-sm" />
-                  )}
-                </div>
-
-                {/* Pulse animation ring when recording */}
-                {recordingState.isRecording && (
-                  <div className="absolute inset-0 rounded-full bg-gradient-to-br from-red-500 to-red-600 animate-pulse opacity-30"></div>
-                )}
-              </button>
+      {showRecordingUI ? (
+        // Phase 1: Recording only (centered square)
+        <section className="flex flex-col w-full md:w-auto items-center justify-center gap-4">
+          {/* Info when no OpenAI API key is set */}
+          {!hasApiKey && (
+            <div className="info-box">
+              Please set your OpenAI API key in <Link href="/settings" className="underline">Settings</Link> to enable transcription and AI-powered note rewrites.
             </div>
           )}
 
-          {/* Duration display + actions */}
-          {(recordingState.isRecording || recordingState.duration > 0) && (
-            <div className="flex flex-col items-center text-center gap-2" id="recording-status">
-              <div
-                className="text-3xl md:text-4xl font-mono font-bold text-foreground"
-                aria-live="polite"
-                aria-atomic="true"
-              >
-                {formattedDuration}
+          {/* Greeting */}
+          {!recordingState.isRecording && !isTranscribing && !transcriptionAttempted && (
+            <div className="mb-2">
+              <p className="text-sm md:text-base text-muted-foreground">What's on your mind today?</p>
+            </div>
+          )}
+
+          <div className="p-4 md:p-16 w-full md:w-auto rounded-4xl bg-panel-gradient aspect-square flex flex-col items-center justify-center gap-8">
+            {/* Recording button */}
+            {!isTranscribing && !transcriptionAttempted && (
+              <RecordingButton
+                isRecording={recordingState.isRecording}
+                isTranscribing={isTranscribing}
+                onToggle={handleRecordingToggle}
+                formattedDuration={formattedDuration}
+                size="lg"
+              />
+            )}
+
+            {/* Duration display + actions */}
+            {(recordingState.isRecording || recordingState.duration > 0) && (
+              <RecordingStatus
+                isRecording={recordingState.isRecording}
+                durationMs={recordingState.duration || 0}
+                maxMs={MAX_RECORDING_TIME_MS}
+                formatted={formattedDuration}
+              />
+            )}
+
+            {/* Status text */}
+            {!recordingState.isRecording && recordingState.duration === 0 && (
+              <div className="text-center">
+                <p className="text-sm md:text-base text-muted-foreground">{isTranscribing ? 'Processing...' : 'Tap to start recording'}</p>
               </div>
-              <p className="text-sm text-muted-foreground">
-                {recordingState.isRecording ? 'Recording...' : 'Recording complete'}
-              </p>
-              {/* Progress bar under the recording button while recording */}
-              {recordingState.isRecording && (
-                <div className="w-full max-w-xs space-y-4">
-                  <div className="h-2 w-full bg-background rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-purple-500 transition-[width] duration-200"
-                      style={{ width: `${Math.min(100, ((recordingState.duration || 0) / MAX_RECORDING_TIME_MS) * 100)}%` }}
-                    />
-                  </div>
+            )}
+
+            {/* Transcription status (only after recording stops) */}
+            {isTranscribing && (
+              <div className="text-center">
+                <div className="animate-spin w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full mx-auto mb-2"></div>
+                <p className="text-sm text-muted-foreground">Transcribing audio...</p>
+              </div>
+            )}
+
+            {/* No speech detected message when transcription attempted but empty */}
+            {!isTranscribing && transcriptionAttempted && !transcript?.trim().length && (
+              <div className="error-box">No speech detected.</div>
+            )}
+          </div>
+        </section>
+      ) : (
+        // Phase 2: Edit (show all 4 sections full width)
+        <div className="w-full flex flex-col gap-4">
+          {/* Section 1: Recording / Saving */}
+          <section className="rounded-xl bg-panel-gradient p-4 md:p-16">
+            <div className="flex flex-col md:flex-row items-center gap-4 justify-around">
+              {(recordingState.isRecording || recordingState.duration > 0) && (
+                <RecordingStatus
+                  isRecording={recordingState.isRecording}
+                  durationMs={recordingState.duration || 0}
+                  maxMs={MAX_RECORDING_TIME_MS}
+                  formatted={formattedDuration}
+                />
+              )}
+
+              {!recordingState.isRecording && recordingState.duration > 0 && (
+                <SaveDiscardButtons
+                  canSave={!!recordingState.audioBlob}
+                  isSaving={isSaving}
+                  onSave={handleSaveNote}
+                  onDiscard={handleDiscard}
+                />
+              )}
+
+              {/* Guidance when we cannot transcribe now (offline or missing API key) */}
+              {!isTranscribing && !transcriptionAttempted && (!isOnline || !hasApiKey) && (
+                <div className="space-y-2 w-full">
+                  {!isOnline && (
+                    <div className="info-box">You are offline. You can save now and transcribe later.</div>
+                  )}
+                  {isOnline && !hasApiKey && (
+                    <div className="info-box">OpenAI API key not configured. Please set your API key in <Link href="/settings" className="underline">Settings</Link> to enable transcription.</div>
+                  )}
                 </div>
               )}
             </div>
-          )}
+          </section>
 
-          {/* Show Save/Discard after recording stops (transcript may be absent) */}
-          {!recordingState.isRecording && recordingState.duration > 0 && (
-            <div className="flex flex-col items-center gap-4 ml-8">
-              <button
-                type="button"
-                onClick={handleSaveNote}
-                className={cn(
-                  'flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium w-28',
-                  'btn-gradient-primary'
-                )}
-                aria-label="Save recording"
-                disabled={isSaving || !recordingState.audioBlob}
-              >
-                {isSaving ? (
-                  <>
-                    <RefreshCw className="size-4 animate-spin" />
-                    <span>Saving...</span>
-                  </>
-                ) : (
-                  <>
-                    <Save className="size-4" />
-                    <span>Save</span>
-                  </>
-                )}
-              </button>
-              <button
-                onClick={handleDiscard}
-                className="px-4 py-2 rounded-lg text-sm font-medium bg-background border border-border hover:bg-accent transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed w-28"
-                aria-label="Discard recording and transcript"
-                disabled={isSaving}
-              >
-                <Trash2 className="size-4" />
-                Discard
-              </button>
-            </div>
-          )}
-        </div>
+          {/* Section 2: Transcript */}
+          {transcript?.trim().length ? (
+            <section className="flex flex-col gap-2 p-4 rounded-xl bg-card w-full">
+              <div className="flex items-center justify-between h-9">
+                <h3 className="flex flex-row items-center gap-2">
+                  <FileText className="size-4 flex-shrink-0" />
+                  Transcript
+                </h3>
+                {transcript?.trim().length && <CopyButton text={transcript} />}
+              </div>
+              <textarea
+                className="w-full p-3 rounded-lg border border-border bg-background text-sm text-foreground resize-y min-h-[120px]"
+                value={transcript || ''}
+                onChange={(e) => setTranscript(e.target.value)}
+                aria-label="Edit transcript"
+              />
+            </section>
+          ) : null}
 
-        {/* Status text */}
-        {!recordingState.isRecording && recordingState.duration === 0 && (
-          <div className="text-center">
-            <p className="text-sm md:text-base text-muted-foreground">
-              {isTranscribing ? 'Processing...' : 'Tap to start recording'}
-            </p>
-          </div>
-        )}
-      </div>
-
-      {/* Transcription status (only after recording stops) */}
-      {isTranscribing && (
-        <div className="text-center">
-          <div className="animate-spin w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full mx-auto mb-2"></div>
-          <p className="text-sm text-muted-foreground">
-            Transcribing audio...
-          </p>
-        </div>
-      )}
-
-      {/* No speech detected message when transcription attempted but empty */}
-      {!isTranscribing && transcriptionAttempted && !transcript?.trim().length && (
-        <div className="error-box">
-          No speech detected.
-        </div>
-      )}
-
-      {/* Guidance when we cannot transcribe now (offline or missing API key) */}
-      {!showRecordingUI && !isTranscribing && !transcriptionAttempted && (!isOnline || !hasApiKey) && (
-        <div className="space-y-2">
-          {!isOnline && (
-            <div className="info-box">
-              You are offline. You can save now and transcribe later.
-            </div>
-          )}
-          {isOnline && !hasApiKey && (
-            <div className="info-box">
-              OpenAI API key not configured. Please set your API key in <Link href="/settings" className="underline">Settings</Link> to enable transcription.
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Transcript area (only after a transcription attempt and non-empty transcript) */}
-      {!showRecordingUI && !isTranscribing && transcriptionAttempted && transcript?.trim().length ? (
-        <div className="flex flex-col w-full space-y-4">
-          <div className="flex flex-col gap-2">
-            <div className="flex items-center justify-between">
+          {/* Section 3: Rewriting */}
+          <section className="flex flex-col gap-2 p-4 rounded-xl bg-panel-gradient w-full">
+            <div className="flex items-center justify-between h-9">
               <h3 className="flex flex-row items-center gap-2">
-                <FileText className="size-4" />
-                Transcript
+                <Wand2 className="size-4 flex-shrink-0" />
+                Rewrite text
               </h3>
-              <CopyButton text={transcript || ''} title="Copy to clipboard" />
+              {rewrittenText?.trim().length && <CopyButton text={rewrittenText} />}
             </div>
-            <textarea
-              className="w-full p-3 rounded-lg border border-border bg-background text-sm text-foreground resize-y min-h-[120px]"
-              value={transcript}
-              onChange={(e) => setTranscript(e.target.value)}
-              aria-label="Edit transcript"
-            />
-          </div>
-
-          {/* Rewrite prompt selection and button */}
-          <div className="flex flex-col gap-2">
-            <h3>Rewrite transcript</h3>
             <RewriteControls
               rewritePrompts={rewritePrompts}
               selectedPrompt={selectedPrompt}
@@ -774,100 +835,72 @@ export function RecordingInterface({
               selectedLanguage={selectedLanguage}
               onChangeLanguage={setSelectedLanguage}
               isRewriting={isRewriting}
-              transcript={transcript}
+              transcript={transcript || ''}
               onRewrite={handleRewrite}
             />
-          </div>
-
-          {/* Rewritten text display (only after recording stops) */}
-          {rewrittenText && (
-            <div className="flex flex-col gap-2 p-4 bg-panel-gradient border-panel rounded-lg">
-              <div className="flex items-center justify-between">
-                <h3 className="flex flex-row items-center gap-2">
-                  <Wand2 className="size-4" />
-                  Rewritten text
-                </h3>
-                <CopyButton text={rewrittenText || ''} title="Copy to clipboard" />
-              </div>
+            {rewrittenText?.trim().length && (
               <textarea
                 className="w-full p-3 rounded-lg border border-border bg-background text-sm text-foreground resize-y min-h-[120px]"
                 value={rewrittenText}
                 onChange={(e) => setRewrittenText(e.target.value)}
                 aria-label="Edit rewritten text"
               />
+            )}
+          </section>
+
+          {/* Section 4: Image / Camera */}
+          <section className="flex flex-col gap-2 p-4 rounded-xl bg-card w-full">
+            <h3 className="flex flex-row items-center gap-2 h-9">
+              <FileImage className="size-4 flex-shrink-0" />
+              Add image
+            </h3>
+            <div className="flex gap-2 w-full md:w-1/2">
+              <button
+                onClick={() => {
+                  haptic.buttonPress();
+                  if (isCameraLoading) {
+                    return;
+                  }
+                  if (isCameraActive) {
+                    handleCloseCamera();
+                  } else {
+                    handleCameraCapture();
+                  }
+                }}
+                disabled={isCameraLoading}
+                aria-label={
+                  isCameraLoading
+                    ? 'Camera loading...'
+                    : isCameraActive
+                      ? 'Close camera'
+                      : 'Open camera to take photo'
+                }
+                className="flex flex-row justify-center w-full px-4 py-2 rounded-lg text-sm bg-background border border-border hover:bg-accent transition-colors items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Camera className="size-4 flex-shrink-0" />
+                <span className="text-sm">{isCameraLoading ? 'Camera loading...' : isCameraActive ? 'Close camera' : 'Camera'}</span>
+              </button>
+              <button
+                onClick={() => {
+                  haptic.buttonPress();
+                  if (isCameraActive || isCameraLoading) {
+                    handleCloseCamera();
+                  }
+                  fileInputRef.current?.click();
+                }}
+                aria-label="Upload image from device"
+                className="flex flex-row justify-center w-full px-4 py-2 rounded-lg text-sm bg-background border border-border hover:bg-accent transition-colors items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Upload className="size-4 flex-shrink-0" />
+                <span className="text-sm">Upload</span>
+              </button>
+              <input ref={fileInputRef} type="file" accept="image/*" onChange={handlePhotoUpload} className="hidden" />
             </div>
-          )}
-        </div>
-      ) : null}
 
-      {/* Photo controls */}
-      {!showRecordingUI && !isTranscribing && transcriptionAttempted && transcript?.trim() && (
-        <div className="flex flex-col gap-2 w-full">
-          <h3>Add an image</h3>
-          {/* Photo controls */}
-          <div className="flex gap-2">
-            <button
-              onClick={() => {
-                haptic.buttonPress();
-                if (isCameraLoading) {
-                  return;
-                }
-                if (isCameraActive) {
-                  handleCloseCamera();
-                } else {
-                  handleCameraCapture();
-                }
-              }}
-              disabled={isCameraLoading}
-              aria-label={
-                isCameraLoading
-                  ? 'Camera loading...'
-                  : isCameraActive
-                    ? 'Close camera'
-                    : 'Open camera to take photo'
-              }
-              className="flex items-center gap-2 px-4 py-2 bg-background border border-border rounded-lg hover:bg-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <Camera className="size-4" />
-              <span className="text-sm">{isCameraLoading ? 'Camera loading...' : isCameraActive ? 'Close camera' : 'Open camera'}</span>
-            </button>
-            
-            <button
-              onClick={() => {
-                haptic.buttonPress();
-                if (isCameraActive || isCameraLoading) {
-                  handleCloseCamera();
-                }
-                fileInputRef.current?.click();
-              }}
-              aria-label="Upload photo from device"
-              className="flex items-center gap-2 px-4 py-2 bg-b border border-border rounded-lg hover:bg-accent transition-colors"
-            >
-              <Upload className="size-4" />
-              <span className="text-sm">Upload photo</span>
-            </button>
-
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              onChange={handlePhotoUpload}
-              className="hidden"
-            />
-          </div>
-
-          {/* Camera preview or photo preview (only after recording stops) */}
-          {!showRecordingUI && (
             <div className="relative w-full">
               {(isCameraLoading || isCameraActive) ? (
                 <div className="relative rounded-lg overflow-hidden">
-                  <video
-                    ref={videoRef}
-                    className="w-full h-auto"
-                    autoPlay
-                    playsInline
-                    muted
-                  />
+                  <video ref={videoRef} className="w-full h-auto" autoPlay playsInline muted />
                   {isCameraLoading && (
                     <div className="absolute inset-0 w-full h-full rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
                       <div className="text-center">
@@ -877,7 +910,6 @@ export function RecordingInterface({
                     </div>
                   )}
 
-                  {/* Close camera button overlay */}
                   {(isCameraActive || isCameraLoading) && (
                     <button
                       onClick={() => {
@@ -887,11 +919,10 @@ export function RecordingInterface({
                       aria-label="Close camera"
                       className="absolute top-2 right-2 p-2 bg-black/50 backdrop-blur-sm text-white rounded-full hover:bg-black/70 transition-colors"
                     >
-                      <X className="size-4" />
+                      <X className="size-4 flex-shrink-0" />
                     </button>
                   )}
 
-                  {/* Capture photo button overlay */}
                   {isCameraActive && !isCameraLoading && (
                     <button
                       onClick={() => {
@@ -906,11 +937,7 @@ export function RecordingInterface({
                   )}
                 </div>
               ) : (!isCameraActive && !isCameraLoading && photoPreview) ? (
-                <img
-                  src={photoPreview}
-                  alt="Captured"
-                  className="w-full rounded-lg"
-                />
+                <img src={photoPreview} alt="Captured" className="w-full rounded-lg" />
               ) : (
                 <div className="w-full md:w-1/2 aspect-video rounded-lg bg-gray-100 dark:bg-gray-800 flex flex-col items-center justify-center gap-2 text-muted-foreground">
                   <Image className="w-10 h-10" />
@@ -930,13 +957,14 @@ export function RecordingInterface({
                   aria-label="Remove captured photo"
                   className="absolute top-2 right-2 p-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
                 >
-                  <X className="size-4" />
+                  <X className="size-4 flex-shrink-0" />
                 </button>
               )}
             </div>
-          )}
-          {/* Hidden canvas for photo capture */}
-          <canvas ref={canvasRef} className="hidden" />
+
+            {/* Hidden canvas for photo capture */}
+            <canvas ref={canvasRef} className="hidden" />
+          </section>
         </div>
       )}
     </div>
