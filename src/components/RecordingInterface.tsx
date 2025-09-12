@@ -757,7 +757,7 @@ export function RecordingInterface({
               <CopyButton text={transcript || ''} title="Copy to clipboard" />
             </div>
             <textarea
-              className="w-full p-3 rounded-lg border border-border bg-background text-sm text-foreground resize-y min-h-[120px] focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full p-3 rounded-lg border border-border bg-background text-sm text-foreground resize-y min-h-[120px]"
               value={transcript}
               onChange={(e) => setTranscript(e.target.value)}
               aria-label="Edit transcript"
@@ -790,7 +790,7 @@ export function RecordingInterface({
                 <CopyButton text={rewrittenText || ''} title="Copy to clipboard" />
               </div>
               <textarea
-                className="w-full p-3 rounded-lg border border-border bg-background text-sm text-foreground resize-y min-h-[120px] focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full p-3 rounded-lg border border-border bg-background text-sm text-foreground resize-y min-h-[120px]"
                 value={rewrittenText}
                 onChange={(e) => setRewrittenText(e.target.value)}
                 aria-label="Edit rewritten text"
