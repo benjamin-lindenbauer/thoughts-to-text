@@ -19,7 +19,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Thoughts to Text",
+  title: "Thoughts to Text | Voice recording and AI transcription",
   description: "Voice recording and AI transcription app",
   manifest: "/manifest.json",
   appleWebApp: {
