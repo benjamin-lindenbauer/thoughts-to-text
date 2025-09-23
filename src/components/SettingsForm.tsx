@@ -1,13 +1,11 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { MessageSquare, AlertCircle, CheckCircle2, ExternalLink, Coffee } from 'lucide-react';
+import { MessageSquare, AlertCircle, CheckCircle2, ExternalLink } from 'lucide-react';
 import { useAppState } from '@/hooks/useAppState';
 import { useTheme } from '@/contexts/ThemeContext';
-import { LANGUAGE_OPTIONS } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { RewritePromptManager } from '@/components/RewritePromptManager';
 import { PWAInstallButton } from '@/components/PWAInstallPrompt';
@@ -365,22 +363,6 @@ export function SettingsForm() {
             </div>
           </div>
         )}
-        
-        {/* Support Banner */}
-        <div className="pt-2">
-          <a
-            href="https://buymeacoffee.com/qrewa8p8qz"
-            target="_blank"
-            rel="noopener noreferrer"
-            className={cn(
-              'btn-gradient-primary',
-              'w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg text-sm font-medium'
-            )}
-          >
-            <span>If you like the app, buy me a coffee</span>
-            <Coffee className="w-4 h-4" />
-          </a>
-        </div>
       </div>
     </div>
   );
