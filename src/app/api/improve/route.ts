@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
 
     // Build the Responses API request (always gpt-5 and structured)
     const baseRequest: any = {
-      model: 'gpt-5-mini',
+      model: 'gpt-5',
       instructions: `
         You are a helpful assistant. Return only valid JSON matching the provided JSON schema. 
         Keep the original structure, style and meaning of the text.
@@ -96,7 +96,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Ensure shape and return exactly the 5 fields
+    // Ensure shape and return exactly the 6 fields
     const result = {
       originalText: String(parsed.originalText ?? text),
       improvedText: String(parsed.improvedText ?? ''),
