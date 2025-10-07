@@ -1,36 +1,64 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Thoughts to Text
+
+A progressive web app built with Next.js that turns voice notes into polished, shareable text. Capture ideas with audio, optionally add photos, and let AI handle transcription, rewriting, and metadata—online or offline.
+
+## Table of Contents
+- [Overview](#overview)
+- [Key Features](#key-features)
+- [Tech Stack](#tech-stack)
+- [Getting Started](#getting-started)
+- [Development Scripts](#development-scripts)
+- [Project Structure](#project-structure)
+- [Data Storage & Privacy](#data-storage--privacy)
+
+## Overview
+Thoughts to Text provides an end-to-end workflow for capturing spoken ideas and refining them into usable text. The app ships as an installable PWA with offline-first storage, background processing, and a notes workspace for reviewing and editing finished transcripts. It relies on your own OpenAI API key, which is stored locally on-device and added to API calls only when needed.
+
+## Key Features
+- **Voice-first capture experience.** Record up to 10 minutes of audio with haptic/accessibility feedback, auto-save guards, and real-time status indicators. Attach a photo from the device camera or file system before saving the note.【F:src/components/RecordingInterface.tsx†L49-L214】【F:src/app/page.tsx†L16-L119】
+- **Automated transcription and rewriting.** Submit recordings to OpenAI for transcription, generate rewritten summaries using customizable prompts, and produce AI-assisted titles, descriptions, and keywords—all without leaving the note view.【F:src/app/api/transcribe/route.ts†L8-L102】【F:src/components/RecordingInterface.tsx†L445-L624】【F:src/app/notes/[id]/page.tsx†L118-L318】
+- **Rich note management.** Browse, search, and filter notes; expand them inline when offline; share or delete with confirmation flows; and edit metadata directly from the detail page.【F:src/app/notes/page.tsx†L1-L243】【F:src/app/notes/[id]/page.tsx†L320-L515】
+- **Offline-first PWA.** Works without a network by persisting data in IndexedDB via LocalForage, queueing background processing tasks, and registering a service worker with custom events for sync and install prompts.【F:src/lib/storage.ts†L1-L120】【F:src/lib/offline-processing.ts†L1-L120】【F:src/app/layout.tsx†L1-L118】
+- **Customizable settings.** Configure your OpenAI API key, theme, default language, and bespoke rewrite prompts. Install the app to your device directly from the Settings screen when the browser signals availability.【F:src/components/SettingsForm.tsx†L1-L210】
+
+## Tech Stack
+- [Next.js 15 App Router](https://nextjs.org/) with React 19 and TypeScript.【F:package.json†L1-L38】
+- Tailwind CSS v4 for styling plus Radix UI primitives and custom animation utilities.【F:package.json†L18-L38】
+- LocalForage-backed storage for notes, audio, photos, and encrypted API keys.【F:src/lib/storage.ts†L1-L120】
+- OpenAI SDK for transcription, rewriting, and metadata generation endpoints.【F:src/app/api/transcribe/route.ts†L1-L118】【F:package.json†L21-L38】
 
 ## Getting Started
+1. **Install dependencies.**
+   ```bash
+   npm install
+   ```
+2. **Start the development server.**
+   ```bash
+   npm run dev
+   ```
+3. **Open the app.** Visit [http://localhost:3000](http://localhost:3000) in your browser. The UI auto-reloads as you edit code.
+4. **Provide your OpenAI API key.** Navigate to **Settings → OpenAI API Key**, paste your key (must start with `sk-`), and save. The key is stored locally and attached to API requests through the app’s secure client-side storage helpers.【F:src/components/SettingsForm.tsx†L74-L210】【F:src/lib/storage.ts†L49-L120】
+5. **Record your first note.** Use the home page interface to capture audio, add optional photos, run transcription/rewrites, and save the note to your local library.【F:src/app/page.tsx†L16-L119】【F:src/components/RecordingInterface.tsx†L49-L624】
 
-First, run the development server:
+> **Requirements:** Use Node.js 18.18+ (per Next.js 15) and npm 9+ or another compatible package manager.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## Development Scripts
+- `npm run dev` – Launch the dev server with Turbopack for hot reloading.【F:package.json†L4-L17】
+- `npm run build` – Create an optimized production build (also via Turbopack).【F:package.json†L4-L17】
+- `npm run start` – Serve the production build.
+- `npm run test` – Run the Vitest test suite (unit, hooks, components, and integration). Additional scoped scripts like `test:unit`, `test:integration`, and `test:components` are available for targeted runs.【F:package.json†L8-L31】
+
+## Project Structure
+```
+src/
+├─ app/                # App Router routes, layouts, and API handlers
+├─ components/         # UI building blocks (recording, notes, settings, toasts, etc.)
+├─ contexts/           # Global providers (theme, app state)
+├─ hooks/              # Client hooks (recording, offline status, filters)
+├─ lib/                # Storage, API utilities, offline processing helpers
+└─ types/              # Shared TypeScript definitions
+public/                # Manifest, icons, and static assets
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Data Storage & Privacy
+All notes, audio, photos, settings, and API keys are stored locally in the browser via LocalForage with lightweight encryption for the API key. Nothing is uploaded to external servers except direct calls you make to OpenAI’s APIs using your own key. You can clear stored content at any time from the Settings page.【F:src/lib/storage.ts†L1-L166】【F:src/components/SettingsForm.tsx†L140-L209】
