@@ -15,6 +15,7 @@ export interface RewriteControlsProps {
   isRewriting: boolean;
   transcript: string | null;
   onRewrite: () => void;
+  disabled?: boolean;
 }
 
 export function RewriteControls({
@@ -27,8 +28,10 @@ export function RewriteControls({
   isRewriting,
   transcript,
   onRewrite,
+  disabled = false,
 }: RewriteControlsProps) {
   const isDisabled =
+    disabled ||
     isRewriting ||
     transcript === null ||
     (typeof transcript === "string" && transcript.trim().length === 0);
@@ -38,7 +41,7 @@ export function RewriteControls({
       <select
         value={selectedPrompt}
         onChange={(e) => onChangePrompt(e.target.value)}
-        disabled={isRewriting}
+        disabled={isRewriting || disabled}
         className="w-full md:w-1/3 p-2 rounded-lg border border-border bg-background text-foreground text-sm transition-colors focus:border-transparent disabled:opacity-50"
       >
         {rewritePrompts.map((prompt) => (
@@ -51,7 +54,7 @@ export function RewriteControls({
       {/* Language selection */}
       <select
         value={selectedLanguage}
-        disabled={isRewriting}
+        disabled={isRewriting || disabled}
         onChange={(e) => onChangeLanguage(e.target.value)}
         className="w-full md:w-1/3 p-2 rounded-lg border border-border bg-background text-foreground text-sm transition-colors focus:border-transparent disabled:opacity-50"
       >

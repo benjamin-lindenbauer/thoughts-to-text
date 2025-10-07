@@ -3,6 +3,7 @@ import { retrieveNote, updateNote, retrieveApiKey } from '@/lib/storage';
 import { transcribeAudio, generateNoteMetadata } from '@/lib/api';
 
 const OFFLINE_PENDING_NOTES_KEY = 'offline_pending_notes';
+export const OFFLINE_QUEUE_CHANGE_EVENT = 'offline-processing:queue-changed';
 let isProcessing = false;
 
 function isBrowser(): boolean {
@@ -28,8 +29,19 @@ function saveQueue(ids: string[]): void {
 
   try {
     window.localStorage.setItem(OFFLINE_PENDING_NOTES_KEY, JSON.stringify(ids));
+    notifyQueueChange(ids);
   } catch (error) {
     console.error('Failed to persist offline pending notes queue:', error);
+  }
+}
+
+function notifyQueueChange(ids: string[]): void {
+  if (!isBrowser()) return;
+  try {
+    const event = new CustomEvent<string[]>(OFFLINE_QUEUE_CHANGE_EVENT, { detail: ids });
+    window.dispatchEvent(event);
+  } catch (error) {
+    console.error('Failed to dispatch offline queue change event:', error);
   }
 }
 
@@ -50,6 +62,10 @@ export function clearNoteFromPostProcessingQueue(noteId: string): void {
 
 export function hasPendingOfflineNotes(): boolean {
   return getQueue().length > 0;
+}
+
+export function getPendingOfflineNoteIds(): string[] {
+  return getQueue();
 }
 
 export async function processPendingOfflineNotes(

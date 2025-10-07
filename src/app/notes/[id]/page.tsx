@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { AppLayout } from "@/components/AppLayout";
 import { AudioPlayer } from "@/components/AudioPlayer";
@@ -23,6 +23,7 @@ import { CopyButton } from '@/components/CopyButton';
 import { RewriteControls } from '@/components/RewriteControls';
 import { DEFAULT_REWRITE_PROMPTS, LANGUAGE_OPTIONS } from '@/lib/utils';
 import { useAppState } from '@/hooks/useAppState';
+import { useOfflineProcessingQueue } from '@/hooks/useOfflineProcessingQueue';
 
 export default function NoteDetailsPage() {
   const params = useParams();
@@ -45,6 +46,11 @@ export default function NoteDetailsPage() {
   const [selectedLanguage, setSelectedLanguage] = useState('auto');
 
   const noteId = params.id as string;
+  const offlineQueueIds = useOfflineProcessingQueue();
+  const isInProcessingQueue = useMemo(
+    () => offlineQueueIds.includes(noteId),
+    [offlineQueueIds, noteId]
+  );
 
   // Access settings for rewrite prompts/defaults
   const { settings } = useAppState();
@@ -108,6 +114,7 @@ export default function NoteDetailsPage() {
   // Handle text rewriting (persist result to the note)
   const handleRewrite = useCallback(async () => {
     if (!note?.transcript || !note.transcript.trim()) return;
+    if (isInProcessingQueue) return;
 
     setIsRewriting(true);
 
@@ -149,7 +156,7 @@ export default function NoteDetailsPage() {
     } finally {
       setIsRewriting(false);
     }
-  }, [note, selectedPrompt, selectedLanguage, rewritePrompts]);
+  }, [note, selectedPrompt, selectedLanguage, rewritePrompts, isInProcessingQueue]);
 
   // Save edited note
   const saveNote = async () => {
@@ -254,7 +261,7 @@ export default function NoteDetailsPage() {
 
   // Transcribe audio for this note
   const handleTranscribe = async () => {
-    if (!note) return;
+    if (!note || isInProcessingQueue) return;
     try {
       setTranscribing(true);
       setError(null);
@@ -493,7 +500,20 @@ export default function NoteDetailsPage() {
                   <div className="text-xs bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
                     {note.language.toUpperCase()}
                   </div>
+                  {isInProcessingQueue && (
+                    <Badge
+                      variant="outline"
+                      className="uppercase tracking-wide text-[10px] font-semibold"
+                    >
+                      Queued
+                    </Badge>
+                  )}
                 </div>
+                {isInProcessingQueue && (
+                  <p className="text-xs text-muted-foreground">
+                    This note is queued for automatic processing. Actions will unlock once processing finishes.
+                  </p>
+                )}
               </div>
             </CardHeader>
 
@@ -635,6 +655,7 @@ export default function NoteDetailsPage() {
                     isRewriting={isRewriting}
                     transcript={note.transcript}
                     onRewrite={handleRewrite}
+                    disabled={isInProcessingQueue}
                   />
                 </>
               ) : (
@@ -645,7 +666,7 @@ export default function NoteDetailsPage() {
                       variant="outline"
                       size="sm"
                       onClick={handleTranscribe}
-                      disabled={transcribing}
+                      disabled={transcribing || isInProcessingQueue}
                       className="flex items-center gap-2 w-full md:w-1/3"
                     >
                       {transcribing ? (
@@ -653,7 +674,7 @@ export default function NoteDetailsPage() {
                       ) : (
                         <FileText className="h-4 w-4" />
                       )}
-                      {transcribing ? 'Transcribing…' : 'Transcribe'}
+                      {transcribing ? 'Transcribing...' : 'Transcribe'}
                     </Button>
                   )}
                 </div>

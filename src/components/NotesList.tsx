@@ -26,6 +26,7 @@ interface NotesListProps {
     onExpandNote?: (note: Note) => void;
     onCollapseNote?: () => void;
     renderExpanded?: (note: Note) => React.ReactNode;
+    processingNoteIds?: ReadonlySet<string>;
 }
 
 interface ContextMenuState {
@@ -50,6 +51,7 @@ export function NotesList({
     onExpandNote,
     onCollapseNote,
     renderExpanded,
+    processingNoteIds,
 }: NotesListProps) {
     const [contextMenu, setContextMenu] = useState<ContextMenuState>({
         isOpen: false,
@@ -304,6 +306,7 @@ export function NotesList({
                 className={className}
             >
                 {notes.map((note) => {
+                    const isQueued = processingNoteIds?.has(note.id) ?? false;
                     return (
                         <LazyComponent
                             key={note.id}
@@ -341,13 +344,23 @@ export function NotesList({
                                 tabIndex={0}
                                 data-note-id={note.id}
                                 aria-expanded={((isOnline === false) || (typeof navigator !== 'undefined' && navigator.onLine === false)) && expandedNoteId === note.id}
-                                aria-label={`Note: ${note.title || 'Untitled'}. Created ${dateFns.formatDistanceToNow(note.createdAt, { addSuffix: true })}. Duration ${formatDuration(note.duration)}.`}
+                                aria-label={`Note: ${note.title || 'Untitled'}. Created ${dateFns.formatDistanceToNow(note.createdAt, { addSuffix: true })}. Duration ${formatDuration(note.duration)}.${isQueued ? ' Queued for processing.' : ''}`}
                             >
                             <div className="flex justify-between items-start mb-3">
                                 <div className="flex-1 min-w-0">
-                                    <h3 className="font-medium text-foreground truncate">
-                                        {note.title || 'Untitled Note'}
-                                    </h3>
+                                    <div className="flex items-center gap-2">
+                                        <h3 className="font-medium text-foreground truncate">
+                                            {note.title || 'Untitled Note'}
+                                        </h3>
+                                        {isQueued && (
+                                            <Badge
+                                                variant="outline"
+                                                className="uppercase tracking-wide text-[10px] font-semibold"
+                                            >
+                                                Queued
+                                            </Badge>
+                                        )}
+                                    </div>
                                     <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
                                         <span className="flex items-center gap-1">
                                             <Calendar className="w-3 h-3" />

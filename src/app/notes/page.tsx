@@ -16,6 +16,7 @@ import { DeleteConfirmationDialog } from "@/components/DeleteConfirmationDialog"
 import { Note } from "@/types";
 import { getAllNotes, deleteNote as deleteNoteStorage, retrieveNote } from '@/lib/storage';
 import { useOffline } from '@/hooks/useOffline';
+import { useOfflineProcessingQueue } from '@/hooks/useOfflineProcessingQueue';
 import { AudioPlayer } from "@/components/AudioPlayer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { OfflineIndicator } from '@/components/OfflineIndicator';
@@ -172,6 +173,8 @@ function useNotes() {
 export default function NotesPage() {
   const router = useRouter();
   const { isOnline } = useOffline();
+  const offlineQueueIds = useOfflineProcessingQueue();
+  const processingNoteIds = useMemo(() => new Set(offlineQueueIds), [offlineQueueIds]);
   const [searchQuery, setSearchQuery] = useState('');
   const [filters, setFilters] = useState<SearchFilters>(DEFAULT_FILTERS);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -377,6 +380,7 @@ export default function NotesPage() {
             className="flex-1 min-h-0"
             onEndReached={hasMore ? handleEndReached : undefined}
             hasMore={hasMore}
+            processingNoteIds={processingNoteIds}
           />
         </div>
 
