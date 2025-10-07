@@ -1,10 +1,11 @@
 'use client';
 
-import React, { createContext, useContext, useReducer, useEffect, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useReducer, useEffect, useState, ReactNode, useRef } from 'react';
 import { AppState, AppAction, AppSettings } from '@/types';
 import { retrieveSettings, getAllNotes, storeSettings } from '@/lib/storage';
 import { StatePersistence } from '@/lib/state-persistence';
 import { DEFAULT_REWRITE_PROMPTS } from '@/lib/utils';
+import { processPendingOfflineNotes, hasPendingOfflineNotes } from '@/lib/offline-processing';
 
 // Initial state
 const initialState: AppState = {
@@ -353,6 +354,31 @@ export function AppProvider({ children }: { children: ReactNode }) {
       window.removeEventListener('offline', handleOffline);
     };
   }, [isMounted]);
+
+  const previousOfflineState = useRef<boolean | null>(null);
+
+  useEffect(() => {
+    if (!isMounted || !state.isNotesLoaded || !state.isSettingsLoaded) {
+      return;
+    }
+
+    const wasOffline = previousOfflineState.current;
+    const isNowOffline = state.isOffline;
+
+    const shouldProcess =
+      (wasOffline === null && !isNowOffline && hasPendingOfflineNotes()) ||
+      (wasOffline === true && isNowOffline === false);
+
+    if (shouldProcess) {
+      processPendingOfflineNotes(note => {
+        dispatch({ type: 'UPDATE_NOTE', payload: note });
+      }).catch(error => {
+        console.error('Failed to process offline notes after reconnecting:', error);
+      });
+    }
+
+    previousOfflineState.current = isNowOffline;
+  }, [state.isOffline, state.isNotesLoaded, state.isSettingsLoaded, isMounted, dispatch]);
 
   return (
     <AppContext.Provider value={{ state, dispatch }}>

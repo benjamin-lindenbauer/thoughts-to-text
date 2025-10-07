@@ -14,6 +14,7 @@ import { RewritePrompt, Note } from '@/types';
 import Link from 'next/link';
 import { CopyButton } from "@/components/CopyButton";
 import { RewriteControls } from "@/components/RewriteControls";
+import { markNoteForPostProcessing } from '@/lib/offline-processing';
 
 interface RecordingInterfaceProps {
   onSave?: (noteId: string, note: Note) => void;
@@ -597,6 +598,10 @@ export function RecordingInterface({
       };
 
       await notes.addNote(newNote);
+
+      if (!isOnline && (!transcript || !transcript.trim())) {
+        markNoteForPostProcessing(noteId);
+      }
 
       haptic.buttonPress();
       announce('Note saved', 'polite');
