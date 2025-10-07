@@ -1,6 +1,6 @@
 {
   "name": "Thoughts to Text",
-  "short_name": "ThoughtsToText",
+  "short_name": "Thoughts to Text",
   "description": "Voice recording and AI transcription app",
   "start_url": "/",
   "display": "standalone",
