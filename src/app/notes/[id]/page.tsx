@@ -451,7 +451,7 @@ export default function NoteDetailsPage() {
 
         {/* Error Display */}
         {error && (
-          <div className="mb-6">
+          <div className="mt-4">
             <APIErrorDisplay
               error={{
                 type: 'unknown',
