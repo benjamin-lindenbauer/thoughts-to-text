@@ -95,6 +95,18 @@ export async function transcribeAudio(
     try {
       const { errorLogger } = await import('./error-logging');
       
+      
+      // OpenAI Whisper API has a 25MB file size limit
+      const MAX_FILE_SIZE = 25 * 1024 * 1024; // 25MB
+      if (audioBlob.size > MAX_FILE_SIZE) {
+        const sizeMB = (audioBlob.size / (1024 * 1024)).toFixed(1);
+        throw {
+          type: 'validation',
+          message: `Audio file is too large (${sizeMB}MB). Maximum file size is 25MB.`,
+          retryable: false,
+        } as APIError;
+      }
+      
       errorLogger.info('api', 'Starting audio transcription', {
         audioSize: audioBlob.size,
         language,
@@ -272,6 +284,8 @@ export function getErrorMessage(error: APIError): string {
         ? ` Please try again in ${error.retryAfter} seconds.`
         : ' Please try again later.';
       return `Rate limit exceeded.${retryMessage}`;
+    case 'validation':
+      return error.message; // Validation errors already have user-friendly messages
     case 'network':
       return 'Network error. Please check your internet connection and try again.';
     case 'server':

@@ -59,8 +59,10 @@ export function RecordingInterface({
   const [showRewriteSection, setShowRewriteSection] = useState(false);
 
   // Recording time limits and helpers
+  // Limit to 10 minutes to keep transcription time reasonable
   const MAX_RECORDING_TIME_SECONDS = 10 * 60; // 10 minutes
   const MAX_RECORDING_TIME_MS = MAX_RECORDING_TIME_SECONDS * 1000;
+  const MAX_FILE_SIZE_BYTES = 25 * 1024 * 1024; // 25MB OpenAI limit
 
   // Use app state hooks
   const { notes, settings } = useAppState();
@@ -198,7 +200,7 @@ export function RecordingInterface({
     // Keep the pipeline simple: record directly in a supported format (webm/opus) without conversion
     autoCompress: false,
     mimeType: 'audio/webm;codecs=opus',
-    maxDuration: 10 * 60 * 1000 // 10 minutes max
+    maxDuration: MAX_RECORDING_TIME_MS // 10 minutes max
   });
 
   // Extra safety: ensure we hard-stop at the max time in case the hook's timer is delayed
@@ -453,6 +455,14 @@ export function RecordingInterface({
   const handleTranscription = useCallback(async (audioBlob: Blob) => {
     if (!audioBlob) return;
 
+    // Check file size before transcription
+    if (audioBlob.size > MAX_FILE_SIZE_BYTES) {
+      const sizeMB = (audioBlob.size / (1024 * 1024)).toFixed(1);
+      const errorMessage = `Recording is too large (${sizeMB}MB). Maximum file size is 25MB. Please record a shorter audio.`;
+      onError?.(errorMessage);
+      return;
+    }
+
     setIsTranscribing(true);
 
     try {
@@ -473,7 +483,7 @@ export function RecordingInterface({
     } finally {
       setIsTranscribing(false);
     }
-  }, [onError]);
+  }, [onError, MAX_FILE_SIZE_BYTES, getApiKey]);
 
   // Handle text rewriting
   const handleRewrite = useCallback(async () => {

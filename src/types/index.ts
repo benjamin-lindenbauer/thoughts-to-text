@@ -40,7 +40,7 @@ export interface RecordingState {
 
 // Additional utility types
 export interface APIError {
-  type: 'network' | 'auth' | 'quota' | 'server' | 'unknown';
+  type: 'network' | 'auth' | 'quota' | 'server' | 'unknown' | 'validation';
   message: string;
   retryable: boolean;
   retryAfter?: number;
