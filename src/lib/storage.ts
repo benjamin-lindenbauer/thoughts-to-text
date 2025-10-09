@@ -139,7 +139,7 @@ export async function createNote(note: Note): Promise<void> {
     // Check storage quota before creating note
     const { checkStorageBeforeOperation, handleStorageQuotaError } = await import('./storage-quota');
     const { errorLogger } = await import('./error-logging');
-
+    
     // Estimate note size
     const estimatedSize = estimateNoteSize(note);
     
@@ -161,25 +161,43 @@ export async function createNote(note: Note): Promise<void> {
       });
     }
     
-    // Store audio blob separately before metadata to avoid partially hydrated notes
-    if (note.audioBlob) {
-      await audioStore.setItem(note.id, note.audioBlob);
-    }
-
-    // Store photo blob separately if exists
-    if (note.photoBlob) {
-      await photoStore.setItem(note.id, note.photoBlob);
-    }
-
-    // Store note metadata (without blobs) as the final step so listings only
-    // appear once associated blobs are fully persisted.
+    // Store note metadata (without blobs) after blobs are persisted
     const noteMetadata = {
       ...note,
       audioBlob: undefined,
       photoBlob: undefined
     };
 
-    await notesStore.setItem(note.id, noteMetadata);
+    let audioStored = false;
+    let photoStored = false;
+
+    try {
+      // Persist audio before metadata so readers never see a note without its audio
+      if (note.audioBlob) {
+        await audioStore.setItem(note.id, note.audioBlob);
+        audioStored = true;
+      } else {
+        await audioStore.removeItem(note.id);
+      }
+
+      // Persist photo before metadata as well
+      if (note.photoBlob) {
+        await photoStore.setItem(note.id, note.photoBlob);
+        photoStored = true;
+      } else {
+        await photoStore.removeItem(note.id);
+      }
+
+      await notesStore.setItem(note.id, noteMetadata);
+    } catch (blobError) {
+      if (audioStored && note.audioBlob) {
+        await audioStore.removeItem(note.id);
+      }
+      if (photoStored && note.photoBlob) {
+        await photoStore.removeItem(note.id);
+      }
+      throw blobError;
+    }
 
     errorLogger.info('storage', 'Note created successfully', {
       noteId: note.id,
@@ -225,36 +243,17 @@ function estimateNoteSize(note: Note): number {
   return size;
 }
 
-async function getBlobWithRetry(store: typeof audioStore, id: string, attempts = 5, delayMs = 200): Promise<Blob | null> {
-  let attempt = 0;
-  while (attempt < attempts) {
-    const blob = await store.getItem<Blob>(id);
-    if (blob) {
-      return blob;
-    }
-
-    if (attempt < attempts - 1) {
-      await new Promise((resolve) => setTimeout(resolve, delayMs));
-    }
-
-    attempt += 1;
-  }
-
-  return null;
-}
-
 export async function retrieveNote(id: string): Promise<Note | null> {
   try {
     const noteMetadata = await notesStore.getItem<Omit<Note, 'audioBlob' | 'photoBlob'>>(id);
     if (!noteMetadata) return null;
-
-    // Retrieve audio blob with retry to handle cases where the binary data is
-    // still being written (e.g., when the app was backgrounded mid-save).
-    const audioBlob = await getBlobWithRetry(audioStore, id, 10, 300);
+    
+    // Retrieve audio blob
+    const audioBlob = await audioStore.getItem<Blob>(id);
     if (!audioBlob) {
       throw new Error('Audio blob not found for note');
     }
-
+    
     // Retrieve photo blob if exists
     const photoBlob = await photoStore.getItem<Blob>(id);
     
@@ -285,16 +284,22 @@ export async function updateNote(note: Note): Promise<void> {
       photoBlob: undefined
     };
     
-    await notesStore.setItem(note.id, noteMetadata);
-    
-    // Update audio blob if provided
-    if (note.audioBlob) {
-      await audioStore.setItem(note.id, note.audioBlob);
-    }
-    
-    // Update photo blob if provided
-    if (note.photoBlob) {
-      await photoStore.setItem(note.id, note.photoBlob);
+    try {
+      if (note.audioBlob) {
+        await audioStore.setItem(note.id, note.audioBlob);
+      } else {
+        await audioStore.removeItem(note.id);
+      }
+
+      if (note.photoBlob) {
+        await photoStore.setItem(note.id, note.photoBlob);
+      } else {
+        await photoStore.removeItem(note.id);
+      }
+
+      await notesStore.setItem(note.id, noteMetadata);
+    } catch (blobError) {
+      throw blobError;
     }
   } catch (error) {
     throw new Error(`Failed to update note: ${error instanceof Error ? error.message : 'Unknown error'}`);
