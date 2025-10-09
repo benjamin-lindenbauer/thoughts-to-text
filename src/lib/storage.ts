@@ -139,7 +139,7 @@ export async function createNote(note: Note): Promise<void> {
     // Check storage quota before creating note
     const { checkStorageBeforeOperation, handleStorageQuotaError } = await import('./storage-quota');
     const { errorLogger } = await import('./error-logging');
-    
+
     // Estimate note size
     const estimatedSize = estimateNoteSize(note);
     
@@ -161,25 +161,26 @@ export async function createNote(note: Note): Promise<void> {
       });
     }
     
-    // Store note metadata (without blobs)
+    // Store audio blob separately before metadata to avoid partially hydrated notes
+    if (note.audioBlob) {
+      await audioStore.setItem(note.id, note.audioBlob);
+    }
+
+    // Store photo blob separately if exists
+    if (note.photoBlob) {
+      await photoStore.setItem(note.id, note.photoBlob);
+    }
+
+    // Store note metadata (without blobs) as the final step so listings only
+    // appear once associated blobs are fully persisted.
     const noteMetadata = {
       ...note,
       audioBlob: undefined,
       photoBlob: undefined
     };
-    
+
     await notesStore.setItem(note.id, noteMetadata);
-    
-    // Store audio blob separately
-    if (note.audioBlob) {
-      await audioStore.setItem(note.id, note.audioBlob);
-    }
-    
-    // Store photo blob separately if exists
-    if (note.photoBlob) {
-      await photoStore.setItem(note.id, note.photoBlob);
-    }
-    
+
     errorLogger.info('storage', 'Note created successfully', {
       noteId: note.id,
       hasAudio: !!note.audioBlob,
@@ -224,17 +225,36 @@ function estimateNoteSize(note: Note): number {
   return size;
 }
 
+async function getBlobWithRetry(store: typeof audioStore, id: string, attempts = 5, delayMs = 200): Promise<Blob | null> {
+  let attempt = 0;
+  while (attempt < attempts) {
+    const blob = await store.getItem<Blob>(id);
+    if (blob) {
+      return blob;
+    }
+
+    if (attempt < attempts - 1) {
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+    }
+
+    attempt += 1;
+  }
+
+  return null;
+}
+
 export async function retrieveNote(id: string): Promise<Note | null> {
   try {
     const noteMetadata = await notesStore.getItem<Omit<Note, 'audioBlob' | 'photoBlob'>>(id);
     if (!noteMetadata) return null;
-    
-    // Retrieve audio blob
-    const audioBlob = await audioStore.getItem<Blob>(id);
+
+    // Retrieve audio blob with retry to handle cases where the binary data is
+    // still being written (e.g., when the app was backgrounded mid-save).
+    const audioBlob = await getBlobWithRetry(audioStore, id, 10, 300);
     if (!audioBlob) {
       throw new Error('Audio blob not found for note');
     }
-    
+
     // Retrieve photo blob if exists
     const photoBlob = await photoStore.getItem<Blob>(id);
     
