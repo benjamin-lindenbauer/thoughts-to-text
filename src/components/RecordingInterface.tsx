@@ -622,10 +622,9 @@ export function RecordingInterface({
       // Navigation is handled by the parent via onSave
 
     } catch (error) {
+      setIsSaving(false);
       console.error('Failed to save note:', error);
       onError?.('Failed to save note. Please try again.');
-    } finally {
-      setIsSaving(false);
     }
   }, [recordingState.audioBlob, recordingState.duration, transcript, rewrittenText, selectedLanguage, photo, notes, haptic, announce, onError]);
 
