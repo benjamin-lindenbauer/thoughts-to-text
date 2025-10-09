@@ -843,6 +843,7 @@ export function RecordingInterface({
                 isRewriting={isRewriting}
                 transcript={transcript || ''}
                 onRewrite={handleRewrite}
+                disabled={isRewriting || isTranscribing || isSaving}
               />
             </section>
           ) : null}
