@@ -7,6 +7,7 @@ import { BookOpenText, Mic, Settings } from 'lucide-react';
 import { OfflineIndicatorCompact } from './OfflineIndicator';
 import { cn } from '@/lib/utils';
 import { NAV_ROUTE_ORDER, NavRoute } from '@/lib/nav-order';
+import { useRecording } from '@/hooks/useAppState';
 
 interface NavItem {
   href: string;
@@ -29,6 +30,8 @@ const navItems: NavItem[] = NAV_ROUTE_ORDER.map((href) => ({
 
 export function NavigationBar() {
   const pathname = usePathname();
+  const { recording } = useRecording();
+  const isRecordingActive = recording.isRecording;
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 h-20 bg-background/95 backdrop-blur-sm border-t border-border safe-area-bottom">
@@ -44,7 +47,8 @@ export function NavigationBar() {
             const isActive =
               pathname === item.href ||
               (item.href !== '/' && !!pathname && pathname.startsWith(item.href + '/'));
-            
+            const isDisabled = isRecordingActive && !isActive;
+
             return (
               <Link
                 key={item.href}
@@ -56,8 +60,12 @@ export function NavigationBar() {
                   isActive
                     ? 'text-indigo-500 bg-gradient-to-r from-indigo-100 to-purple-100 shadow-sm'
                     : 'text-muted-foreground hover:text-foreground hover:bg-accent',
+                  isDisabled ? 'pointer-events-none opacity-60' : '',
                   item.className
                 )}
+                aria-disabled={isDisabled}
+                tabIndex={isDisabled ? -1 : undefined}
+                title={isDisabled ? 'Finish recording to switch tabs' : undefined}
               >
                 <Icon className={cn(
                   'transition-transform duration-200',

@@ -9,6 +9,8 @@ interface Options {
   horizontalIntentRatio?: number;
   // Max time (ms) between touchstart and touchend to count as a swipe
   maxDurationMs?: number;
+  // Whether swipe navigation is enabled
+  enabled?: boolean;
 }
 
 export function useSwipeNavigation(
@@ -19,12 +21,17 @@ export function useSwipeNavigation(
     threshold = 60,
     horizontalIntentRatio = 1.5,
     maxDurationMs = 800,
+    enabled = true,
   } = options;
 
   const router = useRouter();
   const pathname = usePathname();
 
   useEffect(() => {
+    if (!enabled) {
+      return;
+    }
+
     const el = containerRef.current;
     if (!el) return;
 
@@ -118,5 +125,13 @@ export function useSwipeNavigation(
       el.removeEventListener('touchmove', onTouchMove as any);
       el.removeEventListener('touchend', onTouchEnd as any);
     };
-  }, [containerRef, pathname, router, threshold, horizontalIntentRatio, maxDurationMs]);
+  }, [
+    containerRef,
+    pathname,
+    router,
+    threshold,
+    horizontalIntentRatio,
+    maxDurationMs,
+    enabled,
+  ]);
 }

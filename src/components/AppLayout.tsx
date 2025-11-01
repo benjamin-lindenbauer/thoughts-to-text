@@ -7,6 +7,7 @@ import { PWAInstallPrompt } from './PWAInstallPrompt';
 import { pwaManager } from '@/lib/pwa';
 import { cn } from '@/lib/utils';
 import { useSwipeNavigation } from '@/hooks/useSwipeNavigation';
+import { useRecording } from '@/hooks/useAppState';
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -14,12 +15,14 @@ interface AppLayoutProps {
   className?: string;
 }
 
-export function AppLayout({ 
-  children, 
+export function AppLayout({
+  children,
   header,
   className
 }: AppLayoutProps) {
   const scrollRef = useRef<HTMLElement | null>(null);
+  const { recording } = useRecording();
+  const isRecordingActive = recording.isRecording;
   useEffect(() => {
     // Initialize PWA manager in production and on localhost for dev testing
     const isLocalhost = typeof window !== 'undefined' && (
@@ -38,6 +41,7 @@ export function AppLayout({
     threshold: 60,
     horizontalIntentRatio: 1.5,
     maxDurationMs: 800,
+    enabled: !isRecordingActive,
   });
 
   return (
