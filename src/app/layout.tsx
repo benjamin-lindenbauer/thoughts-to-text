@@ -78,7 +78,11 @@ export default function RootLayout({
 {`
   // Initialize PWA features
   // Only register service worker in production to avoid interfering with other localhost apps
-  if ('serviceWorker' in navigator && process.env.NODE_ENV === 'production') {
+  // Check if we're in production by checking if the hostname is not localhost
+  const isProduction = !window.location.hostname.includes('localhost') && 
+                       !window.location.hostname.includes('127.0.0.1');
+  
+  if ('serviceWorker' in navigator && isProduction) {
     window.addEventListener('load', async function() {
       try {
         const registration = await navigator.serviceWorker.register('/sw.js', {
