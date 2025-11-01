@@ -110,7 +110,7 @@ export default function Home() {
   }, [pending]);
 
   return (
-    <AppLayout>
+    <AppLayout blockNavigation={pending}>
       {showRecordingUI && (
         <div className={`w-full flex flex-col items-center text-center pt-2 pb-4 bg-background ${isLoaded ? animations.fadeIn : 'opacity-0'}`}>
           <div className="flex items-center justify-center gap-2 w-full">

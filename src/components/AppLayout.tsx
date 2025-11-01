@@ -7,32 +7,31 @@ import { PWAInstallPrompt } from './PWAInstallPrompt';
 import { pwaManager } from '@/lib/pwa';
 import { cn } from '@/lib/utils';
 import { useSwipeNavigation } from '@/hooks/useSwipeNavigation';
-import { useRecording } from '@/hooks/useAppState';
 
 interface AppLayoutProps {
   children: React.ReactNode;
   header?: React.ReactNode;
   className?: string;
+  blockNavigation?: boolean;
 }
 
 export function AppLayout({
   children,
   header,
-  className
+  className,
+  blockNavigation = false
 }: AppLayoutProps) {
   const scrollRef = useRef<HTMLElement | null>(null);
-  const { recording } = useRecording();
-  const isRecordingActive = recording.isRecording;
 
   const confirmNavigationWhileRecording = useCallback((_nextRoute: string) => {
-    if (!isRecordingActive) {
+    if (!blockNavigation) {
       return true;
     }
 
     return window.confirm(
       'You have an unsaved recording. Leave this page and lose your changes?'
     );
-  }, [isRecordingActive]);
+  }, [blockNavigation]);
   useEffect(() => {
     // Initialize PWA manager in production and on localhost for dev testing
     const isLocalhost = typeof window !== 'undefined' && (
