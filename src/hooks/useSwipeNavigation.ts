@@ -11,6 +11,8 @@ interface Options {
   maxDurationMs?: number;
   // Whether swipe navigation is enabled
   enabled?: boolean;
+  // Called before navigating. Return false to cancel navigation.
+  beforeNavigate?: (nextRoute: string) => boolean | void;
 }
 
 export function useSwipeNavigation(
@@ -22,6 +24,7 @@ export function useSwipeNavigation(
     horizontalIntentRatio = 1.5,
     maxDurationMs = 800,
     enabled = true,
+    beforeNavigate,
   } = options;
 
   const router = useRouter();
@@ -112,7 +115,11 @@ export function useSwipeNavigation(
       }
 
       if (nextIndex !== currentIndex) {
-        router.push(NAV_ROUTE_ORDER[nextIndex]);
+        const nextRoute = NAV_ROUTE_ORDER[nextIndex];
+        if (beforeNavigate && beforeNavigate(nextRoute) === false) {
+          return;
+        }
+        router.push(nextRoute);
       }
     };
 
@@ -133,5 +140,6 @@ export function useSwipeNavigation(
     horizontalIntentRatio,
     maxDurationMs,
     enabled,
+    beforeNavigate,
   ]);
 }

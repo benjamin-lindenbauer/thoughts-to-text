@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef } from 'react';
+import React, { useCallback, useEffect, useRef } from 'react';
 import { NavigationBar } from './NavigationBar';
 import { OfflineIndicator } from './OfflineIndicator';
 import { PWAInstallPrompt } from './PWAInstallPrompt';
@@ -23,6 +23,16 @@ export function AppLayout({
   const scrollRef = useRef<HTMLElement | null>(null);
   const { recording } = useRecording();
   const isRecordingActive = recording.isRecording;
+
+  const confirmNavigationWhileRecording = useCallback((_nextRoute: string) => {
+    if (!isRecordingActive) {
+      return true;
+    }
+
+    return window.confirm(
+      'You have an unsaved recording. Leave this page and lose your changes?'
+    );
+  }, [isRecordingActive]);
   useEffect(() => {
     // Initialize PWA manager in production and on localhost for dev testing
     const isLocalhost = typeof window !== 'undefined' && (
@@ -41,7 +51,7 @@ export function AppLayout({
     threshold: 60,
     horizontalIntentRatio: 1.5,
     maxDurationMs: 800,
-    enabled: !isRecordingActive,
+    beforeNavigate: confirmNavigationWhileRecording,
   });
 
   return (
