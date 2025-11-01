@@ -135,6 +135,11 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // ONLY handle requests from this app's origin to avoid interfering with other localhost apps
+  if (url.origin !== self.location.origin) {
+    return;
+  }
+
   // Handle different types of requests
   if (isStaticAsset(request)) {
     event.respondWith(handleStaticAsset(request));

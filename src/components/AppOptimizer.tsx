@@ -88,6 +88,12 @@ async function preloadCriticalResources() {
 async function initializeServiceWorker() {
   if (!('serviceWorker' in navigator)) return;
 
+  // Only register service worker in production to avoid interfering with other localhost apps
+  if (process.env.NODE_ENV !== 'production') {
+    console.log('Service worker registration skipped in development mode');
+    return;
+  }
+
   try {
     const registration = await navigator.serviceWorker.register('/sw.js', {
       scope: '/',

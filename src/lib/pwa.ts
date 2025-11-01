@@ -31,6 +31,12 @@ class PWAManager {
       return null;
     }
 
+    // Only register service worker in production to avoid interfering with other localhost apps during development
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('Service Worker registration skipped in development mode');
+      return null;
+    }
+
     try {
       this.registration = await navigator.serviceWorker.register('/sw.js', {
         scope: '/',

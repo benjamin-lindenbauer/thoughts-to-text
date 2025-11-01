@@ -77,7 +77,8 @@ export default function RootLayout({
         <Script id="pwa-init" strategy="afterInteractive">
 {`
   // Initialize PWA features
-  if ('serviceWorker' in navigator) {
+  // Only register service worker in production to avoid interfering with other localhost apps
+  if ('serviceWorker' in navigator && process.env.NODE_ENV === 'production') {
     window.addEventListener('load', async function() {
       try {
         const registration = await navigator.serviceWorker.register('/sw.js', {
