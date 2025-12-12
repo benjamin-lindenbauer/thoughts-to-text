@@ -28,7 +28,7 @@
     "date-fns": "^4.1.0",
     "localforage": "^1.10.0",
     "lucide-react": "^0.542.0",
-    "next": "16.0.7",
+    "next": "16.0.10",
     "openai": "^6.2.0",
     "react": "19.2.1",
     "react-dom": "19.2.1",
