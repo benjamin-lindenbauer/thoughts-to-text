@@ -36,9 +36,9 @@ The "Thoughts to Text" application is a Progressive Web App (PWA) built with Nex
 
 #### Acceptance Criteria
 
-1. WHEN a recording is completed THEN the system SHALL automatically transcribe it using OpenAI's "gpt-4o-transcribe" model
+1. WHEN a recording is completed THEN the system SHALL automatically transcribe it using OpenAI's "gpt-4o-mini-transcribe" model
 2. WHEN transcription is complete THEN the system SHALL display rewrite prompt options with a default selection
-3. WHEN the user clicks the rewrite button THEN the system SHALL enhance the transcript using OpenAI's "gpt-5" model
+3. WHEN the user clicks the rewrite button THEN the system SHALL enhance the transcript using OpenAI's "gpt-5-nano" model
 4. WHEN no OpenAI API key is configured THEN the system SHALL prompt the user to set their API key
 5. IF API calls fail THEN the system SHALL display appropriate error messages and retain the original transcript
 

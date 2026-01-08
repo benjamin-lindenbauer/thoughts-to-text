@@ -45,8 +45,8 @@
 
 
 
-  - Create API route for speech-to-text transcription using gpt-4o-transcribe
-  - Create API route for text rewriting using gpt-5 model
+  - Create API route for speech-to-text transcription using gpt-4o-mini-transcribe
+  - Create API route for text rewriting using gpt-5-nano model
   - Implement error handling for API failures, rate limits, and invalid keys
   - Add retry logic and user-friendly error messages
   - _Requirements: 3.1, 3.4, 9.1, 9.2, 9.3, 9.4, 9.5_
