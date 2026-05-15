@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
     const audioFile = formData.get('audio') as File;
     const language = formData.get('language') as string || 'en';
     const prompt = formData.get('prompt') as string || defaultPrompt;
-    const model = formData.get('model') as string || 'gpt-4o-mini-transcribe';
+    const model = formData.get('model') as string || 'gpt-4o-mini-tts';
 
     if (!audioFile) {
       return NextResponse.json(

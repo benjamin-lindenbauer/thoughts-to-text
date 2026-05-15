@@ -149,8 +149,8 @@ export default function NoteDetailsPage() {
       setNote(updatedNote);
       success('Text rewritten', 'Your transcript has been rewritten.');
 
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Rewriting failed';
+    } catch (err: any) {
+      const message = err?.message || (err instanceof Error ? err.message : 'Rewriting failed');
       setError(message);
       showError('Rewriting failed', message);
     } finally {
@@ -288,8 +288,8 @@ export default function NoteDetailsPage() {
       await updateNote(updatedNote);
       setNote(updatedNote);
       success('Transcription complete', 'The transcript was added to your note.');
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to transcribe audio';
+    } catch (err: any) {
+      const message = err?.message || (err instanceof Error ? err.message : 'Failed to transcribe audio');
       setError(message);
       showError('Transcription failed', message);
     } finally {

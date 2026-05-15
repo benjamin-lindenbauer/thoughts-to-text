@@ -453,7 +453,7 @@ export function RecordingInterface({
 
   // Handle transcription
   const handleTranscription = useCallback(async (audioBlob: Blob) => {
-    if (!audioBlob) return;
+    if (!audioBlob || isTranscribing) return;
 
     // Check file size before transcription
     if (audioBlob.size > MAX_FILE_SIZE_BYTES) {
@@ -477,13 +477,13 @@ export function RecordingInterface({
       }
       setTranscript(result.transcript);
 
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Transcription failed';
+    } catch (error: any) {
+      const errorMessage = error?.message || (error instanceof Error ? error.message : 'Transcription failed');
       onError?.(errorMessage);
     } finally {
       setIsTranscribing(false);
     }
-  }, [onError, MAX_FILE_SIZE_BYTES, getApiKey]);
+  }, [onError, MAX_FILE_SIZE_BYTES, getApiKey, isTranscribing]);
 
   // Handle text rewriting
   const handleRewrite = useCallback(async () => {
@@ -512,14 +512,14 @@ export function RecordingInterface({
       setShowRewriteSection(true);
       setRewrittenText(result.rewrittenText);
 
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Rewriting failed';
+    } catch (error: any) {
+      const errorMessage = error?.message || (error instanceof Error ? error.message : 'Rewriting failed');
       onError?.(errorMessage);
       // Keep original transcript as fallback - don't clear existing rewritten text
     } finally {
       setIsRewriting(false);
     }
-  }, [transcript, selectedPrompt, rewritePrompts, onError, selectedLanguage]);
+  }, [transcript, selectedPrompt, rewritePrompts, onError, selectedLanguage, isRewriting]);
 
   // Save and discard handlers
   const handleDiscard = useCallback(() => {
