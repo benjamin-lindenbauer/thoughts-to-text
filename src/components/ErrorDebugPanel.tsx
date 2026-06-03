@@ -210,9 +210,9 @@ export function ErrorDebugPanel({ isVisible, onClose }: ErrorDebugPanelProps) {
                 >
                   <div className="flex items-center gap-3 flex-1 min-w-0">
                     {expandedLogs.has(log.id) ? (
-                      <ChevronDown className="w-4 h-4 flex-shrink-0" />
+                      <ChevronDown className="w-4 h-4 shrink-0" />
                     ) : (
-                      <ChevronRight className="w-4 h-4 flex-shrink-0" />
+                      <ChevronRight className="w-4 h-4 shrink-0" />
                     )}
                     
                     <span className={`text-sm font-medium ${getLevelColor(log.level)}`}>
@@ -227,7 +227,7 @@ export function ErrorDebugPanel({ isVisible, onClose }: ErrorDebugPanelProps) {
                       {log.message}
                     </span>
                     
-                    <span className="text-xs text-muted-foreground flex-shrink-0">
+                    <span className="text-xs text-muted-foreground shrink-0">
                       {new Date(log.timestamp).toLocaleTimeString()}
                     </span>
                   </div>

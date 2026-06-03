@@ -320,7 +320,7 @@
 
   /* Reusable panel background gradient (indigo -> purple), light and dark */
   .bg-panel-gradient {
-    @apply bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-950/20 dark:to-purple-950/20;
+    @apply bg-linear-to-br from-indigo-50 to-purple-50 dark:from-indigo-950/20 dark:to-purple-950/20;
   }
   
   /* Reusable panel border (indigo), light and dark */

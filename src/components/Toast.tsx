@@ -90,7 +90,7 @@ export function Toast({ id, type, title, description, duration = 5000, transpare
         <button
           onClick={handleClose}
           className={cn(
-            'flex-shrink-0 rounded-md p-1 transition-colors',
+            'shrink-0 rounded-md p-1 transition-colors',
             transparent ? 'hover:bg-black/5 dark:hover:bg-white/5' : 'hover:bg-white/10'
           )}
         >

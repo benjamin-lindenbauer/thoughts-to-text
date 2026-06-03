@@ -115,7 +115,7 @@ export function RecordingInterface({
         aria-label="Discard recording and transcript"
         disabled={isSaving}
       >
-        <Trash2 className="size-4 flex-shrink-0" />
+        <Trash2 className="size-4 shrink-0" />
         Discard
       </button>
       <button
@@ -127,12 +127,12 @@ export function RecordingInterface({
       >
         {isSaving ? (
           <>
-            <RefreshCw className="size-4 animate-spin flex-shrink-0" />
+            <RefreshCw className="size-4 animate-spin shrink-0" />
             <span>Saving...</span>
           </>
         ) : (
           <>
-            <Save className="size-4 flex-shrink-0" />
+            <Save className="size-4 shrink-0" />
             <span>Save</span>
           </>
         )}
@@ -719,8 +719,8 @@ export function RecordingInterface({
                 className={cn(
                   "relative mt-8 aspect-square w-28 h-28 md:w-32 md:h-32 lg:w-36 lg:h-36 rounded-full transition-all duration-300 active:scale-95 touch-manipulation",
                   recordingState.isRecording
-                    ? "bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700"
-                    : "bg-gradient-to-br from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600"
+                    ? "bg-linear-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700"
+                    : "bg-linear-to-br from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600"
                 )}
               >
                 <div className="absolute inset-2 md:inset-3 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
@@ -733,7 +733,7 @@ export function RecordingInterface({
 
                 {/* Pulse animation ring when recording */}
                 {recordingState.isRecording && (
-                  <div className="absolute inset-0 rounded-full bg-gradient-to-br from-red-500 to-red-600 animate-pulse opacity-30"></div>
+                  <div className="absolute inset-0 rounded-full bg-linear-to-br from-red-500 to-red-600 animate-pulse opacity-30"></div>
                 )}
               </button>
             )}
@@ -823,7 +823,7 @@ export function RecordingInterface({
             <section className="flex flex-col gap-2 p-4 rounded-xl bg-card w-full">
               <div className="flex items-center justify-between h-9">
                 <h3 className="flex flex-row items-center gap-2">
-                  <FileText className="size-4 flex-shrink-0" />
+                  <FileText className="size-4 shrink-0" />
                   Transcript
                 </h3>
                 {transcript?.trim().length && <CopyButton text={transcript} />}
@@ -853,7 +853,7 @@ export function RecordingInterface({
             <section className="flex flex-col gap-2 p-4 rounded-xl bg-panel-gradient w-full">
               <div className="flex items-center justify-between h-9">
                 <h3 className="flex flex-row items-center gap-2">
-                  <Wand2 className="size-4 flex-shrink-0" />
+                  <Wand2 className="size-4 shrink-0" />
                   Rewritten text
                 </h3>
                 {rewrittenText?.trim() && <CopyButton text={rewrittenText} />}
@@ -870,7 +870,7 @@ export function RecordingInterface({
           {/* Section 4: Image / Camera */}
           <section className="flex flex-col gap-2 p-4 rounded-xl bg-card w-full">
             <h3 className="flex flex-row items-center gap-2 h-9">
-              <FileImage className="size-4 flex-shrink-0" />
+              <FileImage className="size-4 shrink-0" />
               Add image
             </h3>
             <div className="flex gap-2 w-full md:w-1/2">
@@ -896,7 +896,7 @@ export function RecordingInterface({
                 }
                 className="flex flex-row justify-center w-full px-4 py-2 rounded-lg text-sm bg-background border border-border hover:bg-accent transition-colors items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <Camera className="size-4 flex-shrink-0" />
+                <Camera className="size-4 shrink-0" />
                 <span className="text-sm">{isCameraLoading ? 'Camera loading...' : isCameraActive ? 'Close camera' : 'Camera'}</span>
               </button>
               <button
@@ -910,7 +910,7 @@ export function RecordingInterface({
                 aria-label="Upload image from device"
                 className="flex flex-row justify-center w-full px-4 py-2 rounded-lg text-sm bg-background border border-border hover:bg-accent transition-colors items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <Upload className="size-4 flex-shrink-0" />
+                <Upload className="size-4 shrink-0" />
                 <span className="text-sm">Upload</span>
               </button>
               <input ref={fileInputRef} type="file" accept="image/*" onChange={handlePhotoUpload} className="hidden" />
@@ -938,7 +938,7 @@ export function RecordingInterface({
                       aria-label="Close camera"
                       className="absolute top-2 right-2 p-2 bg-black/50 backdrop-blur-sm text-white rounded-full hover:bg-black/70 transition-colors"
                     >
-                      <X className="size-4 flex-shrink-0" />
+                      <X className="size-4 shrink-0" />
                     </button>
                   )}
 
@@ -976,7 +976,7 @@ export function RecordingInterface({
                   aria-label="Remove captured photo"
                   className="absolute top-2 right-2 p-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
                 >
-                  <X className="size-4 flex-shrink-0" />
+                  <X className="size-4 shrink-0" />
                 </button>
               )}
             </div>

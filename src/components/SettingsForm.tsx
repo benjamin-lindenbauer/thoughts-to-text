@@ -191,7 +191,7 @@ export function SettingsForm() {
       {(settingsError || formError) && (
         <div className="mb-6 p-4 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive">
           <div className="flex items-center gap-2">
-            <AlertCircle className="h-4 w-4 flex-shrink-0" />
+            <AlertCircle className="h-4 w-4 shrink-0" />
             <span className="text-sm">{settingsError || formError}</span>
           </div>
         </div>
@@ -201,7 +201,7 @@ export function SettingsForm() {
       {saveStatus && (
         <div className="mb-6 p-4 rounded-xl bg-green-500/10 border border-green-500/20 text-green-600 dark:text-green-400">
           <div className="flex items-center gap-2">
-            <CheckCircle2 className="h-4 w-4 flex-shrink-0" />
+            <CheckCircle2 className="h-4 w-4 shrink-0" />
             <span className="text-sm">{saveStatus}</span>
           </div>
         </div>
@@ -236,7 +236,7 @@ export function SettingsForm() {
                   rel="noopener noreferrer"
                 >
                   OpenAI API keys
-                  <ExternalLink className="h-4 w-4 flex-shrink-0" />
+                  <ExternalLink className="h-4 w-4 shrink-0" />
                 </a>
               </Button>
             </h2>

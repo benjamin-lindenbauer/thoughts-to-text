@@ -100,7 +100,7 @@ export function StorageQuotaWarning({ onDismiss, className = '' }: StorageQuotaW
 
   const getIcon = () => {
     const level = getWarningLevel();
-    const iconClass = "w-5 h-5 flex-shrink-0";
+    const iconClass = "w-5 h-5 shrink-0";
     
     switch (level) {
       case 'critical':
@@ -174,7 +174,7 @@ export function StorageQuotaWarning({ onDismiss, className = '' }: StorageQuotaW
 
         <button
           onClick={handleDismiss}
-          className="flex-shrink-0 p-1 hover:bg-white/20 rounded transition-colors"
+          className="shrink-0 p-1 hover:bg-white/20 rounded transition-colors"
         >
           <X className="w-4 h-4" />
         </button>

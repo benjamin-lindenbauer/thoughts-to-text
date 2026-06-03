@@ -57,7 +57,7 @@ export function PWAInstallPrompt({ className }: PWAInstallPromptProps) {
       className
     )}>
       <div className="flex items-start gap-3">
-        <div className="flex-shrink-0 w-10 h-10 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg flex items-center justify-center">
+        <div className="shrink-0 w-10 h-10 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg flex items-center justify-center">
           <Smartphone className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
         </div>
 
@@ -72,7 +72,7 @@ export function PWAInstallPrompt({ className }: PWAInstallPromptProps) {
 
         <button
           onClick={handleDismiss}
-          className="flex-shrink-0 p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+          className="shrink-0 p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
         >
           <X className="w-4 h-4" />
         </button>
