@@ -52,7 +52,7 @@ async function withRetry<T>(
 
       // Don't retry on certain error types or if this was the last allowed attempt
       const isLastAttempt = attempt === maxRetries - 1;
-      if (error.type === 'auth' || !error.retryable || isLastAttempt) {
+      if (error.type === 'auth' || error.type === 'quota' || !error.retryable || isLastAttempt) {
         throw error;
       }
 
